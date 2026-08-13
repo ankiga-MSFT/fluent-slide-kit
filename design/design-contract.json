@@ -1,0 +1,63 @@
+{
+    "schemaVersion": 1,
+    "alignment": "Fluent 2 public design guidance",
+    "notABrandCertification": true,
+    "canonicalCanvas": {
+        "width": 1920,
+        "height": 1080,
+        "aspectRatio": "16:9"
+    },
+    "typography": {
+        "fontStack": "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, system-ui, sans-serif",
+        "note": "Segoe UI binaries are not redistributed. Slide aliases are larger than the Fluent UI type ramp for projected readability.",
+        "roles": {
+            "display": 72,
+            "title": 48,
+            "subtitle": 30,
+            "body": 24,
+            "caption": 18,
+            "stat": 96
+        }
+    },
+    "contentBudgets": {
+        "titleWords": 10,
+        "bodyWords": 55,
+        "itemsPerSlide": 6
+    },
+    "diagramQuality": {
+        "canvas": {
+            "width": 1600,
+            "height": 720
+        },
+        "minimumEffectiveFontSize": 18,
+        "maximumFlowNodes": 18,
+        "maximumArchitectureComponents": 15,
+        "maximumArchitectureColumns": 5,
+        "maximumArchitectureLayers": 6,
+        "maximumCrossCuttingConcerns": 5,
+        "minimumLayerConnectorLength": 24,
+        "minimumNodeContentGap": 4,
+        "maximumItemCollisions": 0,
+        "maximumConnectorCrossings": 0,
+        "allowTextOutsideContainer": false
+    },
+    "powerPointQuality": {
+        "canvas": {
+            "width": 1920,
+            "height": 1080
+        },
+        "requireSceneElementCoverage": true,
+        "requireSpeakerNotes": true,
+        "allowScreenshotOnlySlides": false,
+        "minimumPreviewNonWhiteRatio": 0.01,
+        "minimumPreviewSampledColors": 5
+    },
+    "sources": [
+        "https://fluent2.microsoft.design/design-principles",
+        "https://fluent2.microsoft.design/color",
+        "https://fluent2.microsoft.design/typography",
+        "https://fluent2.microsoft.design/layout",
+        "https://fluent2.microsoft.design/iconography",
+        "https://fluent2.microsoft.design/motion"
+    ]
+}

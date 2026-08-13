@@ -1,0 +1,131 @@
+{
+    "schemaVersion": 1,
+    "diagramType": "flow",
+    "id": "azure-request-flow",
+    "title": "Azure request and asynchronous processing flow",
+    "description": "Requests enter through Azure Front Door, run on AKS, and branch to synchronous storage or asynchronous processing.",
+    "direction": "right",
+    "theme": "light",
+    "nodes": [
+        {
+            "id": "front-door",
+            "label": "Azure Front Door",
+            "description": "Global entry",
+            "kind": "azure-service",
+            "tone": "brand",
+            "lane": "edge",
+            "asset": {
+                "kind": "azure",
+                "path": "assets/azure-public-service-icons/svg/networking/10073-icon-service-Front-Door-and-CDN-Profiles.svg",
+                "alt": "Azure Front Door and CDN Profiles"
+            }
+        },
+        {
+            "id": "aks",
+            "label": "Azure Kubernetes Service",
+            "description": "Application workloads",
+            "kind": "azure-service",
+            "tone": "brand",
+            "lane": "application",
+            "group": "workload-platform",
+            "asset": {
+                "kind": "azure",
+                "path": "assets/azure-public-service-icons/svg/containers/10023-icon-service-Kubernetes-Services.svg",
+                "alt": "Azure Kubernetes Service"
+            }
+        },
+        {
+            "id": "route",
+            "label": "Asynchronous work?",
+            "kind": "decision",
+            "tone": "neutral",
+            "lane": "application",
+            "group": "workload-platform"
+        },
+        {
+            "id": "work-queue",
+            "label": "Work queue",
+            "description": "Durable handoff",
+            "kind": "queue",
+            "tone": "brand",
+            "lane": "data"
+        },
+        {
+            "id": "cosmos-db",
+            "label": "Azure Cosmos DB",
+            "description": "Operational data",
+            "kind": "azure-service",
+            "tone": "success",
+            "lane": "data",
+            "asset": {
+                "kind": "azure",
+                "path": "assets/azure-public-service-icons/svg/databases/10121-icon-service-Azure-Cosmos-DB.svg",
+                "alt": "Azure Cosmos DB"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-to-app",
+            "source": "front-door",
+            "target": "aks",
+            "label": "HTTPS"
+        },
+        {
+            "id": "app-to-decision",
+            "source": "aks",
+            "target": "route",
+            "label": "request"
+        },
+        {
+            "id": "sync-write",
+            "source": "route",
+            "target": "cosmos-db",
+            "label": "No: write"
+        },
+        {
+            "id": "queue-work",
+            "source": "route",
+            "target": "work-queue",
+            "label": "Yes: enqueue",
+            "kind": "asynchronous"
+        },
+        {
+            "id": "queue-to-store",
+            "source": "work-queue",
+            "target": "cosmos-db",
+            "label": "persist",
+            "kind": "asynchronous"
+        }
+    ],
+    "groups": [
+        {
+            "id": "workload-platform",
+            "label": "Application platform"
+        }
+    ],
+    "lanes": [
+        {
+            "id": "edge",
+            "label": "Edge"
+        },
+        {
+            "id": "application",
+            "label": "Application"
+        },
+        {
+            "id": "data",
+            "label": "Data and messaging"
+        }
+    ],
+    "legend": [
+        {
+            "label": "Synchronous",
+            "kind": "primary"
+        },
+        {
+            "label": "Asynchronous",
+            "kind": "asynchronous"
+        }
+    ]
+}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "name": "Microsoft HTML Slide Creation Kit Assets",
+  "purpose": "Compact, web-native icon assets with deterministic AI lookup.",
+  "entryPoints": {
+    "fluentCatalog": "fluent-system-icons/catalog.json",
+    "azureCatalog": "azure-public-service-icons/catalog.json"
+  },
+  "inventory": {
+    "fluentConcepts": 2973,
+    "fluentSvgAssets": 5855,
+    "fluentFontAssets": 3,
+    "azureSvgAssets": 714
+  },
+  "collections": [
+    {
+      "id": "fluent-system-icons",
+      "useFor": "Generic UI actions, status, navigation, objects, and concepts.",
+      "svg": "fluent-system-icons/svg/{regular|filled}/{icon-id}.svg",
+      "fontCss": "fluent-system-icons/font/FluentSystemIcons-Resizable.css",
+      "license": "fluent-system-icons/legal/LICENSE"
+    },
+    {
+      "id": "azure-public-service-icons",
+      "useFor": "Azure products, services, and architecture diagrams.",
+      "svg": "azure-public-service-icons/svg/{category}/{official-file-name}.svg",
+      "terms": "azure-public-service-icons/legal/Microsoft_Terms_of_Use.pdf"
+    }
+  ],
+  "rendering": {
+    "fluentSvg": "Inline SVG content to inherit CSS currentColor, or use the file as a CSS mask.",
+    "fluentFont": "Load the included CSS, then use its icon-ic_fluent_* class names.",
+    "azureSvg": "Use as an img source or inline SVG; preserve official colors and proportions."
+  },
+  "compactness": {
+    "included": [
+      "One canonical Regular and Filled SVG per available Fluent icon concept.",
+      "One Resizable Fluent WOFF2 font, CSS class map, and JSON glyph map.",
+      "All Azure V24 SVGs with their category hierarchy, terms, and FAQ.",
+      "Searchable per-collection JSON catalogs and required Fluent legal files."
+    ],
+    "excluded": [
+      "Duplicate Fluent SVG sizes.",
+      "Deprecated Fluent color icons and less-common Light variants.",
+      "Duplicate TTF and WOFF font formats, HTML previews, and separate style fonts.",
+      "React, React Native, Android, iOS, Flutter, PDF icon exports, and build tooling."
+    ]
+  },
+  "validation": {
+    "selectedFluentSvgFilesWithIds": []
+  }
+}

@@ -1,0 +1,107 @@
+{
+    "schemaVersion": 1,
+    "id": "fluent-aligned",
+    "name": "Fluent-aligned public profile",
+    "brandStatus": "aligned-not-certified",
+    "canvas": {
+        "width": 1920,
+        "height": 1080,
+        "aspectRatio": "16:9"
+    },
+    "fonts": {
+        "heading": "Segoe UI",
+        "body": "Segoe UI",
+        "fallback": "Aptos"
+    },
+    "colors": {
+        "light": {
+            "background": "#FFFFFF",
+            "surface": "#FFFFFF",
+            "subtle": "#F5F5F5",
+            "foreground": "#242424",
+            "secondary": "#424242",
+            "muted": "#616161",
+            "stroke": "#D1D1D1",
+            "strokeStrong": "#8A8886",
+            "brand": "#0F6CBD",
+            "brandStrong": "#115EA3",
+            "onBrand": "#FFFFFF",
+            "success": "#107C10",
+            "warning": "#8A6D00",
+            "danger": "#C50F1F"
+        },
+        "dark": {
+            "background": "#202020",
+            "surface": "#292929",
+            "subtle": "#333333",
+            "foreground": "#FFFFFF",
+            "secondary": "#D6D6D6",
+            "muted": "#ADADAD",
+            "stroke": "#666666",
+            "strokeStrong": "#ADADAD",
+            "brand": "#479EF5",
+            "brandStrong": "#62ABF5",
+            "onBrand": "#FFFFFF",
+            "success": "#54B054",
+            "warning": "#FCE100",
+            "danger": "#DC626D"
+        }
+    },
+    "typography": {
+        "display": {
+            "size": 72,
+            "lineHeight": 1.1,
+            "weight": 600
+        },
+        "title": {
+            "size": 48,
+            "lineHeight": 1.15,
+            "weight": 600
+        },
+        "subtitle": {
+            "size": 30,
+            "lineHeight": 1.3,
+            "weight": 400
+        },
+        "itemTitle": {
+            "size": 30,
+            "lineHeight": 1.25,
+            "weight": 600
+        },
+        "body": {
+            "size": 24,
+            "lineHeight": 1.4,
+            "weight": 400
+        },
+        "caption": {
+            "size": 18,
+            "lineHeight": 1.35,
+            "weight": 400
+        },
+        "stat": {
+            "size": 72,
+            "lineHeight": 1,
+            "weight": 700
+        }
+    },
+    "assetPolicy": {
+        "allowMicrosoftLogos": false,
+        "allowProductIcons": true,
+        "requireApprovedTemplateForBrandClaim": true
+    },
+    "imageGenerationPolicy": {
+        "allowedUses": [
+            "hero photography",
+            "conceptual illustration",
+            "editorial background"
+        ],
+        "prohibitedUses": [
+            "logos",
+            "Microsoft product icons",
+            "slide text",
+            "charts",
+            "architecture diagrams",
+            "workflow diagrams"
+        ]
+    }
+}

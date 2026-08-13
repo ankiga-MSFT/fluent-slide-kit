@@ -1,0 +1,270 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://local.fluent-slide-kit/schemas/brand-profile.schema.json",
+    "title": "Presentation brand profile",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "brandStatus",
+        "canvas",
+        "fonts",
+        "colors",
+        "typography",
+        "assetPolicy",
+        "imageGenerationPolicy"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "const": 1
+        },
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "brandStatus": {
+            "enum": [
+                "aligned-not-certified",
+                "approved-internal",
+                "custom-approved"
+            ]
+        },
+        "canvas": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "width",
+                "height",
+                "aspectRatio"
+            ],
+            "properties": {
+                "width": {
+                    "const": 1920
+                },
+                "height": {
+                    "const": 1080
+                },
+                "aspectRatio": {
+                    "const": "16:9"
+                }
+            }
+        },
+        "fonts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "heading",
+                "body",
+                "fallback"
+            ],
+            "properties": {
+                "heading": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "body": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "fallback": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "colors": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "light",
+                "dark"
+            ],
+            "properties": {
+                "light": {
+                    "$ref": "#/$defs/palette"
+                },
+                "dark": {
+                    "$ref": "#/$defs/palette"
+                }
+            }
+        },
+        "typography": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "display",
+                "title",
+                "subtitle",
+                "itemTitle",
+                "body",
+                "caption",
+                "stat"
+            ],
+            "properties": {
+                "display": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "title": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "subtitle": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "itemTitle": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "body": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "caption": {
+                    "$ref": "#/$defs/typeRole"
+                },
+                "stat": {
+                    "$ref": "#/$defs/typeRole"
+                }
+            }
+        },
+        "assetPolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowMicrosoftLogos",
+                "allowProductIcons",
+                "requireApprovedTemplateForBrandClaim"
+            ],
+            "properties": {
+                "allowMicrosoftLogos": {
+                    "type": "boolean"
+                },
+                "allowProductIcons": {
+                    "type": "boolean"
+                },
+                "requireApprovedTemplateForBrandClaim": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "imageGenerationPolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "allowedUses",
+                "prohibitedUses"
+            ],
+            "properties": {
+                "allowedUses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "prohibitedUses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "$defs": {
+        "palette": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "background",
+                "surface",
+                "subtle",
+                "foreground",
+                "secondary",
+                "muted",
+                "stroke",
+                "strokeStrong",
+                "brand",
+                "brandStrong",
+                "onBrand",
+                "success",
+                "warning",
+                "danger"
+            ],
+            "properties": {
+                "background": {
+                    "$ref": "#/$defs/color"
+                },
+                "surface": {
+                    "$ref": "#/$defs/color"
+                },
+                "subtle": {
+                    "$ref": "#/$defs/color"
+                },
+                "foreground": {
+                    "$ref": "#/$defs/color"
+                },
+                "secondary": {
+                    "$ref": "#/$defs/color"
+                },
+                "muted": {
+                    "$ref": "#/$defs/color"
+                },
+                "stroke": {
+                    "$ref": "#/$defs/color"
+                },
+                "strokeStrong": {
+                    "$ref": "#/$defs/color"
+                },
+                "brand": {
+                    "$ref": "#/$defs/color"
+                },
+                "brandStrong": {
+                    "$ref": "#/$defs/color"
+                },
+                "onBrand": {
+                    "$ref": "#/$defs/color"
+                },
+                "success": {
+                    "$ref": "#/$defs/color"
+                },
+                "warning": {
+                    "$ref": "#/$defs/color"
+                },
+                "danger": {
+                    "$ref": "#/$defs/color"
+                }
+            }
+        },
+        "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "typeRole": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "size",
+                "lineHeight",
+                "weight"
+            ],
+            "properties": {
+                "size": {
+                    "type": "number",
+                    "minimum": 12
+                },
+                "lineHeight": {
+                    "type": "number",
+                    "minimum": 1
+                },
+                "weight": {
+                    "type": "integer",
+                    "minimum": 400,
+                    "maximum": 700
+                }
+            }
+        }
+    }
+}

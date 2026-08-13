@@ -1,0 +1,294 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://local.fluent-slide-kit/schemas/deck.schema.json",
+    "title": "Fluent slide deck",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schemaVersion",
+        "title",
+        "slides"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "const": 1
+        },
+        "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+        },
+        "brandProfile": {
+            "type": "string",
+            "pattern": "^design/brand-profiles/[^.].+\\.json$",
+            "default": "design/brand-profiles/fluent-aligned.json"
+        },
+        "theme": {
+            "enum": [
+                "light",
+                "dark"
+            ],
+            "default": "light"
+        },
+        "locale": {
+            "type": "string",
+            "default": "en"
+        },
+        "footer": {
+            "type": "string",
+            "maxLength": 100
+        },
+        "date": {
+            "type": "string",
+            "maxLength": 40
+        },
+        "confidentiality": {
+            "type": "string",
+            "maxLength": 60
+        },
+        "slides": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/$defs/slide"
+            }
+        }
+    },
+    "$defs": {
+        "asset": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "kind",
+                "path",
+                "alt"
+            ],
+            "properties": {
+                "kind": {
+                    "enum": [
+                        "fluent",
+                        "azure",
+                        "image"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "pattern": "^assets/[^.].+"
+                },
+                "alt": {
+                    "type": "string",
+                    "maxLength": 160
+                },
+                "provenance": {
+                    "enum": [
+                        "local-catalog",
+                        "user-supplied",
+                        "ai-generated"
+                    ],
+                    "default": "local-catalog"
+                }
+            }
+        },
+        "diagramReference": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "path",
+                "alt"
+            ],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "pattern": "^diagrams/[^.].+\\.json$"
+                },
+                "alt": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                }
+            }
+        },
+        "item": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "body": {
+                    "type": "string",
+                    "maxLength": 260
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 80
+                },
+                "date": {
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "tone": {
+                    "enum": [
+                        "neutral",
+                        "brand",
+                        "success",
+                        "warning",
+                        "danger"
+                    ]
+                },
+                "asset": {
+                    "$ref": "#/$defs/asset"
+                }
+            },
+            "anyOf": [
+                {
+                    "required": [
+                        "title"
+                    ]
+                },
+                {
+                    "required": [
+                        "body"
+                    ]
+                },
+                {
+                    "required": [
+                        "value"
+                    ]
+                },
+                {
+                    "required": [
+                        "asset"
+                    ]
+                }
+            ]
+        },
+        "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "label"
+            ],
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "accessed": {
+                    "type": "string",
+                    "maxLength": 40
+                }
+            }
+        },
+        "slide": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "layout",
+                "takeaway",
+                "title"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "number": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "layout": {
+                    "enum": [
+                        "title",
+                        "statement",
+                        "cards",
+                        "split",
+                        "metrics",
+                        "comparison",
+                        "timeline",
+                        "architecture",
+                        "diagram",
+                        "quote",
+                        "sources"
+                    ]
+                },
+                "theme": {
+                    "enum": [
+                        "light",
+                        "dark"
+                    ]
+                },
+                "takeaway": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180
+                },
+                "eyebrow": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                },
+                "subtitle": {
+                    "type": "string",
+                    "maxLength": 240
+                },
+                "items": {
+                    "type": "array",
+                    "maxItems": 6,
+                    "items": {
+                        "$ref": "#/$defs/item"
+                    }
+                },
+                "diagram": {
+                    "$ref": "#/$defs/diagramReference"
+                },
+                "sources": {
+                    "type": "array",
+                    "maxItems": 12,
+                    "items": {
+                        "$ref": "#/$defs/source"
+                    }
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 4000
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "layout": {
+                                "const": "diagram"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "diagram"
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

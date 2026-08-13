@@ -1,0 +1,56 @@
+{
+    "schemaVersion": 1,
+    "kitPositioning": "Fluent-aligned semantic slide tooling with HTML previews and editable PowerPoint output; not Microsoft brand certification.",
+    "assets": [
+        {
+            "name": "Fluent UI System Icons",
+            "version": "1.1.335",
+            "source": "https://github.com/microsoft/fluentui-system-icons",
+            "license": "MIT",
+            "licenseFile": "assets/fluent-system-icons/legal/LICENSE"
+        },
+        {
+            "name": "Azure Public Service Icons",
+            "version": "V24",
+            "source": "https://learn.microsoft.com/azure/architecture/icons/",
+            "termsFile": "assets/azure-public-service-icons/legal/Microsoft_Terms_of_Use.pdf",
+            "faqFile": "assets/azure-public-service-icons/legal/Azure_Icons_FAQ.pdf"
+        }
+    ],
+    "developmentTools": [
+        {
+            "name": "Playwright",
+            "version": "1.62.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Ajv",
+            "version": "8.20.0",
+            "license": "MIT"
+        },
+        {
+            "name": "axe-core",
+            "version": "4.12.1",
+            "license": "MPL-2.0"
+        }
+    ],
+    "runtimeDependencies": [
+        {
+            "name": "PptxGenJS",
+            "version": "4.0.1",
+            "source": "https://github.com/gitbrent/PptxGenJS",
+            "license": "MIT",
+            "purpose": "Generate native editable PowerPoint Open XML packages from the shared scene."
+        }
+    ],
+    "securityBoundaries": [
+        "Presentation assets are restricted to local SVG, PNG, and JPEG files.",
+        "ICNS, JXL, and HEIF inputs are prohibited because the pinned image-size dependency has denial-of-service advisories for those parsers.",
+        "Desktop PowerPoint preview automation refuses to run while an interactive PowerPoint session exists."
+    ],
+    "fonts": {
+        "redistributed": false,
+        "stack": "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, system-ui, sans-serif"
+    },
+    "trademarks": "Microsoft logos and product launch icons are not included. Add only approved brand assets under their applicable terms."
+}

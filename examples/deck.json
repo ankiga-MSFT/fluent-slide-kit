@@ -1,0 +1,107 @@
+{
+    "schemaVersion": 1,
+    "title": "Fluent slide kit example",
+    "brandProfile": "design/brand-profiles/fluent-aligned.json",
+    "theme": "light",
+    "locale": "en",
+    "date": "2026-08-12",
+    "footer": "Fluent slide kit",
+    "slides": [
+        {
+            "id": "opening",
+            "layout": "title",
+            "takeaway": "The kit turns structured content into consistent, reviewable HTML and PowerPoint slides.",
+            "eyebrow": "Fluent slide kit",
+            "title": "Structured content. Consistent slides.",
+            "subtitle": "A deterministic path from an AI-authored specification to HTML and editable PowerPoint."
+        },
+        {
+            "id": "quality-system",
+            "layout": "cards",
+            "takeaway": "Three controls keep generated slides useful and visually coherent.",
+            "eyebrow": "Quality system",
+            "title": "Guardrails where they matter",
+            "subtitle": "Shared rules handle visual consistency while the author focuses on the message.",
+            "items": [
+                {
+                    "title": "Grounded assets",
+                    "body": "Search local catalogs and use exact Fluent or Azure files.",
+                    "tone": "brand",
+                    "asset": {
+                        "kind": "fluent",
+                        "path": "assets/fluent-system-icons/svg/regular/shield-checkmark.svg",
+                        "alt": ""
+                    }
+                },
+                {
+                    "title": "Content structure",
+                    "body": "Select layouts from message shape instead of drawing arbitrary containers.",
+                    "asset": {
+                        "kind": "fluent",
+                        "path": "assets/fluent-system-icons/svg/regular/data-trending.svg",
+                        "alt": ""
+                    }
+                },
+                {
+                    "title": "Executable review",
+                    "body": "Check overflow, missing assets, contrast and screenshots before handoff.",
+                    "tone": "success",
+                    "asset": {
+                        "kind": "fluent",
+                        "path": "assets/fluent-system-icons/svg/regular/checkmark-circle.svg",
+                        "alt": ""
+                    }
+                }
+            ]
+        },
+        {
+            "id": "azure-flow",
+            "layout": "architecture",
+            "takeaway": "Official service icons clarify a simple edge-to-data Azure flow.",
+            "eyebrow": "Architecture example",
+            "title": "A readable service path",
+            "subtitle": "The ordered-flow layout is intentionally constrained for presentation clarity.",
+            "items": [
+                {
+                    "title": "Front Door",
+                    "body": "Global entry point",
+                    "asset": {
+                        "kind": "azure",
+                        "path": "assets/azure-public-service-icons/svg/networking/10073-icon-service-Front-Door-and-CDN-Profiles.svg",
+                        "alt": "Azure Front Door and CDN Profiles"
+                    }
+                },
+                {
+                    "title": "AKS",
+                    "body": "Application workloads",
+                    "asset": {
+                        "kind": "azure",
+                        "path": "assets/azure-public-service-icons/svg/containers/10023-icon-service-Kubernetes-Services.svg",
+                        "alt": "Azure Kubernetes Service"
+                    }
+                },
+                {
+                    "title": "Cosmos DB",
+                    "body": "Operational data",
+                    "asset": {
+                        "kind": "azure",
+                        "path": "assets/azure-public-service-icons/svg/databases/10121-icon-service-Azure-Cosmos-DB.svg",
+                        "alt": "Azure Cosmos DB"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "azure-workflow",
+            "layout": "diagram",
+            "takeaway": "A graph model supports branching, labeled flows, boundaries, and swim lanes.",
+            "eyebrow": "Diagram example",
+            "title": "Branching flows remain readable",
+            "subtitle": "Use the diagram pipeline when a simple ordered service sequence is not enough.",
+            "diagram": {
+                "path": "diagrams/azure-request-flow.json",
+                "alt": "Azure request flow from Front Door to AKS, branching to a work queue or Cosmos DB across edge, application, and data lanes."
+            }
+        }
+    ]
+}

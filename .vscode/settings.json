@@ -1,0 +1,29 @@
+{
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/decks/*.json",
+                "/examples/*.json"
+            ],
+            "url": "./schemas/deck.schema.json"
+        },
+        {
+            "fileMatch": [
+                "/diagrams/*.json"
+            ],
+            "url": "./schemas/diagram.schema.json"
+        },
+        {
+            "fileMatch": [
+                "/design/brand-profiles/*.json"
+            ],
+            "url": "./schemas/brand-profile.schema.json"
+        },
+        {
+            "fileMatch": [
+                "*.scene.json"
+            ],
+            "url": "./schemas/scene.schema.json"
+        }
+    ]
+}

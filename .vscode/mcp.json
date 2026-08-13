@@ -1,0 +1,25 @@
+{
+  "servers": {
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.79",
+        "--isolated",
+        "--headless",
+        "--browser",
+        "msedge",
+        "--viewport-size",
+        "1920x1080",
+        "--block-service-workers",
+        "--output-dir",
+        "${workspaceFolder}/.slide-artifacts/mcp"
+      ]
+    }
+  }
+}

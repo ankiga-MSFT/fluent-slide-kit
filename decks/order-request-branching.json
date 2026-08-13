@@ -1,0 +1,36 @@
+{
+    "schemaVersion": 1,
+    "title": "Order request branching",
+    "brandProfile": "design/brand-profiles/fluent-aligned.json",
+    "theme": "light",
+    "locale": "en",
+    "date": "2026-08-13",
+    "footer": "Azure order platform · conceptual workflow",
+    "slides": [
+        {
+            "id": "order-request-branching",
+            "layout": "diagram",
+            "eyebrow": "Azure order platform · controlled branching",
+            "title": "Order requests branch without losing control",
+            "takeaway": "Long-running work moves to an asynchronous queue while direct writes retain a short synchronous path to Azure Cosmos DB.",
+            "subtitle": "One decision separates immediate persistence from queued work, while both paths converge on the same order store.",
+            "diagram": {
+                "path": "diagrams/order-request-branching.json",
+                "alt": "Rightward flow across three swim lanes: Front Door to AKS, then a decision routes direct writes to Cosmos DB or queued work asynchronously before persistence."
+            },
+            "sources": [
+                {
+                    "label": "Use Azure Front Door to secure AKS workloads",
+                    "url": "https://learn.microsoft.com/azure/architecture/example-scenario/aks-front-door/aks-front-door",
+                    "accessed": "2026-08-13"
+                },
+                {
+                    "label": "What is Azure Cosmos DB?",
+                    "url": "https://learn.microsoft.com/azure/cosmos-db/introduction",
+                    "accessed": "2026-08-13"
+                }
+            ],
+            "notes": "Audience: cloud platform leaders. Purpose: show that the order platform can route long-running work asynchronously without creating a separate persistence model. The diagram is conceptual and does not represent deployed inventory. The Work queue is intentionally service-neutral because no queue technology was specified. Solid connectors show synchronous traffic; dashed blue connectors show asynchronous traffic. The direct and queued paths both persist order state to Azure Cosmos DB."
+        }
+    ]
+}
