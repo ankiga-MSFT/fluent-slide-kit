@@ -52,6 +52,13 @@ const inspectDiagram = async (page, diagram, quality) => {
         }).map(({ id }) => id);
         const emptyText = [...document.querySelectorAll('text')].filter((element) => !element.textContent.trim()).length;
         const invalidImages = [...document.querySelectorAll('image')].filter((element) => !element.getAttribute('href')?.startsWith('data:image/svg+xml;base64,')).length;
+        const sharpCornerRectangles = [...document.querySelectorAll('rect:not([data-canvas-background])')]
+            .filter((element) => element.rx.baseVal.value < qualityDefinition.minimumCornerRadius)
+            .map((element) => element.closest('[data-diagram-node], [data-diagram-component], [data-diagram-concern], .diagram-lane, .diagram-group, .architecture-column, .architecture-layer, .architecture-concerns')?.getAttribute('data-diagram-node')
+                ?? element.closest('[data-diagram-component]')?.getAttribute('data-diagram-component')
+                ?? element.closest('[data-diagram-concern]')?.getAttribute('data-diagram-concern')
+                ?? element.getAttribute('class')
+                ?? 'unnamed rectangle');
         const readableText = [...document.querySelectorAll('.node-label, .node-description, .lane-label, .group-label, .column-label, .layer-label, .component-label, .component-description, .concern-title, .concern-label')]
             .map((element) => {
                 const rect = element.getBoundingClientRect();
@@ -147,6 +154,7 @@ const inspectDiagram = async (page, diagram, quality) => {
             outside,
             emptyText,
             invalidImages,
+            sharpCornerRectangles,
             undersizedText,
             outsideText,
             nodeContentSpacingViolations,
@@ -181,6 +189,7 @@ const inspectDiagram = async (page, diagram, quality) => {
     if (geometry.outside.length) errors.push(`Diagram items outside SVG viewport: ${geometry.outside.join(', ')}`);
     if (geometry.emptyText) errors.push(`${geometry.emptyText} empty SVG text elements rendered.`);
     if (geometry.invalidImages) errors.push(`${geometry.invalidImages} diagram assets were not embedded.`);
+    if (geometry.sharpCornerRectangles.length) errors.push(`Diagram rectangles below the ${quality.minimumCornerRadius}px corner radius: ${geometry.sharpCornerRectangles.join(', ')}`);
     if (geometry.undersizedText.length) errors.push(`Text below ${quality.minimumEffectiveFontSize}px effective size: ${geometry.undersizedText.map((text) => `${text.text} (${text.effectiveFontSize.toFixed(1)}px)`).join(', ')}`);
     if (geometry.outsideText.length) errors.push(`Text outside SVG viewport: ${geometry.outsideText.map((text) => text.text).join(', ')}`);
     if (geometry.nodeContentSpacingViolations.length) errors.push(`Flow-node content overlaps or is too tightly spaced: ${geometry.nodeContentSpacingViolations.map((violation) => `${violation.id}: ${violation.parts} (${violation.gap.toFixed(1)}px)`).join(', ')}`);

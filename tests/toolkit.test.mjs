@@ -82,6 +82,9 @@ test('native PowerPoint export contains editable named shapes and notes', async 
         assert.equal(report.notes[0].hasTakeaway, true);
         assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:diagram-component-${diagram.layers[0].components[0].id}`));
         assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-flow-${diagram.layers[0].id}`));
+        const geometries = new Map(report.slides[0].shapeGeometries.map((shape) => [shape.name, shape.preset]));
+        assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-component-${diagram.layers[0].components[0].id}`), 'roundRect');
+        assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-${diagram.layers[0].id}-surface`), 'roundRect');
     } finally {
         await rm(output, { recursive: true, force: true });
     }
@@ -157,6 +160,7 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         const cards = await readFile(path.join(output, '02-quality-system.html'), 'utf8');
         assert.match(cards, /data-scene-slide="quality-system"/);
         assert.match(cards, /data-scene-element="item-1-visual"/);
+        assert.match(cards, /data-scene-element="item-1-surface"[^>]+border-radius:8px/);
         assert.match(cards, /currentColor/i);
         const architecture = await readFile(path.join(output, '03-azure-flow.html'), 'utf8');
         assert.match(architecture, /10023-icon-service-Kubernetes-Services\.svg/);
@@ -215,6 +219,9 @@ test('flow nodes share one card shape and signal kind with a glyph', async () =>
     const svg = await renderDiagramSvg(diagram);
     assert.equal(svg.includes('<polygon'), false);
     assert.equal((svg.match(/class="node-shape/g) ?? []).length, diagram.nodes.length);
+    for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
+        assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
+    }
     assert.match(svg, /data-diagram-node="route"[\s\S]*?class="node-glyph/);
     assert.match(svg, /data-diagram-node="work-queue"[\s\S]*?class="node-glyph/);
 });
@@ -251,6 +258,9 @@ test('layered architecture renders on a fixed executive canvas', async () => {
     const svg = await renderDiagramSvg(diagram);
     assert.match(svg, /viewBox="0 0 1600 720"/);
     assert.match(svg, /data-diagram-type="layered-architecture"/);
+    for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
+        assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
+    }
     assert.match(svg, new RegExp(`data-diagram-component="${diagram.layers[0].components[0].id}"`));
     assert.match(svg, new RegExp(`data-diagram-concern="${diagram.crossCuttingConcerns[0].id}"`));
     assert.match(svg, /id="architecture-arrow"[^>]+markerUnits="userSpaceOnUse"/);

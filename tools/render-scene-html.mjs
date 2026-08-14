@@ -4,6 +4,7 @@ import { renderDiagramFile, resolveDiagramPath } from './diagram-core.mjs';
 import { kitRoot } from './scene-core.mjs';
 
 const assetsRoot = path.join(kitRoot, 'assets');
+const DEFAULT_CORNER_RADIUS = 8;
 
 const escapeHtml = (value = '') => String(value)
     .replaceAll('&', '&amp;')
@@ -52,7 +53,11 @@ const renderText = (element) => {
 
 const renderShape = (element) => {
     const style = element.style ?? {};
-    const radius = element.shape === 'ellipse' ? '50%' : `${style.radius ?? (element.shape === 'roundRect' ? 8 : 0)}px`;
+    const radius = element.id === 'background'
+        ? '0'
+        : element.shape === 'ellipse'
+            ? '50%'
+            : `${Math.max(DEFAULT_CORNER_RADIUS, style.radius ?? 0)}px`;
     const shapeStyle = [
         boxStyle(element.box, element.z),
         `background:${style.fill ?? 'transparent'}`,

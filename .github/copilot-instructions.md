@@ -56,6 +56,7 @@ the `diagram` layout embeds a validated flow or layered architecture.
 ## Visual rules
 
 - Preserve the fixed canvas, safe margins, type sizes, semantic colors, and 4px spacing system from `design/`.
+- Use rounded corners for every visible container, card, boundary, lane, label chip, and diagram component; never introduce square-corner boxes or sharp-corner diamonds.
 - Do not shrink body or caption text to make content fit; cut or split content instead.
 - Keep embedded diagram labels at or above 18px effective size after slide scaling. Reject clipped text,
 	overlapping items, crossing connectors, and layered architecture descriptions that depend on ellipsis.

@@ -37,6 +37,7 @@
         "maximumCrossCuttingConcerns": 5,
         "minimumLayerConnectorLength": 24,
         "minimumNodeContentGap": 4,
+        "minimumCornerRadius": 6,
         "maximumItemCollisions": 0,
         "maximumConnectorCrossings": 0,
         "allowTextOutsideContainer": false
@@ -48,6 +49,7 @@
         },
         "requireSceneElementCoverage": true,
         "requireSpeakerNotes": true,
+        "requireRoundedContainers": true,
         "allowScreenshotOnlySlides": false,
         "minimumPreviewNonWhiteRatio": 0.01,
         "minimumPreviewSampledColors": 5

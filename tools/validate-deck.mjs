@@ -164,6 +164,9 @@ const inspectPage = async (page, diagramQuality) => {
         const tolerance = 1;
         const outside = [];
         const clippedText = [];
+        const sharpSceneCorners = [...document.querySelectorAll('.scene-shape[data-scene-element]:not([data-scene-element="background"])')]
+            .filter((element) => Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) < quality.minimumCornerRadius)
+            .map((element) => element.getAttribute('data-scene-element'));
         const items = [...document.querySelectorAll('[data-slide-item]')];
         const itemBounds = items.map((element) => ({
             element,
@@ -282,6 +285,9 @@ const inspectPage = async (page, diagramQuality) => {
                     ),
                 }))
                 .filter((flow) => flow.length < quality.minimumLayerConnectorLength);
+            const sharpCornerRectangles = [...svg.querySelectorAll('rect:not([data-canvas-background])')]
+                .filter((element) => element.rx.baseVal.value < quality.minimumCornerRadius)
+                .map((element) => element.getAttribute('class') ?? element.closest('[data-diagram-node], [data-diagram-component], [data-diagram-concern]')?.getAttribute('data-diagram-node') ?? 'unnamed rectangle');
 
             const parseSegments = (pathElement) => {
                 const values = [...pathElement.getAttribute('d').matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)]
@@ -325,6 +331,7 @@ const inspectPage = async (page, diagramQuality) => {
                 uncontainedText: readableText.filter((text) => text.outsideContainer),
                 nodeContentSpacingViolations,
                 shortLayerFlows,
+                sharpCornerRectangles,
                 itemCollisions,
                 crossings,
             };
@@ -334,6 +341,7 @@ const inspectPage = async (page, diagramQuality) => {
             documentOverflow: document.documentElement.scrollWidth > 1920 || document.documentElement.scrollHeight > 1080,
             outside,
             clippedText,
+            sharpSceneCorners,
             overlaps,
             diagrams,
         };
@@ -406,6 +414,7 @@ const main = async () => {
             if (inspection.geometry.documentOverflow) slideErrors.push('Document exceeds the 1920x1080 canvas.');
             if (inspection.geometry.outside.length) slideErrors.push(`Items outside slide: ${inspection.geometry.outside.join(', ')}`);
             if (inspection.geometry.clippedText.length) slideErrors.push(`Clipped text: ${inspection.geometry.clippedText.join(' | ')}`);
+            if (inspection.geometry.sharpSceneCorners.length) slideErrors.push(`Scene shapes below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${inspection.geometry.sharpSceneCorners.join(', ')}`);
             if (inspection.geometry.overlaps.length) slideErrors.push(`Overlapping layout items: ${inspection.geometry.overlaps.join(', ')}`);
             for (const diagram of inspection.geometry.diagrams) {
                 if (diagram.viewBox.width !== designContract.diagramQuality.canvas.width || diagram.viewBox.height !== designContract.diagramQuality.canvas.height) {
@@ -416,6 +425,7 @@ const main = async () => {
                 if (diagram.uncontainedText.length) slideErrors.push(`Diagram text outside its container: ${diagram.uncontainedText.map((text) => text.text).join(', ')}`);
                 if (diagram.nodeContentSpacingViolations.length) slideErrors.push(`Flow-node content overlaps or is too tightly spaced: ${diagram.nodeContentSpacingViolations.map((violation) => `${violation.id}: ${violation.parts} (${violation.gap.toFixed(1)}px)`).join(', ')}`);
                 if (diagram.shortLayerFlows.length) slideErrors.push(`Layer connectors without a visible tail: ${diagram.shortLayerFlows.map((flow) => `${flow.id} (${flow.length.toFixed(1)}px)`).join(', ')}`);
+                if (diagram.sharpCornerRectangles.length) slideErrors.push(`Diagram rectangles below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${diagram.sharpCornerRectangles.join(', ')}`);
                 if (diagram.itemCollisions.length) slideErrors.push(`Overlapping diagram items: ${diagram.itemCollisions.join(', ')}`);
                 if (diagram.crossings.length) slideErrors.push(`Crossing diagram connectors: ${diagram.crossings.join(', ')}`);
             }

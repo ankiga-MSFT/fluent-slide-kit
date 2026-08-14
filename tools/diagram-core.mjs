@@ -502,7 +502,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
       .legend-item line { stroke: #424242; stroke-width: 2.5; }
     </style>
   </defs>
-    <rect width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
+    <rect data-canvas-background="true" width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
   ${laneMarkup}
   ${groupMarkup}
   ${edgeMarkup}
@@ -708,7 +708,7 @@ const renderLayeredArchitectureSvg = async (diagram, options = {}) => {
             .concern-label { fill: ${colors.secondary}; font-size: 18px; font-weight: 600; }
         </style>
     </defs>
-    <rect width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
+    <rect data-canvas-background="true" width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
     ${columnMarkup}
     ${layerMarkup.join('\n')}
     ${flowMarkup}

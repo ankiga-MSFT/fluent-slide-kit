@@ -72,12 +72,11 @@ const addText = (pptxSlide, sceneSlide, element) => {
     });
 };
 
-const shapeName = (pptx, element) => ({
-    rect: pptx.ShapeType.rect,
-    roundRect: pptx.ShapeType.rect,
-    ellipse: pptx.ShapeType.ellipse,
-    diamond: pptx.ShapeType.diamond,
-}[element.shape] ?? pptx.ShapeType.rect);
+const shapeName = (pptx, element) => {
+    if (element.id === 'background') return pptx.ShapeType.rect;
+    if (element.shape === 'ellipse') return pptx.ShapeType.ellipse;
+    return pptx.ShapeType.roundRect;
+};
 
 const addShape = (pptx, pptxSlide, sceneSlide, element) => {
     const style = element.style ?? {};

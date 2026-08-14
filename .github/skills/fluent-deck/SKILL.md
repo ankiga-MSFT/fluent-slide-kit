@@ -92,7 +92,7 @@ checks standalone HTML in Edge, creates a native editable `.pptx`, validates its
 and uses desktop PowerPoint for `1920x1080` previews when no interactive Office session is open.
 
 For embedded diagrams it also enforces a fixed `1600x720` SVG viewBox, 18px minimum effective type,
-text containment, item collisions, and connector crossings.
+text containment, item collisions, connector crossings, and rounded corners on every visible container.
 
 PowerPoint output must contain stable named Office objects and speaker notes. Layered architecture is
 native shapes, text, connectors, and individual icons. Complex flow remains a validated graphic until
@@ -108,6 +108,7 @@ or renderer code only for system-level defects, then run `npm test` and revalida
 - Every slide supports its documented takeaway.
 - Factual claims have sources and unknowns remain explicit placeholders.
 - Visual hierarchy is readable when the screenshot is scaled down.
+- Every visible card, container, boundary, and label chip has rounded corners; only the full-slide background may be rectangular.
 - Fluent and Azure assets use exact local catalog paths.
 - Diagram edges, labels, lanes, and boundaries match the stated system behavior.
 - Color is not the only carrier of meaning.

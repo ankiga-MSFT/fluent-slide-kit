@@ -80,7 +80,7 @@ npm run diagram:validate -- diagrams/<name>.json
 
 The validator checks schema and ids, references and spans, asset containment, flow semantics, a fixed
 `1600x720` viewBox, effective font sizes, text and card bounds, item collisions, connector crossings,
-embedded SVG assets, serious WCAG issues, and a deterministic screenshot.
+rounded corners on every visible rectangle, embedded SVG assets, serious WCAG issues, and a deterministic screenshot.
 
 The kit uses deterministic dependency-free renderers. Do not manually position elements or edit generated
 SVG. A flow is limited to 18 nodes. A layered architecture is limited to 15 components, five columns,
@@ -95,6 +95,7 @@ scale. Split denser systems into context, capability, component, deployment, or 
 - Branch labels explain conditions; merge points remain traceable.
 - Synchronous, asynchronous, dependency, and error paths are not conflated.
 - Groups and lanes convey real boundaries or ownership rather than decoration.
+- Every visible node, component, lane, boundary, concern, and label chip has rounded corners; use icons and labels instead of sharp-corner shape semantics.
 - Service labels remain readable and official Azure icons retain their artwork.
 - A legend is present when line styles or tones carry meaning.
 - Layered architecture has one obvious reading order and its concern rail does not repeat layer content.

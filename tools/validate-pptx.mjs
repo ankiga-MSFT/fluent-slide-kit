@@ -5,6 +5,7 @@ import process from 'node:process';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
+import { loadDiagram, resolveDiagramPath } from './diagram-core.mjs';
 import { compileDeckScene, kitRoot } from './scene-core.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -62,6 +63,32 @@ const validateStructure = async (options, report) => {
             });
             if (missingElements.length) {
                 report.errors.push(`Slide ${index + 1} is missing Office objects for scene elements: ${missingElements.map((element) => element.id).join(', ')}.`);
+            }
+        }
+        if (expectedSlide && report.quality.requireRoundedContainers) {
+            const presets = new Map(slideInspection.shapeGeometries.map((shape) => [shape.name, shape.preset]));
+            const requirePreset = (name, allowed) => {
+                const preset = presets.get(name);
+                if (!allowed.includes(preset)) report.errors.push(`Slide ${index + 1} container ${name} uses ${preset || 'no geometry'}; expected ${allowed.join(' or ')}.`);
+            };
+            for (const element of expectedSlide.elements.filter((element) => element.type === 'shape' && element.id !== 'background')) {
+                requirePreset(`fluent-slide-kit:${expectedSlide.id}:${element.id}`, [element.shape === 'ellipse' ? 'ellipse' : 'roundRect']);
+            }
+            for (const element of expectedSlide.elements.filter((element) => element.type === 'diagram')) {
+                const diagram = await loadDiagram(resolveDiagramPath(element.diagramPath));
+                if (diagram.diagramType !== 'layered-architecture') continue;
+                const prefix = `fluent-slide-kit:${expectedSlide.id}:diagram-`;
+                for (const column of diagram.columns) requirePreset(`${prefix}column-${column.id}`, ['roundRect']);
+                for (const layer of diagram.layers) {
+                    requirePreset(`${prefix}layer-${layer.id}-band`, ['roundRect']);
+                    requirePreset(`${prefix}layer-${layer.id}-surface`, ['roundRect']);
+                    requirePreset(`${prefix}layer-${layer.id}-number`, ['ellipse']);
+                    for (const component of layer.components) requirePreset(`${prefix}component-${component.id}`, ['roundRect']);
+                }
+                if (diagram.crossCuttingConcerns?.length) {
+                    requirePreset(`${prefix}concern-rail`, ['roundRect']);
+                    for (const concern of diagram.crossCuttingConcerns) requirePreset(`${prefix}concern-${concern.id}`, ['roundRect']);
+                }
             }
         }
         report.slides.push({

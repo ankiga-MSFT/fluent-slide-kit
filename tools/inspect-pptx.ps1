@@ -19,6 +19,17 @@ try {
         $reader = [System.IO.StreamReader]::new($entry.Open())
         try { $xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
         $names = @([regex]::Matches($xml, 'name="(fluent-slide-kit:[^"]+)"') | ForEach-Object { $_.Groups[1].Value })
+        $shapeGeometries = @([regex]::Matches($xml, '<p:sp>([\s\S]*?)</p:sp>') | ForEach-Object {
+            $shapeXml = $_.Groups[1].Value
+            $nameMatch = [regex]::Match($shapeXml, 'name="(fluent-slide-kit:[^"]+)"')
+            if ($nameMatch.Success) {
+                $presetMatch = [regex]::Match($shapeXml, '<a:prstGeom prst="([^"]+)"')
+                [ordered]@{
+                    name = $nameMatch.Groups[1].Value
+                    preset = $(if ($presetMatch.Success) { $presetMatch.Groups[1].Value } else { '' })
+                }
+            }
+        })
         $shapeCount = ([regex]::Matches($xml, '<p:sp>')).Count
         $pictureCount = ([regex]::Matches($xml, '<p:pic>')).Count
         [ordered]@{
@@ -26,6 +37,7 @@ try {
             shapes = $shapeCount
             pictures = $pictureCount
             namedObjects = $names
+            shapeGeometries = $shapeGeometries
             screenshotOnly = ($shapeCount -eq 0 -and $pictureCount -eq 1)
         }
     }
