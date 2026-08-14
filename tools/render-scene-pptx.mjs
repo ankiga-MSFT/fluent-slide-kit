@@ -148,12 +148,20 @@ const mapDiagramBox = (hostBox, compiled, diagramBox) => {
 };
 
 const diagramToneColor = (compiled, tone = 'neutral') => ({
-    brand: '#0F6CBD',
-    success: '#107C10',
-    warning: '#8A6D00',
-    danger: '#C50F1F',
+    brand: compiled.colors.brand,
+    success: compiled.colors.success,
+    warning: compiled.colors.warning,
+    danger: compiled.colors.danger,
     neutral: compiled.colors.stroke,
 }[tone] ?? compiled.colors.stroke);
+
+const diagramToneFill = (compiled, tone = 'neutral', neutral = compiled.colors.surface) => ({
+    brand: compiled.colors.brandSubtle,
+    success: compiled.colors.successSubtle,
+    warning: compiled.colors.warningSubtle,
+    danger: compiled.colors.dangerSubtle,
+    neutral,
+}[tone] ?? neutral);
 
 const addDiagramText = (pptxSlide, sceneSlide, hostElement, compiled, id, text, diagramBox, style = {}) => {
     const mapped = mapDiagramBox(hostElement.box, compiled, diagramBox);
@@ -203,7 +211,7 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
     }
 
     for (const layer of compiled.layers) {
-        addNativeShape(`layer-${layer.id}-band`, layer.bandBox, 'roundRect', compiled.colors.lane, diagramToneColor(compiled, layer.tone), 1.5);
+        addNativeShape(`layer-${layer.id}-band`, layer.bandBox, 'roundRect', diagramToneFill(compiled, layer.tone, compiled.colors.lane), diagramToneColor(compiled, layer.tone), 1.5);
         addNativeShape(`layer-${layer.id}-surface`, layer.surfaceBox, 'roundRect', compiled.colors.group, compiled.colors.stroke, 1.25);
         addNativeShape(`layer-${layer.id}-number`, {
             x: layer.numberCircle.cx - layer.numberCircle.radius,
@@ -225,7 +233,7 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
         }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle', lineSpacing: 23 });
 
         for (const component of layer.components) {
-            addNativeShape(`component-${component.id}`, component.box, 'roundRect', compiled.colors.surface, diagramToneColor(compiled, component.tone), component.emphasis ? 3 : 1.5);
+            addNativeShape(`component-${component.id}`, component.box, 'roundRect', diagramToneFill(compiled, component.tone), diagramToneColor(compiled, component.tone), component.emphasis ? 3 : 1.5);
             if (component.asset) {
                 const mappedAsset = mapDiagramBox(hostElement.box, compiled, component.imageBox);
                 await addAsset(pptxSlide, sceneSlide, {
@@ -277,7 +285,7 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
             height: 30,
         }, { fontSize: 18, fontWeight: 700, color: compiled.colors.text, verticalAlign: 'middle' });
         for (const concern of rail.items) {
-            addNativeShape(`concern-${concern.id}`, concern.box, 'roundRect', compiled.colors.surface, diagramToneColor(compiled, concern.tone), 1.5);
+            addNativeShape(`concern-${concern.id}`, concern.box, 'roundRect', diagramToneFill(compiled, concern.tone), diagramToneColor(compiled, concern.tone), 1.5);
             addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `concern-${concern.id}-label`, concern.labelLines.join('\n'), {
                 x: concern.box.x + 16,
                 y: concern.textPosition.y - 17,

@@ -432,8 +432,8 @@ const groupBounds = (diagram, positions) => (diagram.groups ?? []).map((group) =
 }).filter(Boolean);
 
 const palette = (theme) => theme === 'dark'
-    ? { background: '#202020', surface: '#292929', text: '#FFFFFF', secondary: '#D6D6D6', muted: '#ADADAD', stroke: '#666666', card: '#5C5C5C', lane: '#252525', group: '#333333', label: '#202020' }
-    : { background: '#FFFFFF', surface: '#FFFFFF', text: '#242424', secondary: '#424242', muted: '#616161', stroke: '#BDBDBD', card: '#D1D1D1', lane: '#F7F7F7', group: '#FAFAFA', label: '#FFFFFF' };
+    ? { background: '#202020', surface: '#292929', text: '#FFFFFF', secondary: '#D6D6D6', muted: '#ADADAD', stroke: '#666666', card: '#5C5C5C', lane: '#252525', group: '#333333', label: '#202020', brand: '#479EF5', brandSubtle: '#0C3B5E', success: '#54B054', successSubtle: '#0B3B0B', warning: '#FCE100', warningSubtle: '#4A1E04', danger: '#DC626D', dangerSubtle: '#3B0509' }
+    : { background: '#FFFFFF', surface: '#FFFFFF', text: '#242424', secondary: '#424242', muted: '#616161', stroke: '#BDBDBD', card: '#D1D1D1', lane: '#F7F7F7', group: '#FAFAFA', label: '#FFFFFF', brand: '#0F6CBD', brandSubtle: '#EBF3FC', success: '#107C10', successSubtle: '#F1FAF1', warning: '#8A6D00', warningSubtle: '#FFF4CE', danger: '#C50F1F', dangerSubtle: '#FDF3F4' };
 
 const renderFlowDiagramSvg = async (diagram, options = {}) => {
     const layout = layoutDiagram(diagram);
@@ -481,16 +481,16 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
     .group-label { fill: ${colors.secondary}; font: 600 18px "Segoe UI", sans-serif; }
       .node-shape { fill: ${colors.surface}; stroke: ${colors.card}; stroke-width: 1.5; }
       .node-shape--external { stroke-dasharray: 6 4; }
-      .tone-brand { stroke: #0F6CBD; }
-      .tone-success { stroke: #107C10; }
-      .tone-warning { stroke: #8A6D00; }
-      .tone-danger { stroke: #C50F1F; }
+    .node-shape.tone-brand { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
+    .node-shape.tone-success { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
+    .node-shape.tone-warning { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
+    .node-shape.tone-danger { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
       .node-glyph { color: ${colors.muted}; }
       .node-glyph path { fill: currentColor; }
-      .tone-glyph-brand { color: #0F6CBD; }
-      .tone-glyph-success { color: #107C10; }
-      .tone-glyph-warning { color: #8A6D00; }
-      .tone-glyph-danger { color: #C50F1F; }
+    .tone-glyph-brand { color: ${colors.brand}; }
+    .tone-glyph-success { color: ${colors.success}; }
+    .tone-glyph-warning { color: ${colors.warning}; }
+    .tone-glyph-danger { color: ${colors.danger}; }
     .node-label { fill: ${colors.text}; font: 600 20px "Segoe UI", sans-serif; }
     .node-description { fill: ${colors.muted}; font: 18px "Segoe UI", sans-serif; }
       .diagram-edge path { fill: none; stroke: #424242; stroke-width: 2.5; }
@@ -691,20 +691,24 @@ const renderLayeredArchitectureSvg = async (diagram, options = {}) => {
             .layer-label { fill: ${colors.text}; font-size: 19px; font-weight: 600; }
             .architecture-component rect { fill: ${colors.surface}; stroke: ${colors.stroke}; stroke-width: 1.5; }
             .architecture-component--emphasis rect { stroke-width: 3; }
-            .architecture-component.tone-brand rect, .architecture-layer.tone-brand .layer-band { stroke: #0F6CBD; }
-            .architecture-component.tone-success rect, .architecture-layer.tone-success .layer-band { stroke: #107C10; }
-            .architecture-component.tone-warning rect, .architecture-layer.tone-warning .layer-band { stroke: #8A6D00; }
-            .architecture-component.tone-danger rect, .architecture-layer.tone-danger .layer-band { stroke: #C50F1F; }
+            .architecture-component.tone-brand rect { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
+            .architecture-component.tone-success rect { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
+            .architecture-component.tone-warning rect { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
+            .architecture-component.tone-danger rect { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
+            .architecture-layer.tone-brand .layer-band { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
+            .architecture-layer.tone-success .layer-band { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
+            .architecture-layer.tone-warning .layer-band { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
+            .architecture-layer.tone-danger .layer-band { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
             .component-label { fill: ${colors.text}; font-size: 19px; font-weight: 600; }
             .component-description { fill: ${colors.muted}; font-size: 18px; }
             .layer-flow { fill: none; stroke: #0F6CBD; stroke-width: 3.5; stroke-linecap: butt; }
             .concern-rail { fill: ${colors.lane}; stroke: #0F6CBD; stroke-width: 1.5; }
             .concern-title { fill: ${colors.text}; font-size: 18px; font-weight: 700; }
             .architecture-concern rect { fill: ${colors.surface}; stroke: ${colors.stroke}; stroke-width: 1.5; }
-            .architecture-concern.tone-brand rect { stroke: #0F6CBD; }
-            .architecture-concern.tone-success rect { stroke: #107C10; }
-            .architecture-concern.tone-warning rect { stroke: #8A6D00; }
-            .architecture-concern.tone-danger rect { stroke: #C50F1F; }
+            .architecture-concern.tone-brand rect { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
+            .architecture-concern.tone-success rect { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
+            .architecture-concern.tone-warning rect { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
+            .architecture-concern.tone-danger rect { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
             .concern-label { fill: ${colors.secondary}; font-size: 18px; font-weight: 600; }
         </style>
     </defs>

@@ -24,9 +24,13 @@ try {
             $nameMatch = [regex]::Match($shapeXml, 'name="(fluent-slide-kit:[^"]+)"')
             if ($nameMatch.Success) {
                 $presetMatch = [regex]::Match($shapeXml, '<a:prstGeom prst="([^"]+)"')
+                $fillMatch = [regex]::Match($shapeXml, '<p:spPr>[\s\S]*?<a:solidFill><a:srgbClr val="([0-9A-Fa-f]{6})"')
+                $lineMatch = [regex]::Match($shapeXml, '<a:ln[^>]*>[\s\S]*?<a:solidFill><a:srgbClr val="([0-9A-Fa-f]{6})"')
                 [ordered]@{
                     name = $nameMatch.Groups[1].Value
                     preset = $(if ($presetMatch.Success) { $presetMatch.Groups[1].Value } else { '' })
+                    fill = $(if ($fillMatch.Success) { $fillMatch.Groups[1].Value.ToUpperInvariant() } else { '' })
+                    line = $(if ($lineMatch.Success) { $lineMatch.Groups[1].Value.ToUpperInvariant() } else { '' })
                 }
             }
         })

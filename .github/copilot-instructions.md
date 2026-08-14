@@ -65,6 +65,7 @@ the `diagram` layout embeds a validated flow or layered architecture.
 - Use AI-generated images only for hero photography, conceptual illustration, or editorial backgrounds.
 	Never generate whole slides, logos, product icons, text, charts, architecture diagrams, or workflows as images.
 - Use one restrained accent family. Semantic success, warning, and danger colors communicate meaning, not decoration.
+- Default cards and components to a neutral subtle surface. Use a brand tint only for the focal item and semantic tints only when the tone communicates real status or meaning; never alternate colors merely to differentiate adjacent boxes.
 - Avoid gradients, glass effects, decorative blobs, nested cards, emoji icons, text shadows, and center-aligned paragraphs.
 - Slides are still frames: no autoplay, hover-dependent content, or required animation. Respect reduced motion.
 

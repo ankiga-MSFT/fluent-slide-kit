@@ -188,10 +188,14 @@
                 "strokeStrong",
                 "brand",
                 "brandStrong",
+                "brandSubtle",
                 "onBrand",
                 "success",
+                "successSubtle",
                 "warning",
-                "danger"
+                "warningSubtle",
+                "danger",
+                "dangerSubtle"
             ],
             "properties": {
                 "background": {
@@ -224,16 +228,28 @@
                 "brandStrong": {
                     "$ref": "#/$defs/color"
                 },
+                "brandSubtle": {
+                    "$ref": "#/$defs/color"
+                },
                 "onBrand": {
                     "$ref": "#/$defs/color"
                 },
                 "success": {
                     "$ref": "#/$defs/color"
                 },
+                "successSubtle": {
+                    "$ref": "#/$defs/color"
+                },
                 "warning": {
                     "$ref": "#/$defs/color"
                 },
+                "warningSubtle": {
+                    "$ref": "#/$defs/color"
+                },
                 "danger": {
+                    "$ref": "#/$defs/color"
+                },
+                "dangerSubtle": {
                     "$ref": "#/$defs/color"
                 }
             }

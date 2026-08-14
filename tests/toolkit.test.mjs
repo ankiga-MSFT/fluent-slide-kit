@@ -14,6 +14,17 @@ import { renderSceneToPptx } from '../tools/render-scene-pptx.mjs';
 const execFileAsync = promisify(execFile);
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+const relativeLuminance = (hex) => {
+    const channels = hex.slice(1).match(/.{2}/g).map((value) => Number.parseInt(value, 16) / 255)
+        .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+};
+
+const contrastRatio = (left, right) => {
+    const luminances = [relativeLuminance(left), relativeLuminance(right)].sort((a, b) => b - a);
+    return (luminances[0] + 0.05) / (luminances[1] + 0.05);
+};
+
 test('asset search returns exact local Fluent and Azure paths', async () => {
     const fluent = await execFileAsync(process.execPath, [
         'tools/search-assets.mjs',
@@ -59,6 +70,21 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
     }
 });
 
+test('semantic tint surfaces stay distinct and readable in both themes', async () => {
+    const profile = JSON.parse(await readFile(path.join(kitRoot, 'design', 'brand-profiles', 'fluent-aligned.json'), 'utf8'));
+    for (const [theme, colors] of Object.entries(profile.colors)) {
+        for (const fillName of ['subtle', 'brandSubtle', 'successSubtle', 'warningSubtle', 'dangerSubtle']) {
+            assert.ok(contrastRatio(colors.background, colors[fillName]) >= 1.05, `${theme} ${fillName} is indistinguishable from the background`);
+            assert.ok(contrastRatio(colors.foreground, colors[fillName]) >= 4.5, `${theme} foreground fails on ${fillName}`);
+            assert.ok(contrastRatio(colors.secondary, colors[fillName]) >= 4.5, `${theme} secondary text fails on ${fillName}`);
+            assert.ok(contrastRatio(colors.muted, colors[fillName]) >= 4.5, `${theme} muted text fails on ${fillName}`);
+        }
+        for (const tone of ['brand', 'success', 'warning', 'danger']) {
+            assert.ok(contrastRatio(colors[tone], colors[`${tone}Subtle`]) >= 3, `${theme} ${tone} outline fails on its subtle fill`);
+        }
+    }
+});
+
 test('native PowerPoint export contains editable named shapes and notes', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-native-pptx-'));
     try {
@@ -85,6 +111,10 @@ test('native PowerPoint export contains editable named shapes and notes', async 
         const geometries = new Map(report.slides[0].shapeGeometries.map((shape) => [shape.name, shape.preset]));
         assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-component-${diagram.layers[0].components[0].id}`), 'roundRect');
         assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-${diagram.layers[0].id}-surface`), 'roundRect');
+        const brandComponent = diagram.layers.flatMap((layer) => layer.components).find((component) => component.tone === 'brand');
+        const brandShape = report.slides[0].shapeGeometries.find((shape) => shape.name === `fluent-slide-kit:${sourceSlide.id}:diagram-component-${brandComponent.id}`);
+        assert.equal(brandShape.fill, 'EBF3FC');
+        assert.equal(brandShape.line, '0F6CBD');
     } finally {
         await rm(output, { recursive: true, force: true });
     }
@@ -161,6 +191,9 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         assert.match(cards, /data-scene-slide="quality-system"/);
         assert.match(cards, /data-scene-element="item-1-visual"/);
         assert.match(cards, /data-scene-element="item-1-surface"[^>]+border-radius:8px/);
+        assert.match(cards, /data-scene-element="item-1-surface"[^>]+background:#EBF3FC[^>]+border:2px solid #0F6CBD/);
+        assert.match(cards, /data-scene-element="item-2-surface"[^>]+background:#F5F5F5[^>]+border:1px solid #D1D1D1/);
+        assert.match(cards, /data-scene-element="item-3-surface"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
         assert.match(cards, /currentColor/i);
         const architecture = await readFile(path.join(output, '03-azure-flow.html'), 'utf8');
         assert.match(architecture, /10023-icon-service-Kubernetes-Services\.svg/);
@@ -258,6 +291,8 @@ test('layered architecture renders on a fixed executive canvas', async () => {
     const svg = await renderDiagramSvg(diagram);
     assert.match(svg, /viewBox="0 0 1600 720"/);
     assert.match(svg, /data-diagram-type="layered-architecture"/);
+    assert.match(svg, /architecture-component\.tone-brand rect \{ fill: #EBF3FC; stroke: #0F6CBD; \}/);
+    assert.match(svg, /architecture-component\.tone-success rect \{ fill: #F1FAF1; stroke: #107C10; \}/);
     for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
         assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
     }

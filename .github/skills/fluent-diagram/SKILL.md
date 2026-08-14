@@ -96,6 +96,7 @@ scale. Split denser systems into context, capability, component, deployment, or 
 - Synchronous, asynchronous, dependency, and error paths are not conflated.
 - Groups and lanes convey real boundaries or ownership rather than decoration.
 - Every visible node, component, lane, boundary, concern, and label chip has rounded corners; use icons and labels instead of sharp-corner shape semantics.
+- Keep parent surfaces neutral. Use a subtle tone fill only on components or layer rails whose brand, success, warning, or danger meaning is explicit; never use alternating fills as decoration.
 - Service labels remain readable and official Azure icons retain their artwork.
 - A legend is present when line styles or tones carry meaning.
 - Layered architecture has one obvious reading order and its concern rail does not repeat layer content.

@@ -51,6 +51,14 @@ const toneColor = (colors, tone = 'neutral') => ({
     neutral: colors.stroke,
 }[tone] ?? colors.stroke);
 
+const toneSurfaceColor = (colors, tone = 'neutral') => ({
+    brand: colors.brandSubtle,
+    success: colors.successSubtle,
+    warning: colors.warningSubtle,
+    danger: colors.dangerSubtle,
+    neutral: colors.subtle,
+}[tone] ?? colors.subtle);
+
 const typeStyle = (profile, role, textColor, overrides = {}) => {
     const typography = profile.typography[role];
     return {
@@ -150,12 +158,12 @@ const addCardContent = (elements, item, itemBox, index, profile, theme, options 
     const prefix = `item-${index + 1}`;
     const contentWidth = itemBox.width - CARD_PADDING * 2;
     const bordered = options.border !== false;
+    const tone = item.tone && item.tone !== 'neutral' ? item.tone : 'neutral';
     elements.push(shapeElement(`${prefix}-surface`, 'roundRect', itemBox, 5, {
-        fill: colors.surface,
-        stroke: bordered ? colors.stroke : colors.surface,
-        strokeWidth: bordered ? 1 : 0,
+        fill: bordered ? toneSurfaceColor(colors, tone) : colors.surface,
+        stroke: bordered ? toneColor(colors, tone) : colors.surface,
+        strokeWidth: bordered ? (tone === 'neutral' ? 1 : 2) : 0,
         radius: 8,
-        accentTop: bordered ? { color: toneColor(colors, item.tone && item.tone !== 'neutral' ? item.tone : 'brand'), width: 6 } : undefined,
     }));
     let cursorY = itemBox.y + CARD_PADDING;
     for (const block of cardBlocks(item, itemBox.width, profile, options)) {

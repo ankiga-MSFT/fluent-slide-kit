@@ -109,6 +109,7 @@ or renderer code only for system-level defects, then run `npm test` and revalida
 - Factual claims have sources and unknowns remain explicit placeholders.
 - Visual hierarchy is readable when the screenshot is scaled down.
 - Every visible card, container, boundary, and label chip has rounded corners; only the full-slide background may be rectangular.
+- Neutral cards use the subtle surface. Apply `tone: brand` only to the focal item and success, warning, or danger only when the content carries that meaning; do not color every card or alternate tones decoratively.
 - Fluent and Azure assets use exact local catalog paths.
 - Diagram edges, labels, lanes, and boundaries match the stated system behavior.
 - Color is not the only carrier of meaning.

@@ -25,10 +25,14 @@
             "strokeStrong": "#8A8886",
             "brand": "#0F6CBD",
             "brandStrong": "#115EA3",
+            "brandSubtle": "#EBF3FC",
             "onBrand": "#FFFFFF",
             "success": "#107C10",
+            "successSubtle": "#F1FAF1",
             "warning": "#8A6D00",
-            "danger": "#C50F1F"
+            "warningSubtle": "#FFF4CE",
+            "danger": "#C50F1F",
+            "dangerSubtle": "#FDF3F4"
         },
         "dark": {
             "background": "#202020",
@@ -41,10 +45,14 @@
             "strokeStrong": "#ADADAD",
             "brand": "#479EF5",
             "brandStrong": "#62ABF5",
+            "brandSubtle": "#0C3B5E",
             "onBrand": "#FFFFFF",
             "success": "#54B054",
+            "successSubtle": "#0B3B0B",
             "warning": "#FCE100",
-            "danger": "#DC626D"
+            "warningSubtle": "#4A1E04",
+            "danger": "#DC626D",
+            "dangerSubtle": "#3B0509"
         }
     },
     "typography": {
