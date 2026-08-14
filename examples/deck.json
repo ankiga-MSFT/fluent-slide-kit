@@ -4,8 +4,6 @@
     "brandProfile": "design/brand-profiles/fluent-aligned.json",
     "theme": "light",
     "locale": "en",
-    "date": "2026-08-12",
-    "footer": "Fluent slide kit",
     "slides": [
         {
             "id": "opening",
@@ -94,13 +92,11 @@
         {
             "id": "azure-workflow",
             "layout": "diagram",
-            "takeaway": "A graph model supports branching, labeled flows, boundaries, and swim lanes.",
-            "eyebrow": "Diagram example",
-            "title": "Branching flows remain readable",
-            "subtitle": "Use the diagram pipeline when a simple ordered service sequence is not enough.",
+            "takeaway": "Long-running requests move to a durable queue while direct writes retain a short synchronous path.",
+            "title": "Long-running work branches without losing control",
             "diagram": {
                 "path": "diagrams/templates/flow.json",
-                "alt": "Azure request flow from Front Door to AKS, branching to a work queue or Cosmos DB across edge, application, and data lanes."
+                "alt": "Rightward Azure request flow across three lanes: Front Door sends requests to AKS, then a decision routes direct writes to Cosmos DB or asynchronous work through a durable queue."
             }
         }
     ]

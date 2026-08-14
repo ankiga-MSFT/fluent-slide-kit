@@ -59,6 +59,11 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
     const brandSchema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'brand-profile.schema.json'), 'utf8'));
     const brandProfile = JSON.parse(await readFile(path.join(kitRoot, deck.brandProfile), 'utf8'));
     const scene = await compileDeckScene(deck, { source: 'examples/deck.json' });
+    assert.equal(deck.footer, undefined);
+    assert.equal(deck.date, undefined);
+    const diagramSlide = deck.slides.find((slide) => slide.layout === 'diagram');
+    assert.equal(diagramSlide.eyebrow, undefined);
+    assert.equal(diagramSlide.subtitle, undefined);
     const ajv = new Ajv2020({ allErrors: true, strict: false });
     const validate = ajv.compile(schema);
     const validateBrand = ajv.compile(brandSchema);
