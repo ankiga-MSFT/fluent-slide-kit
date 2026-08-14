@@ -87,6 +87,30 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
     }
 });
 
+test('diagram accessibility descriptions allow up to 500 characters', async () => {
+    const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'deck.schema.json'), 'utf8'));
+    const validate = new Ajv2020({ allErrors: true, strict: false, validateFormats: false }).compile(schema);
+    const deck = {
+        schemaVersion: 1,
+        title: 'Accessibility boundary',
+        theme: 'light',
+        slides: [{
+            id: 'diagram-alt-boundary',
+            layout: 'diagram',
+            takeaway: 'Detailed diagram descriptions remain available to assistive technology.',
+            title: 'Diagram descriptions stay useful',
+            diagram: {
+                path: 'diagrams/templates/flow.json',
+                alt: 'A'.repeat(500),
+            },
+        }],
+    };
+    assert.equal(validate(deck), true, JSON.stringify(validate.errors));
+    deck.slides[0].diagram.alt += 'A';
+    assert.equal(validate(deck), false);
+    assert.match(JSON.stringify(validate.errors), /must NOT have more than 500 characters/);
+});
+
 test('semantic tint surfaces stay distinct and readable in both themes', async () => {
     const profile = JSON.parse(await readFile(path.join(kitRoot, 'design', 'brand-profiles', 'fluent-aligned.json'), 'utf8'));
     for (const [theme, colors] of Object.entries(profile.colors)) {
