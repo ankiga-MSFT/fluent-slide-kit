@@ -73,8 +73,9 @@ local Azure asset, visible service label, and useful alt text. Do not recolor or
 
 ## 5. Author and validate
 
-Start a workflow from `diagrams/azure-request-flow.json`; start a capability architecture from
-`diagrams/advisor-kusto-publishing.json`. Render and validate with:
+Start a workflow from `diagrams/templates/flow.json`; start a capability architecture from
+`diagrams/templates/layered-architecture.json`. Save the request-specific copy directly under
+`diagrams/`; those local sources are ignored by Git. Render and validate with:
 
 ```powershell
 npm run diagram:render -- diagrams/<name>.json

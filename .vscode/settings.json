@@ -9,7 +9,8 @@
         },
         {
             "fileMatch": [
-                "/diagrams/*.json"
+                "/diagrams/*.json",
+                "/diagrams/templates/*.json"
             ],
             "url": "./schemas/diagram.schema.json"
         },

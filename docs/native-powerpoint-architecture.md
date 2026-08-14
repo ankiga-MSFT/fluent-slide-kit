@@ -51,7 +51,7 @@ fluent-slide-kit:<slide-id>:<element-id>
 Layered diagram children extend the element id, for example:
 
 ```text
-fluent-slide-kit:advisor-kusto-publishing:diagram-component-resource-graph
+fluent-slide-kit:layered-template:diagram-component-front-door
 ```
 
 This Selection Pane identity is the contract for a future PowerPoint task-pane add-in. A revision request

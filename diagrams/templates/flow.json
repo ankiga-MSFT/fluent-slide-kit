@@ -1,9 +1,9 @@
 {
     "schemaVersion": 1,
     "diagramType": "flow",
-    "id": "azure-request-flow",
-    "title": "Azure request and asynchronous processing flow",
-    "description": "Requests enter through Azure Front Door, run on AKS, and branch to synchronous storage or asynchronous processing.",
+    "id": "template-request-flow",
+    "title": "Request processing with asynchronous work",
+    "description": "A reusable branching-flow example with lanes, a group, a decision, synchronous work, and an asynchronous queue.",
     "direction": "right",
     "theme": "light",
     "nodes": [

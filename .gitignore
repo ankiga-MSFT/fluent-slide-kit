@@ -1,5 +1,10 @@
 node_modules/
 .slide-artifacts/
+deliverables/
+decks/**/*.json
+diagrams/**/*.json
+!diagrams/templates/
+!diagrams/templates/**/*.json
 slides/
 screenshots/
 test-results/

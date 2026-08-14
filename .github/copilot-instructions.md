@@ -19,6 +19,7 @@ organization brand assets only when the user supplies an approved source and app
 ## Architecture
 
 - Author decks as JSON under `decks/`, conforming to `schemas/deck.schema.json`.
+- Treat JSON under `decks/` and top-level `diagrams/` as local request sources; they are Git-ignored. Only reusable fixtures under `examples/` and `diagrams/templates/` belong in version control.
 - Select a profile under `design/brand-profiles/`; public output defaults to `fluent-aligned` and must
 	not be described as Microsoft brand compliant.
 - Author architecture and workflow graphs under `diagrams/`, conforming to `schemas/diagram.schema.json`.
@@ -30,6 +31,7 @@ organization brand assets only when the user supplies an approved source and app
 - Generate standalone HTML with `npm run deck:render -- <deck.json>`; do not hand-edit generated slides.
 - Generate native PowerPoint with `npm run deck:export:pptx -- <deck.json>`; do not package full-slide screenshots.
 - Generate standalone SVG with `npm run diagram:render -- <diagram.json>`; do not hand-edit generated diagrams.
+- Put final handoff bundles under `deliverables/<deck-name>/`. Reserve `.slide-artifacts/` for intermediate validation and previews.
 - `templates/slide-template.html` is an escape hatch for a one-off slide, not the default workflow.
 
 ## Required workflow

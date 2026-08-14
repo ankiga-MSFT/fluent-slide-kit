@@ -99,7 +99,7 @@
             "title": "Branching flows remain readable",
             "subtitle": "Use the diagram pipeline when a simple ordered service sequence is not enough.",
             "diagram": {
-                "path": "diagrams/azure-request-flow.json",
+                "path": "diagrams/templates/flow.json",
                 "alt": "Azure request flow from Front Door to AKS, branching to a work queue or Cosmos DB across edge, application, and data lanes."
             }
         }

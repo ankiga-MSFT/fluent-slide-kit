@@ -83,8 +83,10 @@ workflow as an image. Keep narrative text, data, and diagrams as structured edit
 
 ## 4. Author the internal sources
 
-Create stable source files under `decks/` and, when needed, `diagrams/`. Choose concise names derived
-from the topic. Keep one takeaway per slide, make titles communicate claims, and add speaker notes and
+Create local request source files under `decks/` and, when needed, `diagrams/`. They are reproducible
+inputs for the current request but are intentionally ignored by Git; only reusable examples under
+`examples/` and `diagrams/templates/` are versioned. Choose concise names derived from the topic. Keep
+one takeaway per slide, make titles communicate claims, and add speaker notes and
 sources. Prefer another slide over shrinking text or overloading one frame.
 
 For a single architecture slide, create both:
@@ -142,6 +144,9 @@ Return a concise handoff containing:
 - important content assumptions, source gaps, or placeholders;
 - the brand status from the delivery manifest (`aligned-not-certified`, `approved-internal`, or `custom-approved`);
 - any slide listed as `validated-graphic` rather than `native-shapes`.
+
+Final handoff files live under `deliverables/<deck-name>/`; `.slide-artifacts/` is internal working
+space only. Never send the user into intermediate validation folders to find the presentation.
 
 Do not lead with command logs, schemas, JSON paths, package details, or validation internals. Mention a
 technical blocker only when it prevented delivery and explain the practical consequence and next action.

@@ -80,8 +80,9 @@ rendered SVG. A `diagram` slide renders the approved title only; the renderer ig
 ## 4. Author the deck
 
 Create or update `decks/<deck-name>.json` against `schemas/deck.schema.json`, starting from
-`examples/deck.json`. Store takeaways, notes, asset references, diagram references, and sources in
-JSON. Keep titles within 10 words, body copy within 55 words, and layout items within catalog limits.
+`examples/deck.json`. Files under `decks/` are local request sources and are not committed. Store
+takeaways, notes, asset references, diagram references, and sources in JSON. Keep titles within 10
+words, body copy within 55 words, and layout items within catalog limits.
 
 ## 5. Build and validate
 
@@ -90,6 +91,9 @@ Run after every substantive change:
 ```powershell
 npm run deck:build -- decks/<deck-name>.json --preview
 ```
+
+The default final bundle is `deliverables/<deck-name>/`. Use `.slide-artifacts/` only for temporary
+validation, probes, and intermediate previews; never place the final handoff there.
 
 The build validates semantic sources and the brand profile, compiles `deck.scene.json`, renders and
 checks standalone HTML in Edge, creates a native editable `.pptx`, validates its Open XML structure,
@@ -126,6 +130,7 @@ or renderer code only for system-level defects, then run `npm test` and revalida
 
 Report the editable PowerPoint first, then the generated HTML directory, PowerPoint and HTML previews,
 one takeaway per slide, source gaps, unresolved placeholders, brand status, and editability exceptions.
+Link from `deliverables/<deck-name>/` so the user never has to navigate intermediate validation folders.
 The semantic deck and persisted scene remain the reproducible sources; PowerPoint supports executive
 light edits without becoming the source used for AI regeneration.
 

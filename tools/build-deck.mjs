@@ -21,7 +21,7 @@ const parseArguments = (arguments_) => {
         else throw new Error(`Unexpected argument: ${argument}`);
     }
     if (!options.input) throw new Error('Usage: npm run deck:build -- <deck.json> [--output <directory>] [--preview]');
-    options.output ??= path.join(kitRoot, '.slide-artifacts', 'deliverables', path.basename(options.input, path.extname(options.input)));
+    options.output ??= path.join(kitRoot, 'deliverables', path.basename(options.input, path.extname(options.input)));
     return options;
 };
 

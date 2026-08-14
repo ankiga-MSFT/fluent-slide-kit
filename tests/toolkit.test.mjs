@@ -47,6 +47,12 @@ test('asset search returns exact local Fluent and Azure paths', async () => {
     assert.equal(azureResults[0].name, 'Kubernetes Services');
 });
 
+test('final deliverables are separate from intermediate artifacts', async () => {
+    const source = await readFile(path.join(kitRoot, 'tools', 'build-deck.mjs'), 'utf8');
+    assert.match(source, /path\.join\(kitRoot, 'deliverables', path\.basename/);
+    assert.doesNotMatch(source, /path\.join\(kitRoot, '\.slide-artifacts', 'deliverables'/);
+});
+
 test('semantic deck compiles to a valid renderer-neutral scene', async () => {
     const deck = JSON.parse(await readFile(path.join(kitRoot, 'examples', 'deck.json'), 'utf8'));
     const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'scene.schema.json'), 'utf8'));
@@ -117,7 +123,7 @@ test('dark theme propagates through scene, SVG, and native PowerPoint', async ()
     assert.equal(slide.elements.find((element) => element.id === 'item-2-surface').style.fill, '#0B3B0B');
     assert.equal(slide.elements.find((element) => element.id === 'footer-confidentiality').style.color, '#ADADAD');
 
-    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'advisor-azure-skills-ecosystem.json'), 'utf8'));
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8'));
     diagram.theme = 'dark';
     const svg = await renderDiagramSvg(diagram);
     assert.match(svg, /data-canvas-background="true"[^>]+fill="#202020"/);
@@ -147,12 +153,25 @@ test('dark theme propagates through scene, SVG, and native PowerPoint', async ()
 test('native PowerPoint export contains editable named shapes and notes', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-native-pptx-'));
     try {
-        const deckPath = path.join(kitRoot, 'decks', 'advisor-azure-skills-ecosystem.json');
-        const deck = JSON.parse(await readFile(deckPath, 'utf8'));
+        const diagramPath = 'diagrams/templates/layered-architecture.json';
+        const diagram = JSON.parse(await readFile(path.join(kitRoot, diagramPath), 'utf8'));
+        const deck = {
+            schemaVersion: 1,
+            title: 'Layered architecture template',
+            theme: diagram.theme,
+            brandProfile: 'design/brand-profiles/fluent-aligned.json',
+            slides: [{
+                id: 'layered-template',
+                layout: 'diagram',
+                takeaway: 'Reusable fixtures validate native architecture output.',
+                title: 'Layered architecture remains editable',
+                diagram: { path: diagramPath, alt: 'Reusable layered Azure architecture fixture.' },
+                notes: 'Generic native PowerPoint regression fixture.',
+            }],
+        };
         const sourceSlide = deck.slides[0];
-        const diagram = JSON.parse(await readFile(path.join(kitRoot, sourceSlide.diagram.path), 'utf8'));
-        const scene = await compileDeckScene(deck, { source: 'decks/advisor-azure-skills-ecosystem.json' });
-        const pptxPath = path.join(output, 'advisor.pptx');
+        const scene = await compileDeckScene(deck, { source: 'inline layered template' });
+        const pptxPath = path.join(output, 'layered-template.pptx');
         await renderSceneToPptx(scene, pptxPath);
         const inspection = await execFileAsync('pwsh', [
             '-NoProfile',
@@ -278,7 +297,7 @@ test('diagram renderer creates a standalone graph with embedded Azure assets', a
         const svgPath = path.join(output, 'diagram.svg');
         await execFileAsync(process.execPath, [
             'tools/render-diagram.mjs',
-            'diagrams/azure-request-flow.json',
+            'diagrams/templates/flow.json',
             '--output',
             svgPath,
         ], { cwd: kitRoot });
@@ -297,7 +316,7 @@ test('flow nodes keep icons labels and descriptions separated', async () => {
     try {
         await execFileAsync(process.execPath, [
             'tools/validate-diagram.mjs',
-            'diagrams/azure-request-flow.json',
+            'diagrams/templates/flow.json',
             '--output',
             output,
             '--no-screenshot',
@@ -311,7 +330,7 @@ test('flow nodes keep icons labels and descriptions separated', async () => {
 });
 
 test('flow nodes share one card shape and signal kind with a glyph', async () => {
-    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'azure-request-flow.json'), 'utf8'));
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
     const svg = await renderDiagramSvg(diagram);
     assert.equal(svg.includes('<polygon'), false);
     assert.equal((svg.match(/class="node-shape/g) ?? []).length, diagram.nodes.length);
@@ -347,7 +366,7 @@ test('diagram validation rejects cycles unless they are intentional', async () =
 });
 
 test('layered architecture renders on a fixed executive canvas', async () => {
-    const source = await readFile(path.join(kitRoot, 'diagrams', 'advisor-azure-skills-ecosystem.json'), 'utf8');
+    const source = await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8');
     const diagram = JSON.parse(source);
     const contract = await validateDiagram(diagram);
     assert.deepEqual(contract.errors, []);
@@ -373,7 +392,7 @@ test('layered architecture renders on a fixed executive canvas', async () => {
 });
 
 test('layered architecture rejects overlapping column spans', async () => {
-    const source = await readFile(path.join(kitRoot, 'diagrams', 'advisor-azure-skills-ecosystem.json'), 'utf8');
+    const source = await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8');
     const diagram = JSON.parse(source);
     diagram.layers[0].components.push({
         id: 'overlap',
@@ -384,12 +403,12 @@ test('layered architecture rejects overlapping column spans', async () => {
     assert.match(contract.errors.join('\n'), /overlapping components/);
 });
 
-test('Advisor architecture passes browser typography and collision checks', async () => {
+test('layered architecture template passes browser typography and collision checks', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-layered-diagram-'));
     try {
         await execFileAsync(process.execPath, [
             'tools/validate-diagram.mjs',
-            'diagrams/advisor-azure-skills-ecosystem.json',
+            'diagrams/templates/layered-architecture.json',
             '--output',
             output,
             '--no-screenshot',

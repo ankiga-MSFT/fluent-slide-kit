@@ -62,9 +62,9 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `tools/validate-pptx.mjs` | Open XML editability, scene coverage, notes, and optional Office preview checks |
 | `tools/render-diagram.mjs` | Deterministic graph-to-standalone-SVG renderer |
 | `tools/validate-diagram.mjs` | Graph semantics, browser, geometry, asset, and axe checks |
-| `examples/deck.json` | Working deck specification with Fluent and Azure visuals |
-| `diagrams/azure-request-flow.json` | Working branching graph with lanes and an Azure boundary |
-| `diagrams/advisor-kusto-publishing.json` | Working layered architecture with columns and cross-cutting concerns |
+| `examples/deck.json` | Versioned reusable deck specification with Fluent and Azure visuals |
+| `diagrams/templates/flow.json` | Versioned reusable branching-flow template |
+| `diagrams/templates/layered-architecture.json` | Versioned reusable layered-architecture template |
 | `templates/slide-template.html` | One-off raw HTML escape hatch |
 | `.github/skills/fluent-presentation/SKILL.md` | Executive-facing natural-language orchestration workflow |
 | `.github/skills/fluent-deck/SKILL.md` | Hidden internal deck implementation playbook |
@@ -72,6 +72,11 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `assets/manifest.json` | Entry point for the local icon collections |
 | `legal/provenance.json` | Asset/tool versions, licenses, terms, and brand boundary |
 | `docs/native-powerpoint-architecture.md` | Shared-scene, native editability, validation, and add-in design |
+
+Final handoff bundles are written to `deliverables/<deck-name>/`, separate from intermediate validation
+and preview material under `.slide-artifacts/`. Both are Git-ignored. Request-specific semantic sources
+under `decks/` and top-level `diagrams/` are local-only; reusable fixtures under `examples/` and
+`diagrams/templates/` remain versioned.
 
 Generated HTML remains offline. PowerPoint uses native text, shapes, lines, and individual image objects.
 Layered architectures are fully native. Complex flow diagrams are browser-rasterized validated graphics
@@ -82,11 +87,11 @@ until a native flow connector renderer is added; the delivery manifest discloses
 The `fluent-presentation` skill performs this workflow. These are implementation stages, not steps the
 requestor must execute.
 
-1. Create `decks/<name>.json` from `examples/deck.json`.
+1. Create local `decks/<name>.json` from `examples/deck.json`; request sources under `decks/` are Git-ignored.
 2. Give every slide one takeaway and select a layout from `templates/layouts.json`.
 3. Search assets locally and copy exact returned paths into the deck JSON.
-4. For workflows or layered architecture, author and validate `diagrams/<name>.json`, then reference
-  it from a `diagram` slide.
+4. For workflows or layered architecture, copy a fixture from `diagrams/templates/`, author and validate
+  `diagrams/<name>.json`, then reference it from a `diagram` slide. Request diagrams are Git-ignored.
 5. Add sources for factual claims and bracketed placeholders for missing evidence.
 6. Run the dual-format build and inspect HTML and PowerPoint screenshots, even when checks pass.
 7. Repair content first; change shared CSS or renderer code only for system-level defects.
@@ -102,8 +107,8 @@ npm run assets:search -- "growth trend" --collection fluent --style regular
 npm run assets:search -- "Azure Cosmos DB" --collection azure --json
 
 # Render or validate an architecture/workflow graph
-npm run diagram:render -- diagrams/azure-request-flow.json
-npm run diagram:validate -- diagrams/azure-request-flow.json
+npm run diagram:render -- diagrams/templates/flow.json
+npm run diagram:validate -- diagrams/templates/flow.json
 
 # Render without browser validation
 npm run deck:render -- decks/decision-deck.json --output slides
