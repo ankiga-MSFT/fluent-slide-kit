@@ -347,10 +347,11 @@ const textLines = (lines, x, y, className, lineHeight, anchor = 'middle') => `<t
     .map((line, index) => `<tspan x="${x}" dy="${index === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`)
     .join('')}</text>`;
 
-const assetDataUri = async (asset) => {
+const assetDataUri = async (asset, foreground = '#242424') => {
     if (!asset) return undefined;
-    const svg = await readFile(resolveAssetPath(asset.path));
-    return `data:image/svg+xml;base64,${svg.toString('base64')}`;
+    let svg = await readFile(resolveAssetPath(asset.path), 'utf8');
+    if (asset.kind === 'fluent') svg = svg.replaceAll('currentColor', foreground);
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 };
 
 const glyphMarkupCache = new Map();
@@ -371,8 +372,8 @@ const nodeShape = (node, position) => {
     return `<rect class="node-shape tone-${node.tone ?? 'neutral'}${extraClass}" x="${x}" y="${y}" width="${width}" height="${height}" rx="${NODE_RADIUS}" />`;
 };
 
-const renderNode = async (node, position) => {
-    const assetUri = await assetDataUri(node.asset);
+const renderNode = async (node, position, colors) => {
+    const assetUri = await assetDataUri(node.asset, colors.text);
     const glyphMarkup = assetUri ? undefined : await kindGlyphMarkup(node.kind);
     const hasVisual = Boolean(assetUri || glyphMarkup);
     const centerX = position.x + position.width / 2;
@@ -457,7 +458,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
           ${edge.label ? `<g class="edge-label"><rect x="${geometry.label.x - labelWidth / 2}" y="${geometry.label.y - 16}" width="${labelWidth}" height="24" rx="12" /><text x="${geometry.label.x}" y="${geometry.label.y + 1}" text-anchor="middle">${escapeXml(edge.label)}</text></g>` : ''}
         </g>`;
     }).join('\n');
-    const nodeMarkup = (await Promise.all(diagram.nodes.map((node) => renderNode(node, layout.positions.get(node.id))))).join('\n');
+    const nodeMarkup = (await Promise.all(diagram.nodes.map((node) => renderNode(node, layout.positions.get(node.id), colors)))).join('\n');
     const legendMarkup = (diagram.legend ?? []).map((item, index) => {
         const x = OUTER_PADDING + index * 250;
         const y = layout.height + 38;
@@ -625,9 +626,9 @@ export const compileLayeredArchitectureDiagram = (diagram, options = {}) => {
     return { width: ARCHITECTURE_WIDTH, height: ARCHITECTURE_HEIGHT, colors, layout, columns, layers, flows, concernRail };
 };
 
-const renderArchitectureComponent = async (component) => {
+const renderArchitectureComponent = async (component, colors) => {
     const { x, y, width, height } = component.box;
-    const assetUri = await assetDataUri(component.asset);
+    const assetUri = await assetDataUri(component.asset, colors.text);
     return `<g class="architecture-component tone-${component.tone}${component.emphasis ? ' architecture-component--emphasis' : ''}" role="group" aria-label="${escapeXml(component.aria)}" data-diagram-component="${escapeXml(component.id)}">
             <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" />
             ${assetUri ? `<image href="${assetUri}" x="${component.imageBox.x}" y="${component.imageBox.y}" width="${component.imageBox.width}" height="${component.imageBox.height}" preserveAspectRatio="xMidYMid meet" />` : ''}
@@ -646,7 +647,7 @@ const renderLayeredArchitectureSvg = async (diagram, options = {}) => {
 
     const layerMarkup = [];
     for (const layer of compiled.layers) {
-        const components = await Promise.all(layer.components.map((component) => renderArchitectureComponent(component)));
+        const components = await Promise.all(layer.components.map((component) => renderArchitectureComponent(component, colors)));
         layerMarkup.push(`<g class="architecture-layer tone-${layer.tone}" role="group" aria-label="Layer ${layer.number}: ${escapeXml(layer.label)}" data-diagram-layer="${escapeXml(layer.id)}">
                     <rect class="layer-band" x="${layer.bandBox.x}" y="${layer.bandBox.y}" width="${layer.bandBox.width}" height="${layer.bandBox.height}" rx="8" />
                     <circle class="layer-number" cx="${layer.numberCircle.cx}" cy="${layer.numberCircle.cy}" r="${layer.numberCircle.radius}" />

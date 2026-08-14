@@ -2,7 +2,7 @@
     "schemaVersion": 1,
     "title": "Azure MCP & Skills Ecosystem",
     "brandProfile": "design/brand-profiles/fluent-aligned.json",
-    "theme": "light",
+    "theme": "dark",
     "locale": "en",
     "date": "2026-08-13",
     "footer": "Azure Skills + Azure MCP · conceptual ecosystem",

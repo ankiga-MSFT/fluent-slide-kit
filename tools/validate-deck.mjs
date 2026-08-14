@@ -144,7 +144,12 @@ const validateDeckContract = async (deck) => {
             try {
                 const diagramPath = resolveDiagramPath(slide.diagram.path);
                 await access(diagramPath);
-                const diagramResult = await validateDiagram(await loadDiagram(diagramPath));
+                const diagram = await loadDiagram(diagramPath);
+                const resolvedTheme = slide.theme ?? deck.theme;
+                if (diagram.theme !== resolvedTheme) {
+                    errors.push(`${location}: diagram theme ${diagram.theme} does not match resolved slide theme ${resolvedTheme}.`);
+                }
+                const diagramResult = await validateDiagram(diagram);
                 errors.push(...diagramResult.errors.map((error) => `${location}: diagram: ${error}`));
                 warnings.push(...diagramResult.warnings.map((warning) => `${location}: diagram: ${warning}`));
             } catch (error) {

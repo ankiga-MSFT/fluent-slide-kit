@@ -51,6 +51,9 @@ Author against `schemas/diagram.schema.json`:
 - For `flow`: node kinds, edge kinds, groups, lanes, legends, direction, and intentional cycles.
 - For `layered-architecture`: columns, layers, components with optional column spans, and cross-cutting concerns.
 
+Set `theme` explicitly. For an embedded diagram, match the host slide's resolved theme; for a
+standalone diagram, use the theme confirmed with the user. Never silently reset a dark request to light.
+
 Give every element a stable lowercase id. In a flow, label decision outcomes, set `allowCycles: true`
 only for intentional feedback, and keep a group within one lane. In a layered architecture, do not
 overlap component spans within a layer and use the concern rail only for properties that genuinely

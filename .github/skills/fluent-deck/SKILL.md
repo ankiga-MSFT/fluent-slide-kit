@@ -50,6 +50,10 @@ Read `templates/layouts.json` and choose by message shape:
 Prefer another slide over adding containers or shrinking typography. Deck JSON owns semantic content;
 the scene compiler owns resolved geometry; HTML and PowerPoint renderers consume the same scene.
 
+Set the confirmed deck theme explicitly; never omit `theme` and rely on a renderer fallback. Preserve
+an existing deck's theme unless the user approves a change. Use slide-level overrides only for an
+intentional section change. An embedded diagram must declare the same theme as its resolved slide.
+
 ## 3. Resolve assets and diagrams
 
 Search before writing an asset path:

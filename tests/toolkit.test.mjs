@@ -91,6 +91,59 @@ test('semantic tint surfaces stay distinct and readable in both themes', async (
     }
 });
 
+test('dark theme propagates through scene, SVG, and native PowerPoint', async () => {
+    const deck = {
+        schemaVersion: 1,
+        title: 'Dark theme propagation',
+        theme: 'dark',
+        slides: [{
+            id: 'dark-cards',
+            layout: 'cards',
+            takeaway: 'Dark semantics remain intact.',
+            title: 'Dark theme remains dark',
+            items: [
+                { title: 'Focused', body: 'Brand emphasis.', tone: 'brand' },
+                { title: 'Healthy', body: 'Success status.', tone: 'success' },
+            ],
+            notes: 'Regression fixture for dark rendering.',
+        }],
+    };
+    const scene = await compileDeckScene(deck);
+    const slide = scene.slides[0];
+    assert.equal(slide.theme, 'dark');
+    assert.equal(slide.elements.find((element) => element.id === 'background').style.fill, '#202020');
+    assert.equal(slide.elements.find((element) => element.id === 'title').style.color, '#FFFFFF');
+    assert.equal(slide.elements.find((element) => element.id === 'item-1-surface').style.fill, '#0C3B5E');
+    assert.equal(slide.elements.find((element) => element.id === 'item-2-surface').style.fill, '#0B3B0B');
+    assert.equal(slide.elements.find((element) => element.id === 'footer-confidentiality').style.color, '#ADADAD');
+
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'advisor-azure-skills-ecosystem.json'), 'utf8'));
+    diagram.theme = 'dark';
+    const svg = await renderDiagramSvg(diagram);
+    assert.match(svg, /data-canvas-background="true"[^>]+fill="#202020"/);
+    assert.match(svg, /architecture-component\.tone-brand rect \{ fill: #0C3B5E; stroke: #479EF5; \}/);
+    const fluentComponent = diagram.layers.flatMap((layer) => layer.components).find((component) => component.asset?.kind === 'fluent');
+    const fluentImage = svg.match(new RegExp(`data-diagram-component="${fluentComponent.id}"[\\s\\S]*?href="data:image/svg\\+xml;base64,([^"]+)"`));
+    assert.ok(fluentImage, 'Expected an embedded Fluent component icon.');
+    const fluentSvg = Buffer.from(fluentImage[1], 'base64').toString('utf8');
+    assert.doesNotMatch(fluentSvg, /currentColor/);
+    assert.match(fluentSvg, /#FFFFFF/);
+
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-dark-pptx-'));
+    try {
+        const pptxPath = path.join(output, 'dark.pptx');
+        await renderSceneToPptx(scene, pptxPath);
+        const inspection = await execFileAsync('pwsh', ['-NoProfile', '-File', path.join(kitRoot, 'tools', 'inspect-pptx.ps1'), pptxPath], { cwd: kitRoot });
+        const report = JSON.parse(inspection.stdout);
+        const shapes = new Map(report.slides[0].shapeGeometries.map((shape) => [shape.name, shape]));
+        assert.equal(shapes.get('fluent-slide-kit:dark-cards:background').fill, '202020');
+        assert.equal(shapes.get('fluent-slide-kit:dark-cards:item-1-surface').fill, '0C3B5E');
+        assert.equal(shapes.get('fluent-slide-kit:dark-cards:item-2-surface').fill, '0B3B0B');
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
 test('native PowerPoint export contains editable named shapes and notes', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-native-pptx-'));
     try {
@@ -119,8 +172,8 @@ test('native PowerPoint export contains editable named shapes and notes', async 
         assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-${diagram.layers[0].id}-surface`), 'roundRect');
         const brandComponent = diagram.layers.flatMap((layer) => layer.components).find((component) => component.tone === 'brand');
         const brandShape = report.slides[0].shapeGeometries.find((shape) => shape.name === `fluent-slide-kit:${sourceSlide.id}:diagram-component-${brandComponent.id}`);
-        assert.equal(brandShape.fill, 'EBF3FC');
-        assert.equal(brandShape.line, '0F6CBD');
+        assert.equal(brandShape.fill, diagram.theme === 'dark' ? '0C3B5E' : 'EBF3FC');
+        assert.equal(brandShape.line, diagram.theme === 'dark' ? '479EF5' : '0F6CBD');
     } finally {
         await rm(output, { recursive: true, force: true });
     }
@@ -131,6 +184,7 @@ test('every narrative layout compiles to positioned scene elements', async () =>
     const deck = {
         schemaVersion: 1,
         title: 'Layout catalog',
+        theme: 'light',
         brandProfile: 'design/brand-profiles/fluent-aligned.json',
         slides: [
             { id: 'title', layout: 'title', takeaway: 'Open clearly.', title: 'Title slide', subtitle: 'Supporting context.' },
@@ -161,6 +215,7 @@ test('deck validation rejects AI-generated icon assets', async () => {
         const deck = {
             schemaVersion: 1,
             title: 'Invalid generated icon',
+            theme: 'light',
             slides: [{
                 id: 'invalid',
                 layout: 'cards',
@@ -273,6 +328,7 @@ test('diagram validation rejects cycles unless they are intentional', async () =
         diagramType: 'flow',
         id: 'retry-loop',
         title: 'Retry loop',
+        theme: 'light',
         nodes: [
             { id: 'request', label: 'Request', kind: 'process' },
             { id: 'retry', label: 'Retry', kind: 'process' },
@@ -299,8 +355,12 @@ test('layered architecture renders on a fixed executive canvas', async () => {
     const svg = await renderDiagramSvg(diagram);
     assert.match(svg, /viewBox="0 0 1600 720"/);
     assert.match(svg, /data-diagram-type="layered-architecture"/);
-    assert.match(svg, /architecture-component\.tone-brand rect \{ fill: #EBF3FC; stroke: #0F6CBD; \}/);
-    assert.match(svg, /architecture-component\.tone-success rect \{ fill: #F1FAF1; stroke: #107C10; \}/);
+    assert.match(svg, diagram.theme === 'dark'
+        ? /architecture-component\.tone-brand rect \{ fill: #0C3B5E; stroke: #479EF5; \}/
+        : /architecture-component\.tone-brand rect \{ fill: #EBF3FC; stroke: #0F6CBD; \}/);
+    assert.match(svg, diagram.theme === 'dark'
+        ? /architecture-component\.tone-success rect \{ fill: #0B3B0B; stroke: #54B054; \}/
+        : /architecture-component\.tone-success rect \{ fill: #F1FAF1; stroke: #107C10; \}/);
     for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
         assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
     }

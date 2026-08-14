@@ -4,7 +4,7 @@
     "id": "advisor-azure-skills-ecosystem",
     "title": "Advisor composes scenario skills over shared Azure planes",
     "description": "Conceptual ecosystem with Advisor at the orchestration center, scenario-specific Azure skills, Azure MCP tools, and shared ARM and ARG foundations.",
-    "theme": "light",
+    "theme": "dark",
     "columns": [
         {
             "id": "discover",
