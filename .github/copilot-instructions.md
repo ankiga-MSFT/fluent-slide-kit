@@ -52,6 +52,7 @@ the `diagram` layout embeds a validated flow or layered architecture.
 - Add per-slide sources for factual claims. Use Microsoft Learn MCP for current Microsoft and Azure facts.
 - Use sentence case. Keep paragraphs left-aligned in LTR languages and use CSS logical properties for RTL work.
 - Store speaker notes and the slide takeaway in the deck JSON, not visible slide content.
+- Keep sources, dates, slide numbers, and deck metadata out of the visual footer. Every slide renders only `Microsoft Confidential` at bottom left.
 
 ## Visual rules
 

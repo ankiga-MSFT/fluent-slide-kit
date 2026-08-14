@@ -13,6 +13,7 @@ const CONTENT_TOP = 258;
 const CONTENT_BOTTOM = 858;
 const TAKEAWAY_Y = 894;
 const TAKEAWAY_HEIGHT = 72;
+const CONFIDENTIALITY_LABEL = 'Microsoft Confidential';
 
 const slug = (value, fallback = 'deck') => String(value ?? fallback)
     .toLowerCase()
@@ -126,7 +127,7 @@ const addHeader = (elements, slide, profile, compact = false) => {
     }
 };
 
-// The takeaway carries the executive "so what"; a diagram slide uses its full band and states it in the subtitle instead.
+// The takeaway carries the executive "so what"; a diagram slide keeps the full band for the graphic.
 const addTakeaway = (elements, slide, profile) => {
     if (!slide.takeaway || slide.layout === 'diagram') return;
     const colors = profile.colors[slide.theme];
@@ -139,17 +140,11 @@ const addTakeaway = (elements, slide, profile) => {
     }));
 };
 
-const addFooter = (elements, deck, slide, slideNumber, profile) => {
+const addFooter = (elements, slide, profile) => {
     const colors = profile.colors[slide.theme];
-    const source = slide.sources?.[0]?.label;
-    const metadata = [deck.footer, deck.confidentiality, deck.date, `Slide ${slideNumber}`].filter(Boolean).join(' · ');
-    if (source) {
-        elements.push(textElement('footer-source', 'footer', `Source: ${source}`, box(SAFE_X, FOOTER_Y, 680, 24), 20, {
-            ...typeStyle(profile, 'caption', colors.muted),
-        }));
-    }
-    elements.push(textElement('footer-meta', 'footer', metadata, box(820, FOOTER_Y, 988, 24), 20, {
-        ...typeStyle(profile, 'caption', colors.muted, { align: 'right' }),
+    const color = slide.layout === 'title' ? colors.onBrand : colors.muted;
+    elements.push(textElement('footer-confidentiality', 'footer', CONFIDENTIALITY_LABEL, box(SAFE_X, FOOTER_Y, 360, 24), 20, {
+        ...typeStyle(profile, 'caption', color),
     }));
 };
 
@@ -287,10 +282,8 @@ const compileLayout = (deck, sourceSlide, slideNumber, profile) => {
         if (items[0]) addCardContent(elements, items[0], box(SAFE_X, 390, 1540, 430), 0, profile, theme, { border: false });
     }
 
-    if (slide.layout !== 'title') {
-        addTakeaway(elements, slide, profile);
-        addFooter(elements, deck, slide, slideNumber, profile);
-    }
+    if (slide.layout !== 'title') addTakeaway(elements, slide, profile);
+    addFooter(elements, slide, profile);
     return {
         id: slide.id,
         number: slideNumber,

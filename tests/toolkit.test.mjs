@@ -67,6 +67,12 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
             assert.ok(item.box.x + item.box.width <= scene.canvas.width);
             assert.ok(item.box.y + item.box.height <= scene.canvas.height);
         }
+        const footerElements = slide.elements.filter((element) => element.role === 'footer');
+        assert.equal(footerElements.length, 1);
+        assert.equal(footerElements[0].id, 'footer-confidentiality');
+        assert.equal(footerElements[0].text, 'Microsoft Confidential');
+        assert.equal(footerElements[0].style.align, 'left');
+        assert.equal(slide.elements.some((element) => ['footer-source', 'footer-meta'].includes(element.id)), false);
     }
 });
 
@@ -195,6 +201,8 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         assert.match(cards, /data-scene-element="item-2-surface"[^>]+background:#F5F5F5[^>]+border:1px solid #D1D1D1/);
         assert.match(cards, /data-scene-element="item-3-surface"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
         assert.match(cards, /currentColor/i);
+        assert.match(cards, /data-scene-element="footer-confidentiality"[^>]*>Microsoft Confidential<\/div>/);
+        assert.doesNotMatch(cards, /data-scene-element="footer-(?:source|meta)"|>Source:/);
         const architecture = await readFile(path.join(output, '03-azure-flow.html'), 'utf8');
         assert.match(architecture, /10023-icon-service-Kubernetes-Services\.svg/);
         const diagram = await readFile(path.join(output, '04-azure-workflow.html'), 'utf8');

@@ -34,7 +34,7 @@ This maps the `1920x1080` scene exactly to PowerPoint's `13.333x7.5` wide layout
 | Layered architecture | Native shapes, text, connectors, and individual icons |
 | Complex flow diagram | Validated `1600x720` PNG graphic in the current implementation |
 | Fluent and Azure assets | Individual image objects |
-| Sources and takeaway | Speaker notes plus visible source/footer text |
+| Sources and takeaway | Speaker notes; the visible footer is limited to Microsoft Confidential |
 
 A slide is never exported as one full-slide screenshot. `tools/validate-pptx.mjs` rejects that pattern.
 Complex flow is the only deliberate graphic fallback; `delivery-manifest.json` identifies it as

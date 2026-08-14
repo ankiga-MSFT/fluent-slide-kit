@@ -98,6 +98,9 @@ PowerPoint output must contain stable named Office objects and speaker notes. La
 native shapes, text, connectors, and individual icons. Complex flow remains a validated graphic until
 its native-shape renderer is implemented; disclose this from `delivery-manifest.json`.
 
+The visual footer is fixed: render only `Microsoft Confidential` at bottom left on every slide.
+Keep sources, dates, slide numbers, deck labels, and other metadata in notes or manifests, never in the footer.
+
 Inspect every screenshot. Automated checks cannot judge narrative quality, hierarchy, misleading
 architecture, or whether an evidence visual supports the message. Fix JSON first; change shared CSS
 or renderer code only for system-level defects, then run `npm test` and revalidate the example deck.
