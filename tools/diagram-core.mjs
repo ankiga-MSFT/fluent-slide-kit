@@ -519,14 +519,18 @@ const layeredArchitectureLayout = (diagram) => {
     const mainX = padding + layerRailWidth + 16;
     const mainWidth = ARCHITECTURE_WIDTH - mainX - padding - concernGap - concernWidth;
     const columnGap = 22;
-    const columnWidth = (mainWidth - columnGap * (diagram.columns.length - 1)) / diagram.columns.length;
+    // Columns sit inside the layer surface, so the surface keeps a visible margin on both ends.
+    const surfacePadding = 12;
+    const contentX = mainX + surfacePadding;
+    const contentWidth = mainWidth - surfacePadding * 2;
+    const columnWidth = (contentWidth - columnGap * (diagram.columns.length - 1)) / diagram.columns.length;
     const headerY = 16;
     const headerHeight = 44;
     const layersY = 76;
     const layerGap = 38;
     const layerHeight = (ARCHITECTURE_HEIGHT - layersY - padding - layerGap * (diagram.layers.length - 1)) / diagram.layers.length;
     const concernX = mainX + mainWidth + concernGap;
-    return { padding, layerRailWidth, mainX, mainWidth, columnGap, columnWidth, headerY, headerHeight, layersY, layerGap, layerHeight, concernX, concernWidth };
+    return { padding, layerRailWidth, mainX, mainWidth, contentX, contentWidth, surfacePadding, columnGap, columnWidth, headerY, headerHeight, layersY, layerGap, layerHeight, concernX, concernWidth };
 };
 
 export const compileLayeredArchitectureDiagram = (diagram, options = {}) => {
@@ -538,7 +542,7 @@ export const compileLayeredArchitectureDiagram = (diagram, options = {}) => {
     const columns = diagram.columns.map((column, index) => ({
         ...column,
         box: {
-            x: layout.mainX + index * (layout.columnWidth + layout.columnGap),
+            x: layout.contentX + index * (layout.columnWidth + layout.columnGap),
             y: layout.headerY,
             width: layout.columnWidth,
             height: layout.headerHeight,
@@ -552,7 +556,7 @@ export const compileLayeredArchitectureDiagram = (diagram, options = {}) => {
         const components = layer.components.map((component) => {
             const columnIndex = diagram.columns.findIndex((column) => column.id === component.column);
             const span = component.span ?? 1;
-            const x = layout.mainX + columnIndex * (layout.columnWidth + layout.columnGap);
+            const x = layout.contentX + columnIndex * (layout.columnWidth + layout.columnGap);
             const width = span * layout.columnWidth + (span - 1) * layout.columnGap;
             const height = Math.min(104, layout.layerHeight - 22);
             const componentY = y + (layout.layerHeight - height) / 2;

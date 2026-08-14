@@ -66,7 +66,7 @@ const addText = (pptxSlide, sceneSlide, element) => {
         margin: 0,
         breakLine: false,
         fit: 'none',
-        lineSpacingMultiple: style.lineHeight ?? 1.25,
+        ...(style.lineSpacing ? { lineSpacing: style.lineSpacing } : { lineSpacingMultiple: style.lineHeight ?? 1.25 }),
         hyperlink: style.hyperlink ? { url: style.hyperlink } : undefined,
         isTextBox: true,
     });
@@ -173,6 +173,8 @@ const addDiagramText = (pptxSlide, sceneSlide, hostElement, compiled, id, text, 
             align: style.align ?? 'left',
             verticalAlign: style.verticalAlign ?? 'top',
             lineHeight: style.lineHeight ?? 1.15,
+            // Match the SVG's exact leading; a multiplier would be applied to PowerPoint's own default instead.
+            lineSpacing: style.lineSpacing ? points(style.lineSpacing * mapped.scale) : undefined,
         },
     });
 };
@@ -221,7 +223,7 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
             y: layer.labelY - 18,
             width: compiled.layout.layerRailWidth - 60,
             height: layer.labelLines.length * 23 + 4,
-        }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle' });
+        }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle', lineSpacing: 23 });
 
         for (const component of layer.components) {
             addNativeShape(`component-${component.id}`, component.box, 'roundRect', compiled.colors.surface, diagramToneColor(compiled, component.tone), component.emphasis ? 3 : 1.5);
@@ -242,14 +244,14 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
                 y: component.labelY - 17,
                 width: component.textWidth,
                 height: component.labelLines.length * 22 + 3,
-            }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle' });
+            }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle', lineSpacing: 22 });
             if (component.descriptionLines.length) {
                 addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `component-${component.id}-description`, component.descriptionLines.join('\n'), {
                     x: component.textX,
                     y: component.descriptionY - 16,
                     width: component.textWidth,
                     height: component.descriptionLines.length * 20 + 3,
-                }, { fontSize: 18, color: compiled.colors.muted, verticalAlign: 'middle' });
+                }, { fontSize: 18, color: compiled.colors.muted, verticalAlign: 'middle', lineSpacing: 20 });
             }
         }
     }
