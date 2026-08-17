@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
+import { findTemporaryArtifactPaths, isTemporaryArtifactPath } from '../tools/check-repo-hygiene.mjs';
 import { renderDiagramSvg, validateDiagram } from '../tools/diagram-core.mjs';
 import { compileDeckScene } from '../tools/composition-core.mjs';
 import { renderSceneToPptx } from '../tools/render-scene-pptx.mjs';
@@ -76,6 +77,9 @@ test('presentation skills require local assets, Fluent foundations, and static o
         assert.match(source, /transitions/);
         assert.match(source, /hover/);
         assert.match(source, /autoplay/);
+        assert.match(source, /\$surface/);
+        assert.match(source, /2\.5px/);
+        assert.match(source, /filled triangular arrowhead/);
     }
     assert.equal(designContract.outputMode.staticOnly, true);
     assert.equal(designContract.outputMode.completeMessagePerFrame, true);
@@ -88,6 +92,60 @@ test('presentation skills require local assets, Fluent foundations, and static o
         'loading-state',
         'motion-dependent-meaning',
     ]);
+    assert.equal(designContract.authoringDefaults.containers.fill, '$surface');
+    assert.equal(designContract.authoringDefaults.containers.lightResolvedFill, '#FFFFFF');
+    assert.equal(designContract.authoringDefaults.containers.exceptionMetadata, 'fillIntent');
+    assert.equal(designContract.authoringDefaults.connectors.color, '$secondary');
+    assert.equal(designContract.authoringDefaults.connectors.lightResolvedColor, '#424242');
+    assert.equal(designContract.authoringDefaults.connectors.width, 2.5);
+    assert.equal(designContract.authoringDefaults.connectors.arrowhead, 'filled-triangle');
+    assert.equal(designContract.authoringDefaults.connectors.exceptionMetadata, 'connectorIntent');
+    assert.deepEqual(designContract.authoringDefaults.connectors.marker, {
+        width: 10,
+        height: 10,
+        refX: 9,
+        refY: 3,
+        path: 'M0,0 L0,6 L9,3 z',
+        units: 'strokeWidth',
+    });
+});
+
+test('temporary artifacts stay in ignored dot-prefixed scratch directories', async () => {
+    const gitignore = await readFile(path.join(kitRoot, '.gitignore'), 'utf8');
+    assert.match(gitignore, /^\.tmp\/$/m);
+    assert.match(gitignore, /^\.slide-artifacts\/$/m);
+
+    const instructionPaths = [
+        path.join(kitRoot, '.github', 'copilot-instructions.md'),
+        path.join(kitRoot, '.github', 'skills', 'fluent-presentation', 'SKILL.md'),
+        path.join(kitRoot, '.github', 'skills', 'fluent-deck', 'SKILL.md'),
+        path.join(kitRoot, '.github', 'skills', 'fluent-diagram', 'SKILL.md'),
+    ];
+    for (const instructionPath of instructionPaths) {
+        const source = await readFile(instructionPath, 'utf8');
+        assert.match(source, /\.tmp\/<task>\//);
+        assert.match(source, /repository root/);
+        assert.match(source, /npm run repo:check/);
+    }
+
+    const hook = JSON.parse(await readFile(path.join(kitRoot, '.github', 'hooks', 'repository-hygiene.json'), 'utf8'));
+    assert.ok(hook.hooks.Stop.some((entry) => entry.command === 'node tools/check-repo-hygiene.mjs --hook'));
+    const packageJson = JSON.parse(await readFile(path.join(kitRoot, 'package.json'), 'utf8'));
+    assert.equal(packageJson.scripts['repo:check'], 'node tools/check-repo-hygiene.mjs');
+    assert.match(packageJson.scripts.pretest, /repo:check/);
+
+    assert.equal(isTemporaryArtifactPath('run_searches.cjs'), true);
+    assert.equal(isTemporaryArtifactPath('run_searches_correct.cjs'), true);
+    assert.equal(isTemporaryArtifactPath('tools/probe.ps1'), true);
+    assert.equal(isTemporaryArtifactPath('notes.tmp'), true);
+    assert.equal(isTemporaryArtifactPath('.tmp/asset-search/run_searches.cjs'), false);
+    assert.equal(isTemporaryArtifactPath('.slide-artifacts/advisor/probe.ps1'), false);
+    assert.equal(isTemporaryArtifactPath('tools/render-deck.mjs'), false);
+    assert.deepEqual(findTemporaryArtifactPaths([
+        'run_searches_correct.cjs',
+        '.tmp/asset-search/run_searches.cjs',
+        'run_searches.cjs',
+    ]), ['run_searches.cjs', 'run_searches_correct.cjs']);
 });
 
 test('static pattern fixture compiles six native still-frame patterns', async () => {
@@ -106,6 +164,8 @@ test('static pattern fixture compiles six native still-frame patterns', async ()
         'kpi-summary',
     ]);
     assert.doesNotMatch(source, /animation|transition|autoplay|hover/i);
+    assert.equal(deck.slides.flatMap((slide) => slide.elements)
+        .some((element) => element.type === 'shape' && element.style?.fill === '$subtle'), false);
     assert.equal(deck.slides.every((slide) => slide.notes.startsWith('Static native')), true);
     assert.equal(deck.slides.every((slide) => slide.elements.every((element) => element.type !== 'diagram')), true);
 
@@ -165,6 +225,8 @@ test('freeform deck compiles to a valid renderer-neutral scene', async () => {
     assert.equal(validate(scene), true, JSON.stringify(validate.errors));
     assert.equal(scene.brandStatus, 'aligned-not-certified');
     assert.equal(scene.slides.length, deck.slides.length);
+    assert.equal(deck.slides.flatMap((slide) => slide.elements)
+        .some((element) => element.type === 'shape' && element.style?.fill === '$subtle'), false);
     for (const slide of scene.slides) {
         assert.ok(slide.elements.length > 0);
         assert.equal(new Set(slide.elements.map((element) => element.id)).size, slide.elements.length);
@@ -182,6 +244,33 @@ test('freeform deck compiles to a valid renderer-neutral scene', async () => {
     assert.equal(scene.slides[1].elements.find((item) => item.id === 'assets-card').style.fill, '#EBF3FC');
     assert.equal(scene.slides[1].elements.find((item) => item.id === 'assets-icon').group, 'assets');
     assert.equal(scene.slides[2].elements.find((item) => item.id === 'front-door-to-aks').end.x, 704);
+    assert.equal(scene.slides[2].elements.find((item) => item.id === 'front-door-to-aks').style.color, '#424242');
+    assert.equal(scene.slides[2].elements.find((item) => item.id === 'front-door-to-aks').style.width, 2.5);
+    assert.equal(scene.slides[2].elements.find((item) => item.id === 'front-door-to-aks').style.endArrow, true);
+});
+
+test('neutral shapes and primary connectors inherit shared visual defaults', async () => {
+    const scene = await compileDeckScene({
+        schemaVersion: 1,
+        title: 'Shared visual defaults',
+        theme: 'light',
+        slides: [{
+            id: 'shared-defaults',
+            title: 'Shared defaults remain consistent',
+            takeaway: 'Neutral containers stay white and primary connectors match validated flows.',
+            elements: [
+                { id: 'neutral-box', type: 'shape', z: 3, box: { x: 112, y: 240, width: 480, height: 280 }, shape: 'roundRect', style: { stroke: '$stroke', strokeWidth: 1 } },
+                { id: 'primary-connector', type: 'line', role: 'connector', z: 4, start: { x: 592, y: 380 }, end: { x: 820, y: 380 } },
+                { id: 'divider', type: 'line', role: 'divider', z: 4, start: { x: 112, y: 560 }, end: { x: 820, y: 560 } },
+            ],
+        }],
+    });
+    const elements = new Map(scene.slides[0].elements.map((element) => [element.id, element]));
+    assert.equal(elements.get('neutral-box').style.fill, '#FFFFFF');
+    assert.equal(elements.get('primary-connector').style.color, '#424242');
+    assert.equal(elements.get('primary-connector').style.width, 2.5);
+    assert.equal(elements.get('primary-connector').style.endArrow, true);
+    assert.equal(elements.get('divider').style.endArrow, undefined);
 });
 
 test('image accessibility descriptions allow up to 300 characters', async () => {
@@ -386,6 +475,41 @@ test('freeform composition preserves authored geometry and token semantics', asy
     assert.deepEqual(slide.elements.find((element) => element.id === 'line').end, { x: 1180, y: 360 });
 });
 
+test('deck validation requires explicit intent for grey boxes and custom connectors', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-visual-policy-'));
+    try {
+        const deckPath = path.join(output, 'visual-policy.json');
+        const deck = {
+            schemaVersion: 1,
+            title: 'Visual policy',
+            theme: 'light',
+            slides: [{
+                id: 'visual-policy',
+                takeaway: 'Visual exceptions remain explicit.',
+                title: 'Visual exceptions remain explicit',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Visual exceptions remain explicit', typography: 'title' },
+                    { id: 'grey-box', type: 'shape', z: 3, box: { x: 112, y: 240, width: 400, height: 240 }, shape: 'roundRect', style: { fill: '$subtle', stroke: '$stroke', strokeWidth: 1 } },
+                    { id: 'custom-arrow', type: 'line', role: 'connector', z: 4, start: { x: 512, y: 360 }, end: { x: 800, y: 360 }, style: { color: '$brand', width: 4, endArrow: true } },
+                ],
+            }],
+        };
+        await writeFile(deckPath, JSON.stringify(deck));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
+            /neutral box grey-box must use \$surface|connector custom-arrow departs from the primary flow style/,
+        );
+
+        deck.slides[0].elements[1].metadata = { fillIntent: 'The user explicitly requested a grey comparison state.' };
+        deck.slides[0].elements[2].metadata = { connectorIntent: 'The user explicitly requested a brand-emphasis arrow.' };
+        await writeFile(deckPath, JSON.stringify(deck));
+        const result = await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
+        assert.match(result.stdout, /PASS: 1 slides checked; 0 errors; 0 warnings\./);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
 test('deck validation rejects AI-generated icon assets', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-asset-policy-'));
     try {
@@ -433,7 +557,7 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         assert.match(cards, /data-scene-element="assets-icon"/);
         assert.match(cards, /data-scene-element="assets-card"[^>]+border-radius:8px/);
         assert.match(cards, /data-scene-element="assets-card"[^>]+background:#EBF3FC[^>]+border:2px solid #0F6CBD/);
-        assert.match(cards, /data-scene-element="composition-card"[^>]+background:#F5F5F5[^>]+border:1px solid #D1D1D1/);
+        assert.match(cards, /data-scene-element="composition-card"[^>]+background:#FFFFFF[^>]+border:1px solid #D1D1D1/);
         assert.match(cards, /data-scene-element="validation-card"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
         assert.match(cards, /currentColor/i);
         assert.match(cards, /data-scene-element="footer-confidentiality"[^>]*>Microsoft Confidential<\/div>/);
@@ -442,6 +566,8 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         assert.match(architecture, /10023-icon-service-Kubernetes-Services\.svg/);
         assert.match(architecture, /data-scene-element="front-door-to-aks"/);
         assert.match(architecture, /marker-end=/);
+        assert.match(architecture, /markerWidth="10" markerHeight="10" refX="9" refY="3"[^>]+markerUnits="strokeWidth"/);
+        assert.match(architecture, /<path d="M0,0 L0,6 L9,3 z" fill="#424242"/);
         const scene = JSON.parse(await readFile(path.join(output, 'deck.scene.json'), 'utf8'));
         assert.equal(scene.source, 'examples/deck.json');
         assert.equal(scene.brandProfile, 'fluent-aligned');

@@ -101,6 +101,9 @@ npm run deck:build -- decks/<deck-name>.json --preview
 
 The default final bundle is `deliverables/<deck-name>/`. Use `.slide-artifacts/` only for temporary
 validation, probes, and intermediate previews; never place the final handoff there.
+Keep presentation-specific helper scripts and command captures under `.slide-artifacts/<deck-name>/tmp/`.
+Use `.tmp/<task>/` for general disposable work. Never create temporary files in the repository root or
+a source-controlled directory, and require `npm run repo:check` to pass before handoff.
 
 The build validates semantic sources and the brand profile, compiles `deck.scene.json`, renders and
 checks standalone HTML in Edge, creates a native editable `.pptx`, validates its Open XML structure,
@@ -127,7 +130,8 @@ or renderer code only for system-level defects, then run `npm test` and revalida
 - Factual claims have sources and unknowns remain explicit placeholders.
 - Visual hierarchy is readable when the screenshot is scaled down.
 - Every visible card, container, boundary, and label chip has rounded corners; only the full-slide background may be rectangular.
-- Neutral containers use the subtle surface. Use brand color only for the focal item and success, warning, or danger only when the content carries that meaning; do not color every container or alternate tones decoratively.
+- Neutral containers use `$surface`, which resolves to white in the light theme. A non-white fill requires explicit user direction or documented focal or semantic intent; do not use `$subtle` or alternate tones decoratively.
+- Ordinary directional arrows use the primary flow treatment: `$secondary`, 2.5px, and a filled triangular arrowhead. Different connector styling requires explicit user direction or documented semantic meaning.
 - Fluent and Azure assets use exact local catalog paths.
 - Diagram edges, labels, lanes, and boundaries match the stated system behavior.
 - Color is not the only carrier of meaning.

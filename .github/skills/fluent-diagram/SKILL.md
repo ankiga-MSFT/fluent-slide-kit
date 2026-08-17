@@ -82,6 +82,10 @@ npm run diagram:render -- diagrams/<name>.json
 npm run diagram:validate -- diagrams/<name>.json
 ```
 
+Keep diagram-specific helper scripts, probes, and command captures under `.slide-artifacts/<name>/tmp/`.
+Use `.tmp/<task>/` for general disposable work. Never create temporary files in the repository root or
+a source-controlled directory, and require `npm run repo:check` to pass before handoff.
+
 The validator checks schema and ids, references and spans, asset containment, flow semantics, a fixed
 `1600x720` viewBox, effective font sizes, text and card bounds, item collisions, connector crossings,
 rounded corners on every visible rectangle, embedded SVG assets, serious WCAG issues, and a deterministic screenshot.
@@ -96,11 +100,12 @@ scale. Split denser systems into context, capability, component, deployment, or 
 - The title states what the topology or flow demonstrates.
 - The system boundary and abstraction level are unambiguous.
 - Primary flow is visually dominant and reads in the declared direction.
+- Primary connectors use the shared `$secondary`, 2.5px, filled-triangle treatment unless documented edge semantics require another style.
 - Branch labels explain conditions; merge points remain traceable.
 - Synchronous, asynchronous, dependency, and error paths are not conflated.
 - Groups and lanes convey real boundaries or ownership rather than decoration.
 - Every visible node, component, lane, boundary, concern, and label chip has rounded corners; use icons and labels instead of sharp-corner shape semantics.
-- Keep parent surfaces neutral. Use a subtle tone fill only on components or layer rails whose brand, success, warning, or danger meaning is explicit; never use alternating fills as decoration.
+- Keep parent surfaces and neutral components on `$surface`, which resolves to white in the light theme. Use a non-white fill only for explicit user direction or documented brand, success, warning, or danger meaning; never use alternating fills as decoration.
 - Service labels remain readable and official Azure icons retain their artwork.
 - A legend is present when line styles or tones carry meaning.
 - Layered architecture has one obvious reading order and its concern rail does not repeat layer content.

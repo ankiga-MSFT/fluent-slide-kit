@@ -87,6 +87,8 @@ const validateDeckContract = async (deck) => {
 
     for (const [index, slide] of deck.slides.entries()) {
         const location = `slide ${index + 1} (${slide.id})`;
+        const resolvedTheme = slide.theme ?? deck.theme;
+        const themeColors = brandProfile.colors[resolvedTheme];
         if (slideIds.has(slide.id)) errors.push(`${location}: duplicate slide id.`);
         slideIds.add(slide.id);
         if (slide.number && slideNumbers.has(slide.number)) errors.push(`${location}: duplicate slide number.`);
@@ -116,8 +118,29 @@ const validateDeckContract = async (deck) => {
                 for (const [label, point] of [['start', item.start], ['end', item.end]]) {
                     if (point.x > canvas.width || point.y > canvas.height) errors.push(`${location}: line ${item.id} ${label} is outside the ${canvas.width}x${canvas.height} canvas.`);
                 }
+                if (item.role === 'connector') {
+                    const style = item.style ?? {};
+                    const connectorDefaults = designContract.authoringDefaults.connectors;
+                    const colorIsDefault = style.color === undefined || style.color === connectorDefaults.color || style.color.toUpperCase?.() === themeColors.secondary.toUpperCase();
+                    const departsFromDefault = !colorIsDefault
+                        || (style.width !== undefined && style.width !== connectorDefaults.width)
+                        || style.endArrow === false
+                        || style.beginArrow === true
+                        || (style.dashType !== undefined && style.dashType !== 'solid');
+                    if (departsFromDefault && !item.metadata?.connectorIntent?.trim()) {
+                        errors.push(`${location}: connector ${item.id} departs from the primary flow style; add metadata.connectorIntent for an explicit user or semantic exception.`);
+                    }
+                }
             } else if (item.box.x + item.box.width > canvas.width || item.box.y + item.box.height > canvas.height) {
                 errors.push(`${location}: element ${item.id} is outside the ${canvas.width}x${canvas.height} canvas.`);
+            }
+
+            if (item.type === 'shape' && item.shape === 'roundRect') {
+                const fill = item.style?.fill;
+                const usesNeutralGrey = fill === '$subtle' || fill?.toUpperCase?.() === themeColors.subtle.toUpperCase();
+                if (usesNeutralGrey && !item.metadata?.fillIntent?.trim()) {
+                    errors.push(`${location}: neutral box ${item.id} must use $surface; add metadata.fillIntent for an explicit user or semantic exception.`);
+                }
             }
 
             if (item.type === 'text' && item.style?.fontSize && item.style.fontSize < designContract.diagramQuality.minimumEffectiveFontSize) {
@@ -129,7 +152,6 @@ const validateDeckContract = async (deck) => {
                     const diagramPath = resolveDiagramPath(item.diagramPath);
                     await access(diagramPath);
                     const diagram = await loadDiagram(diagramPath);
-                    const resolvedTheme = slide.theme ?? deck.theme;
                     if (diagram.theme !== resolvedTheme) {
                         errors.push(`${location}: diagram ${item.id} theme ${diagram.theme} does not match resolved slide theme ${resolvedTheme}.`);
                     }

@@ -104,6 +104,11 @@ positioned element. These files preserve reproducibility and future revision wit
 
 ## 5. Execute the pipeline autonomously
 
+Keep presentation-specific helper scripts, probes, command captures, and intermediate conversions under
+`.slide-artifacts/<deck-name>/tmp/`. Put any other disposable workspace files under `.tmp/<task>/`.
+Never create temporary artifacts in the repository root or a source-controlled directory. Remove them
+before handoff, and require `npm run repo:check` to pass.
+
 Run the relevant local scripts yourself from the kit root. The standard internal sequence is:
 
 1. Search and resolve assets.
@@ -129,12 +134,15 @@ Before handoff, verify:
 - Titles state conclusions rather than generic topics.
 - Content is legible when viewed at presentation scale.
 - Architecture boundaries and connector meanings are truthful and unambiguous.
+- Neutral cards and boxes use `$surface` (white in the light theme) unless the user requests another fill or documented focal or semantic intent requires one.
+- Ordinary directional arrows match the primary flow connector: `$secondary`, 2.5px, with a filled triangular arrowhead.
 - Diagram labels remain at least 18px after final slide scaling, with no collisions, clipped text, or connector crossings.
 - Flow diagrams stay within 18 nodes; layered architectures stay within 15 components, five columns, and six layers.
 - Current Microsoft claims have public sources.
 - Private or missing evidence is clearly marked rather than fabricated.
 - Azure service icons are official local assets where available.
 - Automated validation passes with no unresolved errors.
+- The repository hygiene check passes with no temporary artifacts outside approved scratch directories.
 - Every HTML and available PowerPoint screenshot has been visually reviewed for hierarchy, density, clipping, and misleading flow.
 - Every standalone HTML page renders at exactly 16:9 and the manifest contains the expected slide count.
 - The PPTX contains native named Office objects, speaker notes, scene identity, and the expected slide count.

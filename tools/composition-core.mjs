@@ -83,7 +83,7 @@ const compileElement = (source, profile, theme) => {
             ...common,
             shape: source.shape,
             style: {
-                fill: 'transparent',
+                fill: colors.surface,
                 strokeWidth: 0,
                 ...resolveStyle(source.style, colors, fonts),
             },
@@ -91,15 +91,17 @@ const compileElement = (source, profile, theme) => {
     }
 
     if (source.type === 'line') {
+        const isConnector = source.role === 'connector';
         return {
             ...common,
             role: source.role ?? 'connector',
             start: source.start,
             end: source.end,
             style: {
-                color: colors.strokeStrong,
-                width: 2,
+                color: isConnector ? colors.secondary : colors.strokeStrong,
+                width: isConnector ? 2.5 : 2,
                 dashType: 'solid',
+                ...(isConnector ? { endArrow: true } : {}),
                 ...resolveStyle(source.style, colors, fonts),
             },
         };

@@ -73,9 +73,9 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `docs/native-powerpoint-architecture.md` | Shared-scene, native editability, validation, and add-in design |
 
 Final handoff bundles are written to `deliverables/<deck-name>/`, separate from intermediate validation
-and preview material under `.slide-artifacts/`. Both are Git-ignored. Request-specific composition sources
-under `decks/` and top-level `diagrams/` are local-only; reusable fixtures under `examples/` and
-`diagrams/templates/` remain versioned.
+and preview material under `.slide-artifacts/`. General temporary helpers and command captures belong under
+`.tmp/<task>/`. These directories are Git-ignored. Request-specific composition sources under `decks/` and
+top-level `diagrams/` are local-only; reusable fixtures under `examples/` and `diagrams/templates/` remain versioned.
 
 Generated HTML remains offline. PowerPoint uses native text, shapes, lines, and individual image objects.
 Layered architectures are fully native. Complex flow diagrams are browser-rasterized validated graphics
@@ -97,6 +97,14 @@ requestor must execute.
 5. Add sources for factual claims and bracketed placeholders for missing evidence.
 6. Run the dual-format build and inspect HTML and PowerPoint screenshots, even when checks pass.
 7. Repair the composition first; change shared renderers only for system-level defects.
+
+### Repository hygiene
+
+Put every disposable helper script, probe, download, extraction, log, cache, or command capture under
+`.tmp/<task>/`. Presentation-specific intermediate work belongs under `.slide-artifacts/<deck-name>/tmp/`.
+Operating-system temporary directories remain appropriate for isolated tests. Never place temporary files
+in the repository root or a source-controlled directory. The workspace Stop hook and `npm run repo:check`
+reject common temporary artifact patterns that escape these approved scratch locations.
 
 ### Maintainer commands
 
@@ -125,6 +133,9 @@ npm run deck:validate:pptx -- .slide-artifacts/pptx/decision-deck.pptx --deck de
 
 # Complete validated deliverable bundle; Office preview is optional
 npm run deck:build -- decks/decision-deck.json --preview
+
+# Repository hygiene
+npm run repo:check
 
 # Tooling regression tests
 npm test
@@ -161,6 +172,10 @@ resolve colors and fonts during compilation without dictating composition.
 The schema constrains valid primitives and provenance, not storytelling templates. Openings, statements,
 comparisons, paths, evidence views, and architecture slides are compositions rather than named layouts.
 Adding another slide is preferable to shrinking typography or overloading one frame.
+
+Neutral cards, components, and boxes default to `$surface`, which is white in the light theme. Non-white
+fills are reserved for explicit user direction or documented focal or semantic meaning. Ordinary directional
+arrows share the flow-diagram primary connector treatment: `$secondary`, 2.5px, with a filled triangle.
 
 For common executive content, use `examples/static-patterns.json` as the anatomy reference. It contains
 native, editable still-frame examples for a status message, owner/persona view, determinate progress and

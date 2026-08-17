@@ -20,6 +20,29 @@
             "motion-dependent-meaning"
         ]
     },
+    "authoringDefaults": {
+        "containers": {
+            "fill": "$surface",
+            "lightResolvedFill": "#FFFFFF",
+            "nonWhiteFillRequires": "Explicit user direction or documented focal or semantic intent",
+            "exceptionMetadata": "fillIntent"
+        },
+        "connectors": {
+            "color": "$secondary",
+            "lightResolvedColor": "#424242",
+            "width": 2.5,
+            "arrowhead": "filled-triangle",
+            "exceptionMetadata": "connectorIntent",
+            "marker": {
+                "width": 10,
+                "height": 10,
+                "refX": 9,
+                "refY": 3,
+                "path": "M0,0 L0,6 L9,3 z",
+                "units": "strokeWidth"
+            }
+        }
+    },
     "typography": {
         "fontStack": "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, system-ui, sans-serif",
         "note": "Segoe UI binaries are not redistributed. Slide aliases are larger than the Fluent UI type ramp for projected readability.",

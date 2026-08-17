@@ -205,7 +205,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1
                     }
@@ -362,11 +362,6 @@
                     "end": {
                         "x": 704,
                         "y": 516
-                    },
-                    "style": {
-                        "color": "$brand",
-                        "width": 4,
-                        "endArrow": true
                     }
                 },
                 {
@@ -381,11 +376,6 @@
                     "end": {
                         "x": 1336,
                         "y": 516
-                    },
-                    "style": {
-                        "color": "$brand",
-                        "width": 4,
-                        "endArrow": true
                     }
                 },
                 {

@@ -1,0 +1,15 @@
+{
+    "hooks": {
+        "Stop": [
+            {
+                "type": "command",
+                "command": "node tools/check-repo-hygiene.mjs --hook",
+                "windows": "node tools/check-repo-hygiene.mjs --hook",
+                "linux": "node tools/check-repo-hygiene.mjs --hook",
+                "osx": "node tools/check-repo-hygiene.mjs --hook",
+                "cwd": ".",
+                "timeout": 10
+            }
+        ]
+    }
+}

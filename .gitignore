@@ -1,4 +1,5 @@
 node_modules/
+.tmp/
 .slide-artifacts/
 deliverables/
 decks/**/*.json

@@ -16,6 +16,14 @@ organization brand assets only when the user supplies an approved source and app
 	autonomously with available tools.
 - Hand off finished artifacts and business assumptions. Keep implementation details internal unless asked.
 
+## Repository hygiene
+
+- Put every temporary helper script, probe, command capture, download, extracted file, log, cache, and other disposable artifact under `.tmp/<task>/`.
+- Keep presentation-specific intermediate output under `.slide-artifacts/<deck-name>/`. Operating-system temporary directories are also acceptable for isolated test output.
+- Never create temporary files in the repository root or a source-controlled directory. If a tool or subagent creates one, move it into an approved scratch directory or delete it before continuing.
+- Keep `.tmp/` and `.slide-artifacts/` Git-ignored. Never commit temporary artifacts or add an ad hoc ignore rule that hides them elsewhere.
+- Before handoff, run `npm run repo:check` and review Git status so only intentional source changes remain visible.
+
 ## Architecture
 
 - Author freeform compositions as JSON under `decks/`, conforming to `schemas/composition.schema.json`.
@@ -68,7 +76,8 @@ otherwise freeform composition. Keep simple sequences native with shape, text, i
 - Use AI-generated images only for hero photography, conceptual illustration, or editorial backgrounds.
 	Never generate whole slides, logos, product icons, text, charts, architecture diagrams, or workflows as images.
 - Use one restrained accent family. Semantic success, warning, and danger colors communicate meaning, not decoration.
-- Default cards and components to a neutral subtle surface. Use a brand tint only for the focal item and semantic tints only when the tone communicates real status or meaning; never alternate colors merely to differentiate adjacent boxes.
+- Default every card, component, and other box to `$surface`, which resolves to white in the light theme. Use a non-white fill only when the user explicitly requests it or documented focal or semantic intent requires it; never use `$subtle` or alternating fills merely to differentiate adjacent boxes.
+- Use the primary flow connector treatment for ordinary directional arrows: `$secondary`, 2.5px, and a filled triangular arrowhead. Use a different color, weight, dash, or arrowhead only when the user requests it or the connector carries documented semantic meaning.
 - Avoid gradients, glass effects, decorative blobs, nested cards, emoji icons, text shadows, and center-aligned paragraphs.
 - Slides are still frames: no autoplay, hover-dependent content, or required animation. Respect reduced motion.
 

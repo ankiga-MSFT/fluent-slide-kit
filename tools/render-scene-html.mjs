@@ -94,7 +94,7 @@ const renderLine = (element) => {
     const y2 = end.y - element.box.y;
     const dashArray = style.dashType === 'dash' ? '12 8' : style.dashType === 'dot' ? '2 7' : undefined;
     return `<svg class="scene-element scene-line" ${sceneAttributes(element)} style="${boxStyle(element.box, element.z)};overflow:visible;${transformStyle(style)}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
-    ${(style.beginArrow || style.endArrow) ? `<defs><marker id="${escapeHtml(markerId)}" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0,0 L0,8 L10,4 z" fill="${escapeHtml(style.color ?? '#424242')}" /></marker></defs>` : ''}
+    ${(style.beginArrow || style.endArrow) ? `<defs><marker id="${escapeHtml(markerId)}" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="${escapeHtml(style.color ?? '#424242')}" /></marker></defs>` : ''}
     <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${escapeHtml(style.color ?? '#424242')}" stroke-width="${style.width ?? 2}" stroke-linecap="round"${dashArray ? ` stroke-dasharray="${dashArray}"` : ''}${style.beginArrow ? ` marker-start="url(#${escapeHtml(markerId)})"` : ''}${style.endArrow ? ` marker-end="url(#${escapeHtml(markerId)})"` : ''} />
 </svg>`;
 };

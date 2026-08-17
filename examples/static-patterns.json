@@ -141,7 +141,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 12
@@ -321,7 +321,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 16
@@ -408,7 +408,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 16
@@ -1357,7 +1357,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 32
@@ -1704,7 +1704,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 16
@@ -1789,7 +1789,7 @@
                     },
                     "shape": "roundRect",
                     "style": {
-                        "fill": "$subtle",
+                        "fill": "$surface",
                         "stroke": "$stroke",
                         "strokeWidth": 1,
                         "radius": 16
