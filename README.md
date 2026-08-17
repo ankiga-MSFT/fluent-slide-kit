@@ -2,7 +2,7 @@
 
 A compact toolkit for creating executive-ready, editable PowerPoint decks and fixed `1920x1080` HTML
 previews with public Fluent 2 design guidance, local Fluent UI System Icons, and official Azure service
-icons. GitHub Copilot authors constrained semantic JSON; the kit compiles one renderer-neutral scene,
+icons. GitHub Copilot authors freeform composition JSON; the kit resolves tokens into one renderer-neutral scene,
 renders HTML and native Office objects, validates both, and delivers `.pptx`, HTML, and PNG previews.
 
 This project produces **Fluent-aligned** output. It does not certify Microsoft brand compliance.
@@ -44,17 +44,16 @@ the compiled scene, and validation reports remain available for reproducibility 
 
 | Path | Purpose |
 |---|---|
-| `schemas/deck.schema.json` | Machine-enforced deck and slide contract |
+| `schemas/composition.schema.json` | Machine-enforced freeform composition contract |
 | `schemas/diagram.schema.json` | Machine-enforced flow and layered-architecture contract |
 | `schemas/scene.schema.json` | Renderer-neutral positioned element contract |
 | `schemas/brand-profile.schema.json` | Fonts, colors, brand status, and asset-policy contract |
-| `templates/layouts.json` | Supported layouts and item limits |
-| `design/design-contract.json` | Canvas, type aliases, content budgets, and guidance sources |
+| `design/design-contract.json` | Canvas, static-only output policy, type aliases, content budgets, and guidance sources |
 | `design/brand-profiles/fluent-aligned.json` | Public profile; aligned, not Microsoft brand-certified |
-| `design/tokens.css` | Semantic light and dark Fluent-aligned tokens |
-| `design/slide.css` | Shared fixed-canvas layout and component styling |
+| `design/fluent-foundation.json` | Attributed renderer-neutral Fluent spacing, shape, type, brand-ramp, and shadow data |
+| `design/fluent-chart-foundation.json` | Attributed Fluent qualitative and semantic chart palette plus static chart rules |
 | `tools/search-assets.mjs` | Ranked local Fluent and Azure asset discovery |
-| `tools/scene-core.mjs` | Semantic deck-to-positioned-scene compiler |
+| `tools/composition-core.mjs` | Token-resolved composition-to-scene compiler |
 | `tools/render-deck.mjs` | Scene-driven standalone HTML entry point |
 | `tools/render-scene-pptx.mjs` | Scene-to-native-Office renderer |
 | `tools/build-deck.mjs` | End-to-end HTML/PPTX build and delivery manifest |
@@ -62,10 +61,10 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `tools/validate-pptx.mjs` | Open XML editability, scene coverage, notes, and optional Office preview checks |
 | `tools/render-diagram.mjs` | Deterministic graph-to-standalone-SVG renderer |
 | `tools/validate-diagram.mjs` | Graph semantics, browser, geometry, asset, and axe checks |
-| `examples/deck.json` | Versioned reusable deck specification with Fluent and Azure visuals |
+| `examples/deck.json` | Versioned reusable freeform composition with Fluent and Azure visuals |
+| `examples/static-patterns.json` | Six validated native patterns: status, owner, progress, table, tags, and KPI |
 | `diagrams/templates/flow.json` | Versioned reusable branching-flow template |
 | `diagrams/templates/layered-architecture.json` | Versioned reusable layered-architecture template |
-| `templates/slide-template.html` | One-off raw HTML escape hatch |
 | `.github/skills/fluent-presentation/SKILL.md` | Executive-facing natural-language orchestration workflow |
 | `.github/skills/fluent-deck/SKILL.md` | Hidden internal deck implementation playbook |
 | `.github/skills/fluent-diagram/SKILL.md` | Hidden internal diagram implementation playbook |
@@ -74,7 +73,7 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `docs/native-powerpoint-architecture.md` | Shared-scene, native editability, validation, and add-in design |
 
 Final handoff bundles are written to `deliverables/<deck-name>/`, separate from intermediate validation
-and preview material under `.slide-artifacts/`. Both are Git-ignored. Request-specific semantic sources
+and preview material under `.slide-artifacts/`. Both are Git-ignored. Request-specific composition sources
 under `decks/` and top-level `diagrams/` are local-only; reusable fixtures under `examples/` and
 `diagrams/templates/` remain versioned.
 
@@ -82,19 +81,22 @@ Generated HTML remains offline. PowerPoint uses native text, shapes, lines, and 
 Layered architectures are fully native. Complex flow diagrams are browser-rasterized validated graphics
 until a native flow connector renderer is added; the delivery manifest discloses this per slide.
 
+Every slide is a static still frame. The kit excludes animations, slide transitions, autoplay,
+hover-dependent disclosure, interactive controls, loading states, and motion-dependent meaning.
+
 ## Automated authoring workflow
 
 The `fluent-presentation` skill performs this workflow. These are implementation stages, not steps the
 requestor must execute.
 
 1. Create local `decks/<name>.json` from `examples/deck.json`; request sources under `decks/` are Git-ignored.
-2. Give every slide one takeaway and select a layout from `templates/layouts.json`.
-3. Search assets locally and copy exact returned paths into the deck JSON.
-4. For workflows or layered architecture, copy a fixture from `diagrams/templates/`, author and validate
-  `diagrams/<name>.json`, then reference it from a `diagram` slide. Request diagrams are Git-ignored.
+2. Give every slide one takeaway and compose its complete static visual argument directly from positioned primitives.
+3. Search assets locally and copy exact returned paths into the composition JSON.
+4. When graph semantics require it, copy a fixture from `diagrams/templates/`, author and validate
+  `diagrams/<name>.json`, then embed it as a positioned `diagram` element. Request diagrams are Git-ignored.
 5. Add sources for factual claims and bracketed placeholders for missing evidence.
 6. Run the dual-format build and inspect HTML and PowerPoint screenshots, even when checks pass.
-7. Repair content first; change shared CSS or renderer code only for system-level defects.
+7. Repair the composition first; change shared renderers only for system-level defects.
 
 ### Maintainer commands
 
@@ -128,13 +130,13 @@ npm run deck:build -- decks/decision-deck.json --preview
 npm test
 ```
 
-VS Code associates JSON files under `decks/` and `examples/` with the deck schema, providing
+VS Code associates JSON files under `decks/` and `examples/` with the composition schema, providing
 completion and inline errors while the AI or a human edits them.
 
 ## Diagram workflow
 
-Use `architecture` only for a simple horizontal sequence of two to five nodes. Use `diagramType: flow`
-when sequence, branching, decisions, connectors, or ownership carry the message. Use
+Use native text, shape, image, and line elements for a short sequence. Use `diagramType: flow` when
+branching, decisions, connectors, merging, or ownership carry the message. Use
 `diagramType: layered-architecture` when tiers, channels, capabilities, component rows, or cross-cutting
 governance carry the message.
 
@@ -149,11 +151,21 @@ embedding, fixed `1600x720` geometry, effective type size, text containment, ite
 crossings, serious accessibility issues, and a deterministic screenshot. Flows are limited to 18 nodes;
 layered architectures are limited to 15 components, five columns, six layers, and five concerns.
 
-## Layouts
+## Composition model
 
-The renderer supports title, statement, cards, split, metrics, comparison, timeline, architecture,
-diagram, quote, and sources layouts. These are intentionally constrained. Adding another slide is
-preferable to adding arbitrary nested containers or shrinking typography.
+Each slide is a fixed `1920x1080` canvas authored directly with `text`, `shape`, `line`, `image`, and
+optional `diagram` elements. Every element has a stable id, explicit z-order, and exact geometry.
+Logical groups distinguish intended internal overlap from accidental collisions. Brand-profile tokens
+resolve colors and fonts during compilation without dictating composition.
+
+The schema constrains valid primitives and provenance, not storytelling templates. Openings, statements,
+comparisons, paths, evidence views, and architecture slides are compositions rather than named layouts.
+Adding another slide is preferable to shrinking typography or overloading one frame.
+
+For common executive content, use `examples/static-patterns.json` as the anatomy reference. It contains
+native, editable still-frame examples for a status message, owner/persona view, determinate progress and
+milestones, structured table, metadata/status tags, and sourced KPI summary. These are compositions to
+adapt, not fixed layouts or interactive component simulations.
 
 Slide aliases are larger than Fluent’s application UI type ramp for projected readability:
 72px display, 48px title, 30px subtitle, 24px body, and 18px caption. The stack uses Segoe when
@@ -163,13 +175,13 @@ installed and falls back to native system fonts. No Segoe font binary is redistr
 
 The quality gate checks:
 
-- JSON Schema and layout item constraints
+- Composition schema, primitive requirements, and stable ids
 - Title and body content budgets
 - Asset containment and file existence
 - Required Azure/image alt text and visible Azure labels
 - Referenced diagram schema, topology, asset, and semantic checks
 - Font readiness and broken images
-- Canvas overflow, clipped content, and top-level item overlap
+- Canvas overflow, clipped content, and group-aware element overlap
 - Embedded diagram viewBox, effective 18px minimum type, text containment, collisions, and crossings
 - Serious WCAG 2.0/2.1 A and AA violations through axe-core
 - A deterministic `1920x1080` screenshot for every slide
@@ -183,7 +195,7 @@ visual hierarchy, misleading diagrams, or whether the selected image supports th
 
 ## PowerPoint, HTML, and scene delivery
 
-Deck JSON is the semantic source and `deck.scene.json` is the resolved geometry shared by both renderers.
+Composition JSON is the authoring source and `deck.scene.json` is the resolved geometry shared by both renderers.
 PowerPoint is the primary executive artifact: text, cards, simple architecture, and layered architecture
 remain editable. HTML is the rapid deterministic QA surface. The validators capture both browser and,
 when desktop Office is available and no interactive session is open, PowerPoint-rendered previews.
@@ -199,14 +211,15 @@ validator from closing or interrupting user work. Structural validation still ru
 
 Implemented:
 
-- semantic deck and diagram sources;
+- freeform composition and optional structured diagram sources;
 - renderer-neutral scene compilation with stable element ids;
 - scene-driven HTML and native editable PowerPoint renderers;
-- native narrative layouts, simple architecture, and layered architecture;
+- native text, shape, line, image, and layered-architecture objects;
 - validated graphic fallback for complex flow diagrams;
 - brand-profile schema and explicit `aligned-not-certified` status;
 - HTML, Open XML, speaker-note, Office-preview, and pixel validation;
 - generated-image policy and safe local asset formats;
+- static-only output contract and six native executive patterns;
 - stable Selection Pane names for future AI revisions.
 
 Deliberately separate future phases:
@@ -258,6 +271,10 @@ Microsoft product icons, architecture diagrams, and workflows.
 The kit is deliberately small. It does not include Fluent React, web components, native packages,
 stock-photo archives, generic MCP servers, CDN dependencies, a graph-layout package, redistributable
 Segoe binaries, or a bundled AI image service.
+
+The two JSON foundation snapshots under `design/` are plain MIT-licensed source data, not runtime
+dependencies. Their exact upstream package versions, revision, modifications, and notices are recorded
+in `legal/provenance.json`. Referenced fonts and icons remain governed by their separate asset terms.
 
 `pptxgenjs` depends on `image-size`, whose audit advisory concerns untrusted ICNS/JXL/HEIF parsers. The
 kit accepts schema-constrained local SVG/PNG/JPEG assets and never permits those formats, so that vulnerable

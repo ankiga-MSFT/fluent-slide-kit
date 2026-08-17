@@ -22,6 +22,15 @@ const LANE_LABEL_SIZE = 24;
 const GROUP_LANE_INSET = 14;
 const ARCHITECTURE_WIDTH = 1600;
 const ARCHITECTURE_HEIGHT = 720;
+const EDGE_LABEL_MIN_WIDTH = 52;
+const EDGE_LABEL_CHARACTER_WIDTH = 7.5;
+const EDGE_LABEL_PADDING = 20;
+const EDGE_LABEL_NODE_GAP = 8;
+const GROUP_HORIZONTAL_PADDING = 22;
+const GROUP_TOP_PADDING = 38;
+const GROUP_BOTTOM_PADDING = 18;
+
+const edgeLabelWidth = (label) => Math.max(EDGE_LABEL_MIN_WIDTH, String(label ?? '').length * EDGE_LABEL_CHARACTER_WIDTH + EDGE_LABEL_PADDING);
 
 // Non-Azure node kinds keep the shared card and signal meaning with a Fluent glyph instead of a bespoke outline.
 const NODE_KIND_GLYPHS = {
@@ -274,6 +283,26 @@ const layoutDiagram = (diagram) => {
     const direction = diagram.direction ?? 'right';
     const rank = calculateRanks(diagram.nodes, diagram.edges);
     const rankCount = Math.max(...rank.values()) + 1;
+    const rankGaps = Array.from({ length: Math.max(0, rankCount - 1) }, () => RANK_GAP);
+    if (direction === 'right') {
+        for (const edge of diagram.edges.filter((candidate) => candidate.label)) {
+            const sourceRank = rank.get(edge.source);
+            const targetRank = rank.get(edge.target);
+            if (targetRank === sourceRank + 1) {
+                const sourceGroup = diagram.nodes.find((node) => node.id === edge.source)?.group;
+                const targetGroup = diagram.nodes.find((node) => node.id === edge.target)?.group;
+                const boundaryClearance = sourceGroup !== targetGroup && (sourceGroup || targetGroup) ? GROUP_HORIZONTAL_PADDING : 0;
+                rankGaps[sourceRank] = Math.max(
+                    rankGaps[sourceRank],
+                    edgeLabelWidth(edge.label) + (EDGE_LABEL_NODE_GAP + boundaryClearance) * 2,
+                );
+            }
+        }
+    }
+    const primaryNodeSize = direction === 'right' ? NODE_WIDTH : NODE_HEIGHT;
+    const primaryPosition = (nodeRank) => OUTER_PADDING
+        + nodeRank * primaryNodeSize
+        + rankGaps.slice(0, nodeRank).reduce((sum, gap) => sum + gap, 0);
     const configuredLanes = diagram.lanes ?? [];
     const hasUnassigned = diagram.nodes.some((node) => !node.lane);
     const lanes = configuredLanes.length
@@ -300,7 +329,7 @@ const layoutDiagram = (diagram) => {
 
         for (const [nodeRank, bucket] of buckets) {
             bucket.forEach((node, index) => {
-                const primary = OUTER_PADDING + nodeRank * ((direction === 'right' ? NODE_WIDTH : NODE_HEIGHT) + RANK_GAP);
+                const primary = primaryPosition(nodeRank);
                 const cross = crossCursor + LANE_LABEL_SIZE + OUTER_PADDING / 2 + groupInset + index * (crossNodeSize + SLOT_GAP);
                 positions.set(node.id, direction === 'right'
                     ? { x: primary, y: cross, width: NODE_WIDTH, height: NODE_HEIGHT }
@@ -311,8 +340,8 @@ const layoutDiagram = (diagram) => {
     }
 
     const primarySize = OUTER_PADDING * 2
-        + rankCount * (direction === 'right' ? NODE_WIDTH : NODE_HEIGHT)
-        + Math.max(0, rankCount - 1) * RANK_GAP;
+        + rankCount * primaryNodeSize
+        + rankGaps.reduce((sum, gap) => sum + gap, 0);
     const crossSize = crossCursor - SLOT_GAP + OUTER_PADDING;
     const width = direction === 'right' ? primarySize : crossSize;
     const height = direction === 'right' ? crossSize : primarySize;
@@ -401,13 +430,20 @@ const renderNode = async (node, position, colors) => {
 };
 
 const edgeGeometry = (edge, source, target, direction, index) => {
+    const labelFraction = edge.labelPosition === 'target'
+        ? 1
+        : edge.labelPosition === 'middle'
+            ? 0.5
+            : edge.labelPosition === 'source'
+                ? 0
+                : 0.25;
     if (direction === 'right') {
         const start = { x: source.x + source.width, y: source.y + source.height / 2 };
         const end = { x: target.x, y: target.y + target.height / 2 };
         if (end.x > start.x) {
             const middleX = (start.x + end.x) / 2;
-            // Bias the label toward the source so it sits inside a lane instead of on the lane divider.
-            return { path: `M ${start.x} ${start.y} L ${middleX} ${start.y} L ${middleX} ${end.y} L ${end.x} ${end.y}`, label: { x: middleX, y: start.y + (end.y - start.y) * 0.25 } };
+            // Unspecified labels stay source-biased; explicit positions align to the routed edge segments.
+            return { path: `M ${start.x} ${start.y} L ${middleX} ${start.y} L ${middleX} ${end.y} L ${end.x} ${end.y}`, label: { x: middleX, y: start.y + (end.y - start.y) * labelFraction } };
         }
         const routeY = Math.max(source.y + source.height, target.y + target.height) + 34 + (index % 4) * 18;
         return { path: `M ${start.x} ${start.y} L ${start.x + 30} ${start.y} L ${start.x + 30} ${routeY} L ${end.x - 30} ${routeY} L ${end.x - 30} ${end.y} L ${end.x} ${end.y}`, label: { x: (start.x + end.x) / 2, y: routeY - 8 } };
@@ -416,7 +452,7 @@ const edgeGeometry = (edge, source, target, direction, index) => {
     const end = { x: target.x + target.width / 2, y: target.y };
     if (end.y > start.y) {
         const middleY = (start.y + end.y) / 2;
-        return { path: `M ${start.x} ${start.y} L ${start.x} ${middleY} L ${end.x} ${middleY} L ${end.x} ${end.y}`, label: { x: (start.x + end.x) / 2, y: middleY - 8 } };
+        return { path: `M ${start.x} ${start.y} L ${start.x} ${middleY} L ${end.x} ${middleY} L ${end.x} ${end.y}`, label: { x: start.x + (end.x - start.x) * labelFraction, y: middleY - 8 } };
     }
     const routeX = Math.max(source.x + source.width, target.x + target.width) + 34 + (index % 4) * 18;
     return { path: `M ${start.x} ${start.y} L ${start.x} ${start.y + 30} L ${routeX} ${start.y + 30} L ${routeX} ${end.y - 30} L ${end.x} ${end.y - 30} L ${end.x} ${end.y}`, label: { x: routeX, y: (start.y + end.y) / 2 } };
@@ -429,7 +465,13 @@ const groupBounds = (diagram, positions) => (diagram.groups ?? []).map((group) =
     const top = Math.min(...members.map((member) => member.y));
     const right = Math.max(...members.map((member) => member.x + member.width));
     const bottom = Math.max(...members.map((member) => member.y + member.height));
-    return { ...group, x: left - 22, y: top - 38, width: right - left + 44, height: bottom - top + 56 };
+    return {
+        ...group,
+        x: left - GROUP_HORIZONTAL_PADDING,
+        y: top - GROUP_TOP_PADDING,
+        width: right - left + GROUP_HORIZONTAL_PADDING * 2,
+        height: bottom - top + GROUP_TOP_PADDING + GROUP_BOTTOM_PADDING,
+    };
 }).filter(Boolean);
 
 const palette = (theme) => theme === 'dark'
@@ -448,16 +490,20 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
     const groupMarkup = groups
         .map((group) => `<g class="diagram-group tone-${group.tone ?? 'neutral'}"><rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="8" /><text x="${group.x + 14}" y="${group.y + 27}" class="group-label">${escapeXml(group.label)}</text></g>`)
         .join('\n');
-    const edgeMarkup = diagram.edges.map((edge, index) => {
+    const renderedEdges = diagram.edges.map((edge, index) => {
         const geometry = edgeGeometry(edge, layout.positions.get(edge.source), layout.positions.get(edge.target), layout.direction, index);
         const kind = edge.kind ?? 'primary';
         const markerStart = edge.bidirectional ? ' marker-start="url(#arrow-start)"' : '';
-        const labelWidth = Math.max(52, (edge.label?.length ?? 0) * 7.5 + 20);
-        return `<g class="diagram-edge edge-${kind}" data-diagram-edge="${escapeXml(edge.id)}" data-edge-source="${escapeXml(edge.source)}" data-edge-target="${escapeXml(edge.target)}">
-          <path d="${geometry.path}" marker-end="url(#arrow-${kind})"${markerStart} />
-          ${edge.label ? `<g class="edge-label"><rect x="${geometry.label.x - labelWidth / 2}" y="${geometry.label.y - 16}" width="${labelWidth}" height="24" rx="12" /><text x="${geometry.label.x}" y="${geometry.label.y + 1}" text-anchor="middle">${escapeXml(edge.label)}</text></g>` : ''}
-        </g>`;
-    }).join('\n');
+        const labelWidth = edgeLabelWidth(edge.label);
+        return { edge, geometry, kind, markerStart, labelWidth };
+    });
+    const edgeMarkup = renderedEdges.map(({ edge, geometry, kind, markerStart }) => `<g class="diagram-edge edge-${kind}" data-diagram-edge="${escapeXml(edge.id)}" data-edge-source="${escapeXml(edge.source)}" data-edge-target="${escapeXml(edge.target)}">
+                    <path d="${geometry.path}" marker-end="url(#arrow-${kind})"${markerStart} />
+                </g>`).join('\n');
+    const edgeLabelMarkup = renderedEdges.filter(({ edge }) => edge.label).map(({ edge, geometry, labelWidth }) => `<g class="edge-label" data-diagram-edge-label="${escapeXml(edge.id)}">
+                    <rect x="${geometry.label.x - labelWidth / 2}" y="${geometry.label.y - 16}" width="${labelWidth}" height="24" rx="12" />
+                    <text x="${geometry.label.x}" y="${geometry.label.y + 1}" text-anchor="middle">${escapeXml(edge.label)}</text>
+                </g>`).join('\n');
     const nodeMarkup = (await Promise.all(diagram.nodes.map((node) => renderNode(node, layout.positions.get(node.id), colors)))).join('\n');
     const legendMarkup = (diagram.legend ?? []).map((item, index) => {
         const x = OUTER_PADDING + index * 250;
@@ -507,6 +553,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
   ${laneMarkup}
   ${groupMarkup}
   ${edgeMarkup}
+    ${edgeLabelMarkup}
   ${nodeMarkup}
   ${legendMarkup}
 </svg>`;

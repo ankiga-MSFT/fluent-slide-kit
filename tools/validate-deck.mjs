@@ -46,10 +46,9 @@ const parseArguments = (arguments_) => {
 const wordCount = (value = '') => String(value).trim().split(/\s+/).filter(Boolean).length;
 
 const validateDeckContract = async (deck) => {
-    const [schema, brandProfileSchema, layoutCatalog, designContract] = await Promise.all([
-        readFile(path.join(kitRoot, 'schemas', 'deck.schema.json'), 'utf8').then(JSON.parse),
+    const [schema, brandProfileSchema, designContract] = await Promise.all([
+        readFile(path.join(kitRoot, 'schemas', 'composition.schema.json'), 'utf8').then(JSON.parse),
         readFile(path.join(kitRoot, 'schemas', 'brand-profile.schema.json'), 'utf8').then(JSON.parse),
-        readFile(path.join(kitRoot, 'templates', 'layouts.json'), 'utf8').then(JSON.parse),
         readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8').then(JSON.parse),
     ]);
     const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
@@ -81,9 +80,10 @@ const validateDeckContract = async (deck) => {
         return { errors, warnings };
     }
 
-    const layouts = new Map(layoutCatalog.layouts.map((layout) => [layout.id, layout]));
     const slideIds = new Set();
     const slideNumbers = new Set();
+    const reservedElementIds = new Set(['background', 'footer-confidentiality']);
+    const canvas = brandProfile.canvas;
 
     for (const [index, slide] of deck.slides.entries()) {
         const location = `slide ${index + 1} (${slide.id})`;
@@ -92,68 +92,87 @@ const validateDeckContract = async (deck) => {
         if (slide.number && slideNumbers.has(slide.number)) errors.push(`${location}: duplicate slide number.`);
         if (slide.number) slideNumbers.add(slide.number);
 
-        const layout = layouts.get(slide.layout);
-        const itemCount = slide.items?.length ?? 0;
-        if (itemCount < layout.items.min || itemCount > layout.items.max) {
-            errors.push(`${location}: ${slide.layout} requires ${layout.items.min}-${layout.items.max} items; found ${itemCount}.`);
-        }
-
         if (wordCount(slide.title) > designContract.contentBudgets.titleWords) {
             errors.push(`${location}: title exceeds ${designContract.contentBudgets.titleWords} words.`);
         }
-        const bodyWords = wordCount(slide.subtitle) + (slide.items ?? []).reduce((sum, item) => sum + wordCount(item.body), 0);
+        const visibleTitle = slide.elements.some((item) => item.type === 'text' && ['display', 'title'].includes(item.role ?? item.typography));
+        if (!visibleTitle) errors.push(`${location}: add a visible text element with the display or title role.`);
+
+        const bodyWords = slide.elements
+            .filter((item) => item.type === 'text' && !['display', 'title'].includes(item.role ?? item.typography))
+            .reduce((sum, item) => sum + wordCount(item.text), 0);
         if (bodyWords > designContract.contentBudgets.bodyWords) {
             errors.push(`${location}: body copy uses ${bodyWords} words; budget is ${designContract.contentBudgets.bodyWords}.`);
         }
 
-        for (const item of slide.items ?? []) {
-            if (!item.asset) continue;
-            const absoluteAssetPath = path.resolve(kitRoot, item.asset.path);
+        const elementIds = new Set();
+        for (const item of slide.elements) {
+            if (reservedElementIds.has(item.id)) errors.push(`${location}: element id is reserved: ${item.id}.`);
+            if (elementIds.has(item.id)) errors.push(`${location}: duplicate element id: ${item.id}.`);
+            elementIds.add(item.id);
+
+            if (item.type === 'line') {
+                if (item.start.x === item.end.x && item.start.y === item.end.y) errors.push(`${location}: line ${item.id} has identical endpoints.`);
+                for (const [label, point] of [['start', item.start], ['end', item.end]]) {
+                    if (point.x > canvas.width || point.y > canvas.height) errors.push(`${location}: line ${item.id} ${label} is outside the ${canvas.width}x${canvas.height} canvas.`);
+                }
+            } else if (item.box.x + item.box.width > canvas.width || item.box.y + item.box.height > canvas.height) {
+                errors.push(`${location}: element ${item.id} is outside the ${canvas.width}x${canvas.height} canvas.`);
+            }
+
+            if (item.type === 'text' && item.style?.fontSize && item.style.fontSize < designContract.diagramQuality.minimumEffectiveFontSize) {
+                errors.push(`${location}: text ${item.id} is below the ${designContract.diagramQuality.minimumEffectiveFontSize}px minimum.`);
+            }
+
+            if (item.type === 'diagram') {
+                try {
+                    const diagramPath = resolveDiagramPath(item.diagramPath);
+                    await access(diagramPath);
+                    const diagram = await loadDiagram(diagramPath);
+                    const resolvedTheme = slide.theme ?? deck.theme;
+                    if (diagram.theme !== resolvedTheme) {
+                        errors.push(`${location}: diagram ${item.id} theme ${diagram.theme} does not match resolved slide theme ${resolvedTheme}.`);
+                    }
+                    const diagramResult = await validateDiagram(diagram);
+                    errors.push(...diagramResult.errors.map((error) => `${location}: diagram ${item.id}: ${error}`));
+                    warnings.push(...diagramResult.warnings.map((warning) => `${location}: diagram ${item.id}: ${warning}`));
+                } catch (error) {
+                    errors.push(`${location}: diagram ${item.id} could not be loaded: ${error.message}`);
+                }
+                continue;
+            }
+
+            if (item.type !== 'image') continue;
+            const absoluteAssetPath = path.resolve(kitRoot, item.path);
             if (!absoluteAssetPath.startsWith(`${assetsRoot}${path.sep}`)) {
-                errors.push(`${location}: asset escapes assets/: ${item.asset.path}`);
+                errors.push(`${location}: asset escapes assets/: ${item.path}`);
                 continue;
             }
             try {
                 await access(absoluteAssetPath);
             } catch {
-                errors.push(`${location}: asset does not exist: ${item.asset.path}`);
+                errors.push(`${location}: asset does not exist: ${item.path}`);
             }
             if (!['.svg', '.png', '.jpg', '.jpeg'].includes(path.extname(absoluteAssetPath).toLowerCase())) {
-                errors.push(`${location}: unsupported asset format; use SVG, PNG, or JPEG: ${item.asset.path}`);
+                errors.push(`${location}: unsupported asset format; use SVG, PNG, or JPEG: ${item.path}`);
             }
-            if (item.asset.kind !== 'fluent' && !item.asset.alt.trim()) {
-                errors.push(`${location}: ${item.asset.kind} assets require useful alt text: ${item.asset.path}`);
+            if (item.assetKind !== 'fluent' && !item.alt.trim()) {
+                errors.push(`${location}: ${item.assetKind} assets require useful alt text: ${item.path}`);
             }
-            if (item.asset.kind === 'azure' && !item.title) {
-                warnings.push(`${location}: Azure service assets should have a visible title label.`);
+            if (item.assetKind === 'azure') {
+                const hasGroupedLabel = item.group && slide.elements.some((candidate) => candidate.type === 'text' && candidate.group === item.group);
+                if (!hasGroupedLabel) warnings.push(`${location}: Azure asset ${item.id} should share a logical group with its visible label.`);
             }
-            if (item.asset.kind === 'azure' && !brandProfile.assetPolicy.allowProductIcons) {
+            if (item.assetKind === 'azure' && !brandProfile.assetPolicy.allowProductIcons) {
                 errors.push(`${location}: brand profile ${brandProfile.id} does not allow Microsoft product icons.`);
             }
-            if (item.asset.provenance === 'ai-generated') {
-                if (item.asset.kind !== 'image') {
+            if (item.provenance === 'ai-generated') {
+                if (item.assetKind !== 'image') {
                     errors.push(`${location}: AI-generated assets must use kind "image"; icons and product artwork cannot be generated.`);
                 }
-                if (!item.asset.path.startsWith('assets/generated/')) {
-                    errors.push(`${location}: AI-generated assets must remain under assets/generated/: ${item.asset.path}`);
+                if (!item.path.startsWith('assets/generated/')) {
+                    errors.push(`${location}: AI-generated assets must remain under assets/generated/: ${item.path}`);
                 }
-            }
-        }
-
-        if (slide.diagram) {
-            try {
-                const diagramPath = resolveDiagramPath(slide.diagram.path);
-                await access(diagramPath);
-                const diagram = await loadDiagram(diagramPath);
-                const resolvedTheme = slide.theme ?? deck.theme;
-                if (diagram.theme !== resolvedTheme) {
-                    errors.push(`${location}: diagram theme ${diagram.theme} does not match resolved slide theme ${resolvedTheme}.`);
-                }
-                const diagramResult = await validateDiagram(diagram);
-                errors.push(...diagramResult.errors.map((error) => `${location}: diagram: ${error}`));
-                warnings.push(...diagramResult.warnings.map((warning) => `${location}: diagram: ${warning}`));
-            } catch (error) {
-                errors.push(`${location}: diagram could not be loaded: ${error.message}`);
             }
         }
     }
@@ -172,12 +191,24 @@ const inspectPage = async (page, diagramQuality) => {
         const sharpSceneCorners = [...document.querySelectorAll('.scene-shape[data-scene-element]:not([data-scene-element="background"])')]
             .filter((element) => Number.parseFloat(getComputedStyle(element).borderTopLeftRadius) < quality.minimumCornerRadius)
             .map((element) => element.getAttribute('data-scene-element'));
-        const items = [...document.querySelectorAll('[data-slide-item]')];
-        const itemBounds = items.map((element) => ({
-            element,
-            rect: element.getBoundingClientRect(),
-            label: element.querySelector('h2')?.textContent?.trim() || element.textContent.trim().slice(0, 60),
-        }));
+        const overlapCandidates = [...document.querySelectorAll('[data-scene-element]')]
+            .filter((element) => !['background', 'footer-confidentiality'].includes(element.getAttribute('data-scene-element')))
+            .filter((element) => !element.classList.contains('scene-line'))
+            .filter((element) => !element.classList.contains('role-decorative'));
+        const groupedBounds = new Map();
+        for (const element of overlapCandidates) {
+            const id = element.getAttribute('data-scene-element');
+            const group = element.getAttribute('data-scene-group') || id;
+            const rect = element.getBoundingClientRect();
+            const current = groupedBounds.get(group);
+            groupedBounds.set(group, current ? {
+                left: Math.min(current.left, rect.left),
+                top: Math.min(current.top, rect.top),
+                right: Math.max(current.right, rect.right),
+                bottom: Math.max(current.bottom, rect.bottom),
+            } : { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+        }
+        const itemBounds = [...groupedBounds].map(([label, rect]) => ({ label, rect }));
 
         for (const element of document.querySelectorAll('.scene-text, h1, h2, p, .caption, .eyebrow, .stat')) {
             const style = getComputedStyle(element);
@@ -200,17 +231,6 @@ const inspectPage = async (page, diagramQuality) => {
                 rect.bottom > slideBounds.bottom + tolerance
             ) {
                 outside.push(element.getAttribute('data-scene-element'));
-            }
-        }
-
-        for (const { rect, label } of itemBounds) {
-            if (
-                rect.left < slideBounds.left - tolerance ||
-                rect.top < slideBounds.top - tolerance ||
-                rect.right > slideBounds.right + tolerance ||
-                rect.bottom > slideBounds.bottom + tolerance
-            ) {
-                outside.push(label);
             }
         }
 
@@ -255,6 +275,22 @@ const inspectPage = async (page, diagramQuality) => {
                     const width = Math.min(left.rect.right, right.rect.right) - Math.max(left.rect.left, right.rect.left);
                     const height = Math.min(left.rect.bottom, right.rect.bottom) - Math.max(left.rect.top, right.rect.top);
                     if (width > tolerance && height > tolerance) itemCollisions.push(`${left.id} / ${right.id}`);
+                }
+            }
+            const nodeShapeBounds = [...svg.querySelectorAll('[data-diagram-node]')].map((element) => ({
+                id: element.getAttribute('data-diagram-node'),
+                rect: element.querySelector(':scope > .node-shape').getBoundingClientRect(),
+            }));
+            const edgeLabelBounds = [...svg.querySelectorAll('[data-diagram-edge-label]')].map((element) => ({
+                id: element.getAttribute('data-diagram-edge-label'),
+                rect: element.querySelector(':scope > rect').getBoundingClientRect(),
+            }));
+            const edgeLabelNodeCollisions = [];
+            for (const label of edgeLabelBounds) {
+                for (const node of nodeShapeBounds) {
+                    const width = Math.min(label.rect.right, node.rect.right) - Math.max(label.rect.left, node.rect.left);
+                    const height = Math.min(label.rect.bottom, node.rect.bottom) - Math.max(label.rect.top, node.rect.top);
+                    if (width > tolerance && height > tolerance) edgeLabelNodeCollisions.push(`${label.id} / ${node.id}`);
                 }
             }
             const nodeContentSpacingViolations = [];
@@ -338,6 +374,7 @@ const inspectPage = async (page, diagramQuality) => {
                 shortLayerFlows,
                 sharpCornerRectangles,
                 itemCollisions,
+                edgeLabelNodeCollisions,
                 crossings,
             };
         });
@@ -420,7 +457,7 @@ const main = async () => {
             if (inspection.geometry.outside.length) slideErrors.push(`Items outside slide: ${inspection.geometry.outside.join(', ')}`);
             if (inspection.geometry.clippedText.length) slideErrors.push(`Clipped text: ${inspection.geometry.clippedText.join(' | ')}`);
             if (inspection.geometry.sharpSceneCorners.length) slideErrors.push(`Scene shapes below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${inspection.geometry.sharpSceneCorners.join(', ')}`);
-            if (inspection.geometry.overlaps.length) slideErrors.push(`Overlapping layout items: ${inspection.geometry.overlaps.join(', ')}`);
+            if (inspection.geometry.overlaps.length) slideErrors.push(`Overlapping elements: ${inspection.geometry.overlaps.join(', ')}`);
             for (const diagram of inspection.geometry.diagrams) {
                 if (diagram.viewBox.width !== designContract.diagramQuality.canvas.width || diagram.viewBox.height !== designContract.diagramQuality.canvas.height) {
                     slideErrors.push(`Embedded diagram must use a fixed ${designContract.diagramQuality.canvas.width}x${designContract.diagramQuality.canvas.height} viewBox.`);
@@ -432,6 +469,7 @@ const main = async () => {
                 if (diagram.shortLayerFlows.length) slideErrors.push(`Layer connectors without a visible tail: ${diagram.shortLayerFlows.map((flow) => `${flow.id} (${flow.length.toFixed(1)}px)`).join(', ')}`);
                 if (diagram.sharpCornerRectangles.length) slideErrors.push(`Diagram rectangles below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${diagram.sharpCornerRectangles.join(', ')}`);
                 if (diagram.itemCollisions.length) slideErrors.push(`Overlapping diagram items: ${diagram.itemCollisions.join(', ')}`);
+                if (diagram.edgeLabelNodeCollisions.length) slideErrors.push(`Diagram edge labels overlap nodes: ${diagram.edgeLabelNodeCollisions.join(', ')}`);
                 if (diagram.crossings.length) slideErrors.push(`Crossing diagram connectors: ${diagram.crossings.join(', ')}`);
             }
             if (inspection.brokenImages.length) slideErrors.push(`Broken images: ${inspection.brokenImages.join(', ')}`);

@@ -1,0 +1,234 @@
+{
+    "schemaVersion": 1,
+    "id": "fluent-ui-foundation",
+    "description": "Renderer-neutral snapshot of stable Fluent UI foundation tokens suitable for static presentation frames. Presentation typography remains defined by the brand profile for projected readability.",
+    "upstream": {
+        "repository": "https://github.com/microsoft/fluentui",
+        "package": "@fluentui/tokens",
+        "packageVersion": "1.0.0-alpha.24",
+        "revision": "203c5b8d8eafa443f78665e66412668205529b65",
+        "license": "MIT",
+        "sourcePaths": [
+            "packages/tokens/src/alias/darkColor.ts",
+            "packages/tokens/src/alias/lightColor.ts",
+            "packages/tokens/src/global/borderRadius.ts",
+            "packages/tokens/src/global/brandColors.ts",
+            "packages/tokens/src/global/fonts.ts",
+            "packages/tokens/src/global/spacings.ts",
+            "packages/tokens/src/global/strokeWidths.ts",
+            "packages/tokens/src/global/typographyStyles.ts",
+            "packages/tokens/src/themes/web/darkTheme.ts",
+            "packages/tokens/src/themes/web/lightTheme.ts",
+            "packages/tokens/src/utils/shadows.ts"
+        ]
+    },
+    "units": {
+        "length": "px"
+    },
+    "spacing": {
+        "none": 0,
+        "xxs": 2,
+        "xs": 4,
+        "sNudge": 6,
+        "s": 8,
+        "mNudge": 10,
+        "m": 12,
+        "l": 16,
+        "xl": 20,
+        "xxl": 24,
+        "xxxl": 32
+    },
+    "borderRadius": {
+        "none": 0,
+        "small": 2,
+        "medium": 4,
+        "large": 6,
+        "xLarge": 8,
+        "2xLarge": 12,
+        "3xLarge": 16,
+        "4xLarge": 24,
+        "5xLarge": 32,
+        "6xLarge": 40,
+        "circular": 10000
+    },
+    "strokeWidth": {
+        "thin": 1,
+        "thick": 2,
+        "thicker": 3,
+        "thickest": 4
+    },
+    "typography": {
+        "fontFamilies": {
+            "base": "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif",
+            "monospace": "Consolas, 'Courier New', Courier, monospace",
+            "numeric": "Bahnschrift, 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif"
+        },
+        "fontSizes": {
+            "base100": 10,
+            "base200": 12,
+            "base300": 14,
+            "base400": 16,
+            "base500": 20,
+            "base600": 24,
+            "hero700": 28,
+            "hero800": 32,
+            "hero900": 40,
+            "hero1000": 68
+        },
+        "lineHeights": {
+            "base100": 14,
+            "base200": 16,
+            "base300": 20,
+            "base400": 22,
+            "base500": 28,
+            "base600": 32,
+            "hero700": 36,
+            "hero800": 40,
+            "hero900": 52,
+            "hero1000": 92
+        },
+        "fontWeights": {
+            "regular": 400,
+            "medium": 500,
+            "semibold": 600,
+            "bold": 700
+        },
+        "roles": {
+            "body1": {
+                "fontSize": "base300",
+                "fontWeight": "regular",
+                "lineHeight": "base300"
+            },
+            "body1Strong": {
+                "fontSize": "base300",
+                "fontWeight": "semibold",
+                "lineHeight": "base300"
+            },
+            "body1Stronger": {
+                "fontSize": "base300",
+                "fontWeight": "bold",
+                "lineHeight": "base300"
+            },
+            "body2": {
+                "fontSize": "base400",
+                "fontWeight": "regular",
+                "lineHeight": "base400"
+            },
+            "caption1": {
+                "fontSize": "base200",
+                "fontWeight": "regular",
+                "lineHeight": "base200"
+            },
+            "caption1Strong": {
+                "fontSize": "base200",
+                "fontWeight": "semibold",
+                "lineHeight": "base200"
+            },
+            "caption1Stronger": {
+                "fontSize": "base200",
+                "fontWeight": "bold",
+                "lineHeight": "base200"
+            },
+            "caption2": {
+                "fontSize": "base100",
+                "fontWeight": "regular",
+                "lineHeight": "base100"
+            },
+            "caption2Strong": {
+                "fontSize": "base100",
+                "fontWeight": "semibold",
+                "lineHeight": "base100"
+            },
+            "subtitle1": {
+                "fontSize": "base500",
+                "fontWeight": "semibold",
+                "lineHeight": "base500"
+            },
+            "subtitle2": {
+                "fontSize": "base400",
+                "fontWeight": "semibold",
+                "lineHeight": "base400"
+            },
+            "subtitle2Stronger": {
+                "fontSize": "base400",
+                "fontWeight": "bold",
+                "lineHeight": "base400"
+            },
+            "title1": {
+                "fontSize": "hero800",
+                "fontWeight": "semibold",
+                "lineHeight": "hero800"
+            },
+            "title2": {
+                "fontSize": "hero700",
+                "fontWeight": "semibold",
+                "lineHeight": "hero700"
+            },
+            "title3": {
+                "fontSize": "base600",
+                "fontWeight": "semibold",
+                "lineHeight": "base600"
+            },
+            "largeTitle": {
+                "fontSize": "hero900",
+                "fontWeight": "semibold",
+                "lineHeight": "hero900"
+            },
+            "display": {
+                "fontSize": "hero1000",
+                "fontWeight": "semibold",
+                "lineHeight": "hero1000"
+            }
+        }
+    },
+    "brandWeb": {
+        "10": "#061724",
+        "20": "#082338",
+        "30": "#0A2E4A",
+        "40": "#0C3B5E",
+        "50": "#0E4775",
+        "60": "#0F548C",
+        "70": "#115EA3",
+        "80": "#0F6CBD",
+        "90": "#2886DE",
+        "100": "#479EF5",
+        "110": "#62ABF5",
+        "120": "#77B7F7",
+        "130": "#96C6FA",
+        "140": "#B4D6FA",
+        "150": "#CFE4FA",
+        "160": "#EBF3FC"
+    },
+    "shadows": {
+        "levels": [
+            2,
+            4,
+            8,
+            16,
+            28,
+            64
+        ],
+        "formula": {
+            "2": "0 0 2px {ambient}, 0 1px 2px {key}",
+            "4": "0 0 2px {ambient}, 0 2px 4px {key}",
+            "8": "0 0 2px {ambient}, 0 4px 8px {key}",
+            "16": "0 0 2px {ambient}, 0 8px 16px {key}",
+            "28": "0 0 8px {ambient}, 0 14px 28px {key}",
+            "64": "0 0 8px {ambient}, 0 32px 64px {key}"
+        },
+        "colors": {
+            "light": {
+                "ambient": "rgba(0,0,0,0.12)",
+                "key": "rgba(0,0,0,0.14)"
+            },
+            "dark": {
+                "ambient": "rgba(0,0,0,0.24)",
+                "key": "rgba(0,0,0,0.28)"
+            },
+            "brand": {
+                "ambient": "rgba(0,0,0,0.30)",
+                "key": "rgba(0,0,0,0.25)"
+            }
+        }
+    }
+}

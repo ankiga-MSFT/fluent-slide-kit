@@ -18,34 +18,34 @@ organization brand assets only when the user supplies an approved source and app
 
 ## Architecture
 
-- Author decks as JSON under `decks/`, conforming to `schemas/deck.schema.json`.
+- Author freeform compositions as JSON under `decks/`, conforming to `schemas/composition.schema.json`.
 - Treat JSON under `decks/` and top-level `diagrams/` as local request sources; they are Git-ignored. Only reusable fixtures under `examples/` and `diagrams/templates/` belong in version control.
 - Select a profile under `design/brand-profiles/`; public output defaults to `fluent-aligned` and must
 	not be described as Microsoft brand compliant.
-- Author architecture and workflow graphs under `diagrams/`, conforming to `schemas/diagram.schema.json`.
+- Compose slides directly from positioned text, shape, line, image, and optional diagram elements. Use stable ids, semantic tokens, explicit z-order, and logical groups for intentionally overlapping elements.
+- Author a structured graph under `diagrams/`, conforming to `schemas/diagram.schema.json`, only when topology semantics or graph-specific validation justify it.
 - Set `diagramType: flow` when sequence and connectors carry the meaning. Set
 	`diagramType: layered-architecture` when tiers, channels, capabilities, or cross-cutting concerns carry it.
-- Choose only layouts listed in `templates/layouts.json`.
 - Treat the selected brand profile, `design/design-contract.json`, and the compiled scene as source of truth.
 - Compile one scene for both renderers. Never convert arbitrary HTML into PowerPoint.
 - Generate standalone HTML with `npm run deck:render -- <deck.json>`; do not hand-edit generated slides.
 - Generate native PowerPoint with `npm run deck:export:pptx -- <deck.json>`; do not package full-slide screenshots.
 - Generate standalone SVG with `npm run diagram:render -- <diagram.json>`; do not hand-edit generated diagrams.
 - Put final handoff bundles under `deliverables/<deck-name>/`. Reserve `.slide-artifacts/` for intermediate validation and previews.
-- `templates/slide-template.html` is an escape hatch for a one-off slide, not the default workflow.
 
 ## Required workflow
 
-1. State one takeaway per slide and select a layout from the content shape.
-2. Resolve every visual with `npm run assets:search -- "<concept>" --json`.
-3. Add exact returned paths to the deck JSON. Never guess an asset filename or invent SVG geometry.
-4. Run `npm run deck:build -- <deck.json> --preview` after every substantive deck change.
-5. Inspect every HTML and available PowerPoint screenshot and repair hierarchy or composition issues.
-6. Verify HTML and native PPTX validators pass; provide the editable `.pptx`, HTML, and previews.
+1. State one takeaway per slide and choose a visual argument that makes it immediately legible.
+2. Decide whether direct primitives are sufficient or a structured diagram is necessary for topology semantics.
+3. Resolve every visual with `npm run assets:search -- "<concept>" --json` and use exact returned paths.
+4. Author explicit geometry on the fixed canvas; never guess asset filenames or invent SVG geometry.
+5. Run `npm run deck:build -- <deck.json> --preview` after every substantive composition change.
+6. Inspect every HTML and available PowerPoint screenshot and repair hierarchy or composition issues.
+7. Verify HTML and native PPTX validators pass; provide the editable `.pptx`, HTML, and previews.
 
 For branching, merging, decisions, labeled connectors, boundaries, swim lanes, or cycles, use the
-diagram schema and `fluent-diagram` skill. The `architecture` slide layout is a simple linear sequence;
-the `diagram` layout embeds a validated flow or layered architecture.
+diagram schema and `fluent-diagram` skill. Embed the validated source as a `diagram` element within the
+otherwise freeform composition. Keep simple sequences native with shape, text, image, and line elements.
 
 ## Content rules
 
@@ -74,7 +74,7 @@ the `diagram` layout embeds a validated flow or layered architecture.
 
 ## Quality gate
 
-The deck, diagram, and PPTX validators must pass schema, semantic graph checks, brand policy, layout constraints, content
+The composition, diagram, and PPTX validators must pass schema, semantic graph checks, brand policy, content
 budgets, asset existence, font readiness, broken-image checks, canvas geometry, top-level overlap checks,
 embedded SVG type and text bounds, diagram collisions and connector crossings, native named Office-object
 coverage, speaker notes, and serious WCAG issues. A passing validator does not replace screenshot review.

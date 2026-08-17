@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
 import { loadDiagram, resolveDiagramPath } from './diagram-core.mjs';
-import { compileDeckScene, kitRoot } from './scene-core.mjs';
+import { compileDeckScene, kitRoot } from './composition-core.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -36,6 +36,7 @@ const main = async () => {
     const htmlDirectory = path.join(options.output, 'html');
     const pptxPath = path.join(options.output, `${path.basename(options.input, path.extname(options.input))}.pptx`);
     const pptxValidationDirectory = path.join(options.output, 'pptx-validation');
+    await rm(options.output, { recursive: true, force: true });
     await mkdir(options.output, { recursive: true });
 
     await runNode('validate-deck.mjs', [options.input, '--output', htmlDirectory]);
@@ -48,13 +49,13 @@ const main = async () => {
     const deck = JSON.parse(await readFile(options.input, 'utf8'));
     const scene = await compileDeckScene(deck, { source: path.relative(kitRoot, options.input).split(path.sep).join('/') });
     const slides = [];
-    for (const slide of deck.slides) {
+    for (const slide of scene.slides) {
         let powerPointMode = 'native-shapes';
-        if (slide.diagram) {
-            const diagram = await loadDiagram(resolveDiagramPath(slide.diagram.path));
-            powerPointMode = diagram.diagramType === 'layered-architecture' ? 'native-shapes' : 'validated-graphic';
+        for (const element of slide.elements.filter((item) => item.type === 'diagram')) {
+            const diagram = await loadDiagram(resolveDiagramPath(element.diagramPath));
+            if (diagram.diagramType === 'flow') powerPointMode = 'validated-graphic';
         }
-        slides.push({ id: slide.id, layout: slide.layout, powerPointMode });
+        slides.push({ id: slide.id, powerPointMode });
     }
     const manifest = {
         schemaVersion: 1,
@@ -72,7 +73,7 @@ const main = async () => {
         },
         slides,
         limitations: slides.some((slide) => slide.powerPointMode === 'validated-graphic')
-            ? ['Complex flow diagrams are embedded as validated graphics; surrounding slide content remains editable.']
+            ? ['Opt-in complex flow elements are embedded as validated graphics; all other authored primitives remain native Office objects.']
             : [],
     };
     await writeFile(path.join(options.output, 'delivery-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

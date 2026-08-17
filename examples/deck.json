@@ -7,97 +7,596 @@
     "slides": [
         {
             "id": "opening",
-            "layout": "title",
-            "takeaway": "The kit turns structured content into consistent, reviewable HTML and PowerPoint slides.",
-            "eyebrow": "Fluent slide kit",
-            "title": "Structured content. Consistent slides.",
-            "subtitle": "A deterministic path from an AI-authored specification to HTML and editable PowerPoint."
-        },
-        {
-            "id": "quality-system",
-            "layout": "cards",
-            "takeaway": "Three controls keep generated slides useful and visually coherent.",
-            "eyebrow": "Quality system",
-            "title": "Guardrails where they matter",
-            "subtitle": "Shared rules handle visual consistency while the author focuses on the message.",
-            "items": [
+            "title": "Composition without templates",
+            "takeaway": "The kit gives the author spatial freedom while preserving shared assets, tokens, validation, and native PowerPoint output.",
+            "background": "$brandStrong",
+            "footerColor": "$onBrand",
+            "elements": [
                 {
-                    "title": "Grounded assets",
-                    "body": "Search local catalogs and use exact Fluent or Azure files.",
-                    "tone": "brand",
-                    "asset": {
-                        "kind": "fluent",
-                        "path": "assets/fluent-system-icons/svg/regular/shield-checkmark.svg",
-                        "alt": ""
+                    "id": "accent",
+                    "type": "shape",
+                    "role": "decorative",
+                    "group": "opening-message",
+                    "z": 2,
+                    "box": {
+                        "x": 112,
+                        "y": 286,
+                        "width": 12,
+                        "height": 410
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$onBrand"
                     }
                 },
                 {
-                    "title": "Content structure",
-                    "body": "Select layouts from message shape instead of drawing arbitrary containers.",
-                    "asset": {
-                        "kind": "fluent",
-                        "path": "assets/fluent-system-icons/svg/regular/data-trending.svg",
-                        "alt": ""
+                    "id": "eyebrow",
+                    "type": "text",
+                    "role": "eyebrow",
+                    "group": "opening-message",
+                    "z": 10,
+                    "box": {
+                        "x": 168,
+                        "y": 286,
+                        "width": 1200,
+                        "height": 40
+                    },
+                    "text": "FLUENT SLIDE KIT",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$onBrand",
+                        "fontWeight": 600
                     }
                 },
                 {
-                    "title": "Executable review",
-                    "body": "Check overflow, missing assets, contrast and screenshots before handoff.",
-                    "tone": "success",
-                    "asset": {
-                        "kind": "fluent",
-                        "path": "assets/fluent-system-icons/svg/regular/checkmark-circle.svg",
-                        "alt": ""
+                    "id": "title",
+                    "type": "text",
+                    "role": "display",
+                    "group": "opening-message",
+                    "z": 10,
+                    "box": {
+                        "x": 168,
+                        "y": 354,
+                        "width": 1450,
+                        "height": 190
+                    },
+                    "text": "Composition without templates",
+                    "typography": "display",
+                    "style": {
+                        "color": "$onBrand",
+                        "fontSize": 78
+                    }
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "group": "opening-message",
+                    "z": 10,
+                    "box": {
+                        "x": 168,
+                        "y": 574,
+                        "width": 1320,
+                        "height": 120
+                    },
+                    "text": "Freeform scene primitives. Shared Fluent tokens. Editable PowerPoint.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$onBrand"
                     }
                 }
-            ]
+            ],
+            "notes": "This opening demonstrates that the author controls geometry directly. The compiler contributes brand-token resolution, required metadata, and the fixed confidentiality footer."
         },
         {
-            "id": "azure-flow",
-            "layout": "architecture",
-            "takeaway": "Official service icons clarify a simple edge-to-data Azure flow.",
-            "eyebrow": "Architecture example",
-            "title": "A readable service path",
-            "subtitle": "The ordered-flow layout is intentionally constrained for presentation clarity.",
-            "items": [
+            "id": "quality-contract",
+            "title": "Freedom sits inside a quality contract",
+            "takeaway": "Composition is freeform; grounding, accessibility, geometry, and native editability remain enforced.",
+            "elements": [
                 {
-                    "title": "Front Door",
-                    "body": "Global entry point",
-                    "asset": {
-                        "kind": "azure",
-                        "path": "assets/azure-public-service-icons/svg/networking/10073-icon-service-Front-Door-and-CDN-Profiles.svg",
-                        "alt": "Azure Front Door and CDN Profiles"
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1696,
+                        "height": 70
+                    },
+                    "text": "Freedom sits inside a quality contract",
+                    "typography": "title"
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 72
+                    },
+                    "text": "The author decides the composition; the system verifies the result.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
                     }
                 },
                 {
-                    "title": "AKS",
-                    "body": "Application workloads",
-                    "asset": {
-                        "kind": "azure",
-                        "path": "assets/azure-public-service-icons/svg/containers/10023-icon-service-Kubernetes-Services.svg",
-                        "alt": "Azure Kubernetes Service"
+                    "id": "assets-card",
+                    "type": "shape",
+                    "group": "assets",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 302,
+                        "width": 520,
+                        "height": 500
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 2
                     }
                 },
                 {
-                    "title": "Cosmos DB",
-                    "body": "Operational data",
-                    "asset": {
-                        "kind": "azure",
-                        "path": "assets/azure-public-service-icons/svg/databases/10121-icon-service-Azure-Cosmos-DB.svg",
-                        "alt": "Azure Cosmos DB"
+                    "id": "assets-icon",
+                    "type": "image",
+                    "group": "assets",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 346,
+                        "width": 64,
+                        "height": 64
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/shield-checkmark.svg",
+                    "assetKind": "fluent",
+                    "alt": "",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "assets-title",
+                    "type": "text",
+                    "group": "assets",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 448,
+                        "width": 440,
+                        "height": 60
+                    },
+                    "text": "Grounded assets",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "assets-body",
+                    "type": "text",
+                    "group": "assets",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 540,
+                        "width": 420,
+                        "height": 160
+                    },
+                    "text": "Use supplied Fluent, Azure, and approved organization artwork with exact provenance.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "composition-card",
+                    "type": "shape",
+                    "group": "composition",
+                    "z": 4,
+                    "box": {
+                        "x": 700,
+                        "y": 302,
+                        "width": 520,
+                        "height": 500
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1
+                    }
+                },
+                {
+                    "id": "composition-icon",
+                    "type": "image",
+                    "group": "composition",
+                    "z": 10,
+                    "box": {
+                        "x": 740,
+                        "y": 346,
+                        "width": 64,
+                        "height": 64
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/data-trending.svg",
+                    "assetKind": "fluent",
+                    "alt": "",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$foreground"
+                    }
+                },
+                {
+                    "id": "composition-title",
+                    "type": "text",
+                    "group": "composition",
+                    "z": 10,
+                    "box": {
+                        "x": 740,
+                        "y": 448,
+                        "width": 440,
+                        "height": 60
+                    },
+                    "text": "Free composition",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "composition-body",
+                    "type": "text",
+                    "group": "composition",
+                    "z": 10,
+                    "box": {
+                        "x": 740,
+                        "y": 540,
+                        "width": 420,
+                        "height": 160
+                    },
+                    "text": "Place text, shapes, imagery, and connectors wherever the executive story needs them.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "validation-card",
+                    "type": "shape",
+                    "group": "validation",
+                    "z": 4,
+                    "box": {
+                        "x": 1288,
+                        "y": 302,
+                        "width": 520,
+                        "height": 500
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$successSubtle",
+                        "stroke": "$success",
+                        "strokeWidth": 2
+                    }
+                },
+                {
+                    "id": "validation-icon",
+                    "type": "image",
+                    "group": "validation",
+                    "z": 10,
+                    "box": {
+                        "x": 1328,
+                        "y": 346,
+                        "width": 64,
+                        "height": 64
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/checkmark-circle.svg",
+                    "assetKind": "fluent",
+                    "alt": "",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$success"
+                    }
+                },
+                {
+                    "id": "validation-title",
+                    "type": "text",
+                    "group": "validation",
+                    "z": 10,
+                    "box": {
+                        "x": 1328,
+                        "y": 448,
+                        "width": 440,
+                        "height": 60
+                    },
+                    "text": "Executable review",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "validation-body",
+                    "type": "text",
+                    "group": "validation",
+                    "z": 10,
+                    "box": {
+                        "x": 1328,
+                        "y": 540,
+                        "width": 420,
+                        "height": 160
+                    },
+                    "text": "Reject clipping, unintended overlap, inaccessible output, missing assets, or incomplete Office objects.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
                     }
                 }
-            ]
+            ],
+            "notes": "The source contains no layout id or item-count rule. Logical groups identify intentional overlap inside each card while allowing the validator to detect collisions between cards."
         },
         {
-            "id": "azure-workflow",
-            "layout": "diagram",
-            "takeaway": "Long-running requests move to a durable queue while direct writes retain a short synchronous path.",
-            "title": "Long-running work branches without losing control",
-            "diagram": {
-                "path": "diagrams/templates/flow.json",
-                "alt": "Rightward Azure request flow across three lanes: Front Door sends requests to AKS, then a decision routes direct writes to Cosmos DB or asynchronous work through a durable queue."
-            }
+            "id": "azure-journey",
+            "title": "Native primitives clarify the Azure journey",
+            "takeaway": "Official icons, direct connectors, and concise labels remain individually editable in PowerPoint.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1696,
+                        "height": 70
+                    },
+                    "text": "Native primitives clarify the Azure journey",
+                    "typography": "title"
+                },
+                {
+                    "id": "front-door-to-aks",
+                    "type": "line",
+                    "role": "connector",
+                    "z": 5,
+                    "start": {
+                        "x": 584,
+                        "y": 516
+                    },
+                    "end": {
+                        "x": 704,
+                        "y": 516
+                    },
+                    "style": {
+                        "color": "$brand",
+                        "width": 4,
+                        "endArrow": true
+                    }
+                },
+                {
+                    "id": "aks-to-cosmos",
+                    "type": "line",
+                    "role": "connector",
+                    "z": 5,
+                    "start": {
+                        "x": 1216,
+                        "y": 516
+                    },
+                    "end": {
+                        "x": 1336,
+                        "y": 516
+                    },
+                    "style": {
+                        "color": "$brand",
+                        "width": 4,
+                        "endArrow": true
+                    }
+                },
+                {
+                    "id": "front-door-card",
+                    "type": "shape",
+                    "group": "front-door",
+                    "z": 8,
+                    "box": {
+                        "x": 112,
+                        "y": 314,
+                        "width": 472,
+                        "height": 404
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$surface",
+                        "stroke": "$stroke",
+                        "strokeWidth": 2
+                    }
+                },
+                {
+                    "id": "front-door-icon",
+                    "type": "image",
+                    "group": "front-door",
+                    "z": 10,
+                    "box": {
+                        "x": 288,
+                        "y": 358,
+                        "width": 120,
+                        "height": 120
+                    },
+                    "path": "assets/azure-public-service-icons/svg/networking/10073-icon-service-Front-Door-and-CDN-Profiles.svg",
+                    "assetKind": "azure",
+                    "alt": "Azure Front Door and CDN Profiles",
+                    "provenance": "local-catalog"
+                },
+                {
+                    "id": "front-door-title",
+                    "type": "text",
+                    "group": "front-door",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 510,
+                        "width": 392,
+                        "height": 50
+                    },
+                    "text": "Azure Front Door",
+                    "typography": "itemTitle",
+                    "style": {
+                        "align": "center"
+                    }
+                },
+                {
+                    "id": "front-door-body",
+                    "type": "text",
+                    "group": "front-door",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 590,
+                        "width": 392,
+                        "height": 60
+                    },
+                    "text": "Global request entry",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary",
+                        "align": "center"
+                    }
+                },
+                {
+                    "id": "aks-card",
+                    "type": "shape",
+                    "group": "aks",
+                    "z": 8,
+                    "box": {
+                        "x": 704,
+                        "y": 270,
+                        "width": 512,
+                        "height": 492
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 3
+                    }
+                },
+                {
+                    "id": "aks-icon",
+                    "type": "image",
+                    "group": "aks",
+                    "z": 10,
+                    "box": {
+                        "x": 890,
+                        "y": 330,
+                        "width": 140,
+                        "height": 140
+                    },
+                    "path": "assets/azure-public-service-icons/svg/containers/10023-icon-service-Kubernetes-Services.svg",
+                    "assetKind": "azure",
+                    "alt": "Azure Kubernetes Service",
+                    "provenance": "local-catalog"
+                },
+                {
+                    "id": "aks-title",
+                    "type": "text",
+                    "group": "aks",
+                    "z": 10,
+                    "box": {
+                        "x": 744,
+                        "y": 516,
+                        "width": 432,
+                        "height": 80
+                    },
+                    "text": "Azure Kubernetes Service",
+                    "typography": "itemTitle",
+                    "style": {
+                        "align": "center"
+                    }
+                },
+                {
+                    "id": "aks-body",
+                    "type": "text",
+                    "group": "aks",
+                    "z": 10,
+                    "box": {
+                        "x": 744,
+                        "y": 624,
+                        "width": 432,
+                        "height": 60
+                    },
+                    "text": "Application workloads",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary",
+                        "align": "center"
+                    }
+                },
+                {
+                    "id": "cosmos-card",
+                    "type": "shape",
+                    "group": "cosmos",
+                    "z": 8,
+                    "box": {
+                        "x": 1336,
+                        "y": 314,
+                        "width": 472,
+                        "height": 404
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$surface",
+                        "stroke": "$stroke",
+                        "strokeWidth": 2
+                    }
+                },
+                {
+                    "id": "cosmos-icon",
+                    "type": "image",
+                    "group": "cosmos",
+                    "z": 10,
+                    "box": {
+                        "x": 1512,
+                        "y": 358,
+                        "width": 120,
+                        "height": 120
+                    },
+                    "path": "assets/azure-public-service-icons/svg/databases/10121-icon-service-Azure-Cosmos-DB.svg",
+                    "assetKind": "azure",
+                    "alt": "Azure Cosmos DB",
+                    "provenance": "local-catalog"
+                },
+                {
+                    "id": "cosmos-title",
+                    "type": "text",
+                    "group": "cosmos",
+                    "z": 10,
+                    "box": {
+                        "x": 1376,
+                        "y": 510,
+                        "width": 392,
+                        "height": 50
+                    },
+                    "text": "Azure Cosmos DB",
+                    "typography": "itemTitle",
+                    "style": {
+                        "align": "center"
+                    }
+                },
+                {
+                    "id": "cosmos-body",
+                    "type": "text",
+                    "group": "cosmos",
+                    "z": 10,
+                    "box": {
+                        "x": 1376,
+                        "y": 590,
+                        "width": 392,
+                        "height": 60
+                    },
+                    "text": "Operational data",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary",
+                        "align": "center"
+                    }
+                }
+            ],
+            "notes": "Every service card, icon, label, and connector is a separate named Office object. The composition is authored directly rather than selected from an architecture layout."
         }
     ]
 }

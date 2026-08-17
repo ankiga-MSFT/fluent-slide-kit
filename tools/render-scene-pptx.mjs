@@ -3,11 +3,12 @@ import path from 'node:path';
 import { chromium } from '@playwright/test';
 import PptxGenJS from 'pptxgenjs';
 import { compileLayeredArchitectureDiagram, loadDiagram, renderDiagramFile, resolveDiagramPath } from './diagram-core.mjs';
-import { kitRoot } from './scene-core.mjs';
+import { kitRoot } from './composition-core.mjs';
 
 const assetsRoot = path.join(kitRoot, 'assets');
 const PX_PER_INCH = 144;
 const PX_PER_POINT = 2;
+const DEFAULT_CORNER_RADIUS = 8;
 
 const inches = (value) => value / PX_PER_INCH;
 const points = (value) => value / PX_PER_POINT;
@@ -60,7 +61,9 @@ const addText = (pptxSlide, sceneSlide, element) => {
         fontFace,
         fontSize: points(style.fontSize ?? 24),
         bold: (style.fontWeight ?? 400) >= 700,
+        italic: style.italic ?? false,
         color: color(style.color ?? '#242424'),
+        transparency: style.opacity === undefined ? undefined : Math.round((1 - style.opacity) * 100),
         align: style.align ?? 'left',
         valign: style.verticalAlign ?? 'top',
         margin: 0,
@@ -68,12 +71,13 @@ const addText = (pptxSlide, sceneSlide, element) => {
         fit: 'none',
         ...(style.lineSpacing ? { lineSpacing: style.lineSpacing } : { lineSpacingMultiple: style.lineHeight ?? 1.25 }),
         hyperlink: style.hyperlink ? { url: style.hyperlink } : undefined,
+        rotate: style.rotation,
         isTextBox: true,
     });
 };
 
 const shapeName = (pptx, element) => {
-    if (element.id === 'background') return pptx.ShapeType.rect;
+    if (element.shape === 'rect') return pptx.ShapeType.rect;
     if (element.shape === 'ellipse') return pptx.ShapeType.ellipse;
     return pptx.ShapeType.roundRect;
 };
@@ -81,16 +85,20 @@ const shapeName = (pptx, element) => {
 const addShape = (pptx, pptxSlide, sceneSlide, element) => {
     const style = element.style ?? {};
     const lineWidth = style.strokeWidth ?? 0;
-    pptxSlide.addShape(shapeName(pptx, element), {
+    const shape = shapeName(pptx, element);
+    pptxSlide.addShape(shape, {
         ...position(element.box),
         objectName: objectName(sceneSlide, element),
         fill: style.fill && style.fill !== 'transparent'
-            ? { color: color(style.fill) }
+            ? { color: color(style.fill), transparency: style.opacity === undefined ? 0 : Math.round((1 - style.opacity) * 100) }
             : { color: 'FFFFFF', transparency: 100 },
         line: lineWidth > 0
-            ? { color: color(style.stroke ?? '#000000'), width: lineWidth }
+            ? { color: color(style.stroke ?? '#000000'), width: lineWidth, transparency: style.opacity === undefined ? 0 : Math.round((1 - style.opacity) * 100) }
             : { color: 'FFFFFF', transparency: 100, width: 0 },
-        radius: style.radius,
+        rectRadius: shape === pptx.ShapeType.roundRect
+            ? inches(Math.max(DEFAULT_CORNER_RADIUS, style.radius ?? 0))
+            : undefined,
+        rotate: style.rotation,
     });
     if (style.accentTop) {
         pptxSlide.addShape(pptx.ShapeType.line, {
@@ -106,13 +114,21 @@ const addShape = (pptx, pptxSlide, sceneSlide, element) => {
 
 const addLine = (pptx, pptxSlide, sceneSlide, element) => {
     const style = element.style ?? {};
+    const start = element.start ?? { x: element.box.x, y: element.box.y + element.box.height / 2 };
+    const end = element.end ?? { x: element.box.x + element.box.width, y: element.box.y + element.box.height / 2 };
     pptxSlide.addShape(pptx.ShapeType.line, {
-        ...position(element.box),
+        x: inches(Math.min(start.x, end.x)),
+        y: inches(Math.min(start.y, end.y)),
+        w: inches(Math.max(0, Math.abs(end.x - start.x))),
+        h: inches(Math.max(0, Math.abs(end.y - start.y))),
+        flipH: start.x > end.x,
+        flipV: start.y > end.y,
         objectName: objectName(sceneSlide, element),
         line: {
             color: color(style.color ?? '#424242'),
             width: style.width ?? 2,
             dashType: style.dashType ?? 'solid',
+            transparency: style.opacity === undefined ? 0 : Math.round((1 - style.opacity) * 100),
             endArrowType: style.endArrow ? 'triangle' : 'none',
             beginArrowType: style.beginArrow ? 'triangle' : 'none',
         },
@@ -130,7 +146,9 @@ const addAsset = async (pptxSlide, sceneSlide, element) => {
         ...position(element.box),
         objectName: objectName(sceneSlide, element),
         altText: element.alt || undefined,
-        sizing: { type: 'contain', w: inches(element.box.width), h: inches(element.box.height) },
+        sizing: { type: element.style?.fit ?? 'contain', w: inches(element.box.width), h: inches(element.box.height) },
+        transparency: element.style?.opacity === undefined ? undefined : Math.round((1 - element.style.opacity) * 100),
+        rotate: element.style?.rotation,
     });
 };
 
@@ -196,7 +214,7 @@ const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, 
             shape,
             box: mapped,
             z: hostElement.z + 1,
-            style: { fill, stroke, strokeWidth },
+            style: { fill, stroke, strokeWidth, radius: DEFAULT_CORNER_RADIUS * mapped.scale },
         });
     };
 

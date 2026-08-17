@@ -8,7 +8,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { renderDiagramSvg, validateDiagram } from '../tools/diagram-core.mjs';
-import { compileDeckScene } from '../tools/scene-core.mjs';
+import { compileDeckScene } from '../tools/composition-core.mjs';
 import { renderSceneToPptx } from '../tools/render-scene-pptx.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -24,6 +24,101 @@ const contrastRatio = (left, right) => {
     const luminances = [relativeLuminance(left), relativeLuminance(right)].sort((a, b) => b - a);
     return (luminances[0] + 0.05) / (luminances[1] + 0.05);
 };
+
+test('Fluent foundation snapshots stay complete, attributed, and renderer-neutral', async () => {
+    const foundation = JSON.parse(await readFile(path.join(kitRoot, 'design', 'fluent-foundation.json'), 'utf8'));
+    const charts = JSON.parse(await readFile(path.join(kitRoot, 'design', 'fluent-chart-foundation.json'), 'utf8'));
+    const provenance = JSON.parse(await readFile(path.join(kitRoot, 'legal', 'provenance.json'), 'utf8'));
+
+    assert.equal(foundation.upstream.package, '@fluentui/tokens');
+    assert.match(foundation.upstream.revision, /^[0-9a-f]{40}$/);
+    assert.deepEqual(Object.values(foundation.spacing), [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32]);
+    assert.deepEqual(Object.values(foundation.strokeWidth), [1, 2, 3, 4]);
+    assert.equal(foundation.borderRadius.circular, 10000);
+    assert.equal(foundation.typography.roles.display.fontSize, 'hero1000');
+    assert.deepEqual(foundation.shadows.levels, [2, 4, 8, 16, 28, 64]);
+    assert.equal(Object.keys(foundation.brandWeb).length, 16);
+    assert.equal(foundation.motion, undefined);
+    assert.equal(foundation.units.duration, undefined);
+    assert.equal(foundation.upstream.sourcePaths.some((sourcePath) => /curves|durations/.test(sourcePath)), false);
+
+    assert.equal(charts.upstream.package, '@fluentui/react-charts');
+    assert.equal(charts.qualitative.slots.length, 40);
+    assert.deepEqual(charts.qualitative.slots.map((slot) => slot.id), Array.from({ length: 40 }, (_, index) => index + 1));
+    assert.equal(new Set(charts.qualitative.slots.map((slot) => slot.light)).size, 40);
+    assert.equal(Object.keys(charts.semantic.roles).length, 7);
+    assert.equal(charts.qualitative.slots.find((slot) => slot.id === 11).dark, '#93A4F4');
+    assert.equal(charts.qualitative.slots.find((slot) => slot.id === 1).dark, charts.qualitative.slots[0].light);
+    assert.match(charts.resolution.qualitativeSequence, /modulo 40/);
+    assert.match(charts.resolution.representation, /falls back to the light value/);
+    assert.notEqual(charts.semantic.roles.error.light, charts.semantic.roles.warning.light);
+    assert.ok(charts.staticChartRules.required.includes('non-color differentiation when series or status could be ambiguous'));
+
+    const designData = new Map(provenance.designData.map((item) => [item.localFile, item]));
+    assert.equal(designData.get('design/fluent-foundation.json').license, 'MIT');
+    assert.equal(designData.get('design/fluent-chart-foundation.json').license, 'MIT');
+    await readFile(path.join(kitRoot, designData.get('design/fluent-foundation.json').licenseFile), 'utf8');
+    await readFile(path.join(kitRoot, designData.get('design/fluent-chart-foundation.json').licenseFile), 'utf8');
+});
+
+test('presentation skills require local assets, Fluent foundations, and static output', async () => {
+    const presentationSkill = await readFile(path.join(kitRoot, '.github', 'skills', 'fluent-presentation', 'SKILL.md'), 'utf8');
+    const deckSkill = await readFile(path.join(kitRoot, '.github', 'skills', 'fluent-deck', 'SKILL.md'), 'utf8');
+    const designContract = JSON.parse(await readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8'));
+    for (const source of [presentationSkill, deckSkill]) {
+        assert.match(source, /assets\/manifest\.json/);
+        assert.match(source, /design\/design-contract\.json/);
+        assert.match(source, /design\/fluent-foundation\.json/);
+        assert.match(source, /design\/fluent-chart-foundation\.json/);
+        assert.match(source, /npm run assets:search/);
+        assert.match(source, /static/);
+        assert.match(source, /animations/);
+        assert.match(source, /transitions/);
+        assert.match(source, /hover/);
+        assert.match(source, /autoplay/);
+    }
+    assert.equal(designContract.outputMode.staticOnly, true);
+    assert.equal(designContract.outputMode.completeMessagePerFrame, true);
+    assert.deepEqual(designContract.outputMode.forbidden, [
+        'animation',
+        'slide-transition',
+        'autoplay',
+        'hover-dependent-content',
+        'interactive-control',
+        'loading-state',
+        'motion-dependent-meaning',
+    ]);
+});
+
+test('static pattern fixture compiles six native still-frame patterns', async () => {
+    const fixturePath = path.join(kitRoot, 'examples', 'static-patterns.json');
+    const source = await readFile(fixturePath, 'utf8');
+    const deck = JSON.parse(source);
+    const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'composition.schema.json'), 'utf8'));
+    const validate = new Ajv2020({ allErrors: true, strict: false, validateFormats: false }).compile(schema);
+    assert.equal(validate(deck), true, JSON.stringify(validate.errors));
+    assert.deepEqual(deck.slides.map((slide) => slide.id), [
+        'status-message',
+        'persona-owner',
+        'progress-milestones',
+        'structured-table',
+        'metadata-tags',
+        'kpi-summary',
+    ]);
+    assert.doesNotMatch(source, /animation|transition|autoplay|hover/i);
+    assert.equal(deck.slides.every((slide) => slide.notes.startsWith('Static native')), true);
+    assert.equal(deck.slides.every((slide) => slide.elements.every((element) => element.type !== 'diagram')), true);
+
+    const imageElements = deck.slides.flatMap((slide) => slide.elements).filter((element) => element.type === 'image');
+    assert.ok(imageElements.length >= 6);
+    assert.equal(imageElements.every((element) => element.path.startsWith('assets/fluent-system-icons/svg/regular/')), true);
+    assert.equal(imageElements.every((element) => element.provenance === 'local-catalog'), true);
+    for (const element of imageElements) await readFile(path.join(kitRoot, element.path));
+
+    const scene = await compileDeckScene(deck, { source: 'examples/static-patterns.json' });
+    assert.equal(scene.slides.length, 6);
+    assert.equal(scene.slides.every((slide) => slide.elements.some((element) => element.role === 'footer')), true);
+});
 
 test('asset search returns exact local Fluent and Azure paths', async () => {
     const fluent = await execFileAsync(process.execPath, [
@@ -53,7 +148,7 @@ test('final deliverables are separate from intermediate artifacts', async () => 
     assert.doesNotMatch(source, /path\.join\(kitRoot, '\.slide-artifacts', 'deliverables'/);
 });
 
-test('semantic deck compiles to a valid renderer-neutral scene', async () => {
+test('freeform deck compiles to a valid renderer-neutral scene', async () => {
     const deck = JSON.parse(await readFile(path.join(kitRoot, 'examples', 'deck.json'), 'utf8'));
     const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'scene.schema.json'), 'utf8'));
     const brandSchema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'brand-profile.schema.json'), 'utf8'));
@@ -61,9 +156,8 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
     const scene = await compileDeckScene(deck, { source: 'examples/deck.json' });
     assert.equal(deck.footer, undefined);
     assert.equal(deck.date, undefined);
-    const diagramSlide = deck.slides.find((slide) => slide.layout === 'diagram');
-    assert.equal(diagramSlide.eyebrow, undefined);
-    assert.equal(diagramSlide.subtitle, undefined);
+    assert.equal(deck.slides.every((slide) => slide.layout === undefined), true);
+    assert.equal(deck.slides.every((slide) => slide.elements.length > 0), true);
     const ajv = new Ajv2020({ allErrors: true, strict: false });
     const validate = ajv.compile(schema);
     const validateBrand = ajv.compile(brandSchema);
@@ -85,30 +179,32 @@ test('semantic deck compiles to a valid renderer-neutral scene', async () => {
         assert.equal(footerElements[0].style.align, 'left');
         assert.equal(slide.elements.some((element) => ['footer-source', 'footer-meta'].includes(element.id)), false);
     }
+    assert.equal(scene.slides[1].elements.find((item) => item.id === 'assets-card').style.fill, '#EBF3FC');
+    assert.equal(scene.slides[1].elements.find((item) => item.id === 'assets-icon').group, 'assets');
+    assert.equal(scene.slides[2].elements.find((item) => item.id === 'front-door-to-aks').end.x, 704);
 });
 
-test('diagram accessibility descriptions allow up to 500 characters', async () => {
-    const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'deck.schema.json'), 'utf8'));
+test('image accessibility descriptions allow up to 300 characters', async () => {
+    const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'composition.schema.json'), 'utf8'));
     const validate = new Ajv2020({ allErrors: true, strict: false, validateFormats: false }).compile(schema);
     const deck = {
         schemaVersion: 1,
         title: 'Accessibility boundary',
         theme: 'light',
         slides: [{
-            id: 'diagram-alt-boundary',
-            layout: 'diagram',
-            takeaway: 'Detailed diagram descriptions remain available to assistive technology.',
-            title: 'Diagram descriptions stay useful',
-            diagram: {
-                path: 'diagrams/templates/flow.json',
-                alt: 'A'.repeat(500),
-            },
+            id: 'image-alt-boundary',
+            takeaway: 'Detailed image descriptions remain available to assistive technology.',
+            title: 'Image descriptions stay useful',
+            elements: [
+                { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Image descriptions stay useful', typography: 'title' },
+                { id: 'image', type: 'image', z: 5, box: { x: 112, y: 220, width: 300, height: 300 }, path: 'assets/azure-public-service-icons/svg/management + governance/00003-icon-service-Advisor.svg', assetKind: 'azure', alt: 'A'.repeat(300), provenance: 'local-catalog' },
+            ],
         }],
     };
     assert.equal(validate(deck), true, JSON.stringify(validate.errors));
-    deck.slides[0].diagram.alt += 'A';
+    deck.slides[0].elements[1].alt += 'A';
     assert.equal(validate(deck), false);
-    assert.match(JSON.stringify(validate.errors), /must NOT have more than 500 characters/);
+    assert.match(JSON.stringify(validate.errors), /must NOT have more than 300 characters/);
 });
 
 test('semantic tint surfaces stay distinct and readable in both themes', async () => {
@@ -126,19 +222,19 @@ test('semantic tint surfaces stay distinct and readable in both themes', async (
     }
 });
 
-test('dark theme propagates through scene, SVG, and native PowerPoint', async () => {
+test('dark theme tokens propagate through scene, SVG, and native PowerPoint', async () => {
     const deck = {
         schemaVersion: 1,
         title: 'Dark theme propagation',
         theme: 'dark',
         slides: [{
-            id: 'dark-cards',
-            layout: 'cards',
+            id: 'dark-freeform',
             takeaway: 'Dark semantics remain intact.',
             title: 'Dark theme remains dark',
-            items: [
-                { title: 'Focused', body: 'Brand emphasis.', tone: 'brand' },
-                { title: 'Healthy', body: 'Success status.', tone: 'success' },
+            elements: [
+                { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Dark theme remains dark', typography: 'title' },
+                { id: 'brand-surface', type: 'shape', z: 3, box: { x: 112, y: 240, width: 500, height: 300 }, shape: 'roundRect', style: { fill: '$brandSubtle', stroke: '$brand', strokeWidth: 2 } },
+                { id: 'success-surface', type: 'shape', z: 3, box: { x: 680, y: 240, width: 500, height: 300 }, shape: 'roundRect', style: { fill: '$successSubtle', stroke: '$success', strokeWidth: 2 } },
             ],
             notes: 'Regression fixture for dark rendering.',
         }],
@@ -148,8 +244,8 @@ test('dark theme propagates through scene, SVG, and native PowerPoint', async ()
     assert.equal(slide.theme, 'dark');
     assert.equal(slide.elements.find((element) => element.id === 'background').style.fill, '#202020');
     assert.equal(slide.elements.find((element) => element.id === 'title').style.color, '#FFFFFF');
-    assert.equal(slide.elements.find((element) => element.id === 'item-1-surface').style.fill, '#0C3B5E');
-    assert.equal(slide.elements.find((element) => element.id === 'item-2-surface').style.fill, '#0B3B0B');
+    assert.equal(slide.elements.find((element) => element.id === 'brand-surface').style.fill, '#0C3B5E');
+    assert.equal(slide.elements.find((element) => element.id === 'success-surface').style.fill, '#0B3B0B');
     assert.equal(slide.elements.find((element) => element.id === 'footer-confidentiality').style.color, '#ADADAD');
 
     const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8'));
@@ -171,36 +267,38 @@ test('dark theme propagates through scene, SVG, and native PowerPoint', async ()
         const inspection = await execFileAsync('pwsh', ['-NoProfile', '-File', path.join(kitRoot, 'tools', 'inspect-pptx.ps1'), pptxPath], { cwd: kitRoot });
         const report = JSON.parse(inspection.stdout);
         const shapes = new Map(report.slides[0].shapeGeometries.map((shape) => [shape.name, shape]));
-        assert.equal(shapes.get('fluent-slide-kit:dark-cards:background').fill, '202020');
-        assert.equal(shapes.get('fluent-slide-kit:dark-cards:item-1-surface').fill, '0C3B5E');
-        assert.equal(shapes.get('fluent-slide-kit:dark-cards:item-2-surface').fill, '0B3B0B');
+        assert.equal(shapes.get('fluent-slide-kit:dark-freeform:background').fill, '202020');
+        assert.equal(shapes.get('fluent-slide-kit:dark-freeform:brand-surface').fill, '0C3B5E');
+        assert.equal(shapes.get('fluent-slide-kit:dark-freeform:success-surface').fill, '0B3B0B');
     } finally {
         await rm(output, { recursive: true, force: true });
     }
 });
 
-test('native PowerPoint export contains editable named shapes and notes', async () => {
+test('native PowerPoint export contains editable freeform objects and notes', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-native-pptx-'));
     try {
-        const diagramPath = 'diagrams/templates/layered-architecture.json';
-        const diagram = JSON.parse(await readFile(path.join(kitRoot, diagramPath), 'utf8'));
         const deck = {
             schemaVersion: 1,
-            title: 'Layered architecture template',
-            theme: diagram.theme,
+            title: 'Freeform native output',
+            theme: 'light',
             brandProfile: 'design/brand-profiles/fluent-aligned.json',
             slides: [{
-                id: 'layered-template',
-                layout: 'diagram',
-                takeaway: 'Reusable fixtures validate native architecture output.',
-                title: 'Layered architecture remains editable',
-                diagram: { path: diagramPath, alt: 'Reusable layered Azure architecture fixture.' },
-                notes: 'Generic native PowerPoint regression fixture.',
+                id: 'freeform-native',
+                takeaway: 'Every authored primitive remains a named Office object.',
+                title: 'Freeform composition remains editable',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1300, height: 70 }, text: 'Freeform composition remains editable', typography: 'title' },
+                    { id: 'surface', type: 'shape', group: 'advisor', z: 3, box: { x: 112, y: 240, width: 520, height: 360 }, shape: 'roundRect', style: { fill: '$brandSubtle', stroke: '$brand', strokeWidth: 2 } },
+                    { id: 'advisor-icon', type: 'image', group: 'advisor', z: 8, box: { x: 160, y: 288, width: 96, height: 96 }, path: 'assets/azure-public-service-icons/svg/management + governance/00003-icon-service-Advisor.svg', assetKind: 'azure', alt: 'Azure Advisor', provenance: 'local-catalog' },
+                    { id: 'connector', type: 'line', z: 5, start: { x: 632, y: 420 }, end: { x: 900, y: 320 }, style: { color: '$brand', width: 3, endArrow: true } },
+                ],
+                notes: 'Generic freeform native PowerPoint regression fixture.',
             }],
         };
         const sourceSlide = deck.slides[0];
-        const scene = await compileDeckScene(deck, { source: 'inline layered template' });
-        const pptxPath = path.join(output, 'layered-template.pptx');
+        const scene = await compileDeckScene(deck, { source: 'inline freeform composition' });
+        const pptxPath = path.join(output, 'freeform-native.pptx');
         await renderSceneToPptx(scene, pptxPath);
         const inspection = await execFileAsync('pwsh', [
             '-NoProfile',
@@ -209,51 +307,83 @@ test('native PowerPoint export contains editable named shapes and notes', async 
         ], { cwd: kitRoot });
         const report = JSON.parse(inspection.stdout);
         assert.equal(report.slides.length, 1);
-        assert.ok(report.slides[0].shapes >= 30);
-        assert.ok(report.slides[0].namedObjects.length >= 30);
+        assert.ok(report.slides[0].shapes >= 4);
+        assert.ok(report.slides[0].namedObjects.length >= 6);
         assert.equal(report.slides[0].screenshotOnly, false);
         assert.equal(report.notes[0].hasTakeaway, true);
-        assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:diagram-component-${diagram.layers[0].components[0].id}`));
-        assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-flow-${diagram.layers[0].id}`));
+        assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:surface`));
+        assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:advisor-icon`));
+        assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:connector`));
         const geometries = new Map(report.slides[0].shapeGeometries.map((shape) => [shape.name, shape.preset]));
-        assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-component-${diagram.layers[0].components[0].id}`), 'roundRect');
-        assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:diagram-layer-${diagram.layers[0].id}-surface`), 'roundRect');
-        const brandComponent = diagram.layers.flatMap((layer) => layer.components).find((component) => component.tone === 'brand');
-        const brandShape = report.slides[0].shapeGeometries.find((shape) => shape.name === `fluent-slide-kit:${sourceSlide.id}:diagram-component-${brandComponent.id}`);
-        assert.equal(brandShape.fill, diagram.theme === 'dark' ? '0C3B5E' : 'EBF3FC');
-        assert.equal(brandShape.line, diagram.theme === 'dark' ? '479EF5' : '0F6CBD');
+        assert.equal(geometries.get(`fluent-slide-kit:${sourceSlide.id}:surface`), 'roundRect');
+        const brandShape = report.slides[0].shapeGeometries.find((shape) => shape.name === `fluent-slide-kit:${sourceSlide.id}:surface`);
+        assert.equal(brandShape.fill, 'EBF3FC');
+        assert.equal(brandShape.line, '0F6CBD');
+        assert.ok(brandShape.cornerAdjustment > 0 && brandShape.cornerAdjustment < 5000);
     } finally {
         await rm(output, { recursive: true, force: true });
     }
 });
 
-test('every narrative layout compiles to positioned scene elements', async () => {
-    const item = (title, body = 'Executive-ready supporting detail.') => ({ title, body });
+test('freeform composition embeds an opt-in flow as one named PowerPoint graphic', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-hybrid-pptx-'));
+    try {
+        const deck = {
+            schemaVersion: 1,
+            title: 'Hybrid composition',
+            theme: 'light',
+            slides: [{
+                id: 'hybrid-flow',
+                takeaway: 'Structured graphs remain optional inside a freeform slide.',
+                title: 'Graph semantics earn the constraint',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 20, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Graph semantics earn the constraint', typography: 'title' },
+                    { id: 'decision-flow', type: 'diagram', z: 10, box: { x: 160, y: 220, width: 1600, height: 720 }, diagramPath: 'diagrams/templates/flow.json', alt: 'A validated branching request flow.' },
+                ],
+            }],
+        };
+        const schema = JSON.parse(await readFile(path.join(kitRoot, 'schemas', 'composition.schema.json'), 'utf8'));
+        const validate = new Ajv2020({ allErrors: true, strict: false, validateFormats: false }).compile(schema);
+        assert.equal(validate(deck), true, JSON.stringify(validate.errors));
+        const scene = await compileDeckScene(deck);
+        assert.equal(scene.slides[0].elements.find((element) => element.id === 'decision-flow').diagramPath, 'diagrams/templates/flow.json');
+
+        const pptxPath = path.join(output, 'hybrid.pptx');
+        await renderSceneToPptx(scene, pptxPath);
+        const inspection = await execFileAsync('pwsh', ['-NoProfile', '-File', path.join(kitRoot, 'tools', 'inspect-pptx.ps1'), pptxPath], { cwd: kitRoot });
+        const report = JSON.parse(inspection.stdout);
+        assert.equal(report.slides[0].screenshotOnly, false);
+        assert.ok(report.slides[0].namedObjects.includes('fluent-slide-kit:hybrid-flow:decision-flow'));
+        assert.ok(report.slides[0].pictures >= 1);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('freeform composition preserves authored geometry and token semantics', async () => {
     const deck = {
         schemaVersion: 1,
-        title: 'Layout catalog',
+        title: 'Freeform composition',
         theme: 'light',
         brandProfile: 'design/brand-profiles/fluent-aligned.json',
         slides: [
-            { id: 'title', layout: 'title', takeaway: 'Open clearly.', title: 'Title slide', subtitle: 'Supporting context.' },
-            { id: 'statement', layout: 'statement', takeaway: 'Land one point.', title: 'Statement', items: [item('Decisive claim')] },
-            { id: 'cards', layout: 'cards', takeaway: 'Compare ideas.', title: 'Cards', items: [item('One'), item('Two')] },
-            { id: 'split', layout: 'split', takeaway: 'Pair argument and evidence.', title: 'Split', items: [item('Argument'), item('Evidence')] },
-            { id: 'metrics', layout: 'metrics', takeaway: 'Feature outcomes.', title: 'Metrics', items: [{ title: 'Adoption', value: '82%' }, { title: 'Time', value: '4x' }] },
-            { id: 'comparison', layout: 'comparison', takeaway: 'Contrast options.', title: 'Comparison', items: [item('Option A'), item('Option B')] },
-            { id: 'timeline', layout: 'timeline', takeaway: 'Sequence milestones.', title: 'Timeline', items: [{ title: 'Discover', date: 'Q1' }, { title: 'Build', date: 'Q2' }, { title: 'Scale', date: 'Q3' }] },
-            { id: 'architecture', layout: 'architecture', takeaway: 'Show a simple path.', title: 'Architecture', items: [item('Entry'), item('Service')] },
-            { id: 'quote', layout: 'quote', takeaway: 'Feature a sourced voice.', title: 'Customer perspective', items: [{ body: 'A short sourced quotation.', label: 'Customer leader' }] },
-            { id: 'sources', layout: 'sources', takeaway: 'Retain evidence.', title: 'Sources', sources: [{ label: 'Microsoft Learn', url: 'https://learn.microsoft.com/' }] },
+            {
+                id: 'composition',
+                takeaway: 'The author owns geometry.',
+                title: 'Geometry remains explicit',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Geometry remains explicit', typography: 'title' },
+                    { id: 'surface', type: 'shape', group: 'message', z: 3, box: { x: 240, y: 320, width: 640, height: 360 }, shape: 'roundRect', style: { fill: '$warningSubtle', stroke: '$warning', strokeWidth: 2 } },
+                    { id: 'line', type: 'line', z: 4, start: { x: 880, y: 500 }, end: { x: 1180, y: 360 }, style: { color: '$brand', endArrow: true } },
+                ],
+            },
         ],
     };
     const scene = await compileDeckScene(deck);
-    const layouts = JSON.parse(await readFile(path.join(kitRoot, 'templates', 'layouts.json'), 'utf8'));
-    assert.deepEqual(new Set(scene.slides.map((slide) => slide.layout)), new Set(layouts.layouts.map((layout) => layout.id).filter((id) => id !== 'diagram')));
-    for (const slide of scene.slides) {
-        assert.ok(slide.elements.length >= 2, `${slide.layout} did not compile meaningful scene content.`);
-        assert.equal(new Set(slide.elements.map((element) => element.id)).size, slide.elements.length);
-    }
+    const slide = scene.slides[0];
+    assert.deepEqual(slide.elements.find((element) => element.id === 'surface').box, { x: 240, y: 320, width: 640, height: 360 });
+    assert.equal(slide.elements.find((element) => element.id === 'surface').style.fill, '#FFF4CE');
+    assert.deepEqual(slide.elements.find((element) => element.id === 'line').end, { x: 1180, y: 360 });
 });
 
 test('deck validation rejects AI-generated icon assets', async () => {
@@ -266,12 +396,11 @@ test('deck validation rejects AI-generated icon assets', async () => {
             theme: 'light',
             slides: [{
                 id: 'invalid',
-                layout: 'cards',
                 takeaway: 'Generated icons are prohibited.',
                 title: 'Asset policy',
-                items: [
-                    { title: 'Invalid', asset: { kind: 'fluent', path: 'assets/fluent-system-icons/svg/regular/shield.svg', alt: 'Shield', provenance: 'ai-generated' } },
-                    { title: 'Valid', body: 'Structured content remains editable.' },
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Asset policy', typography: 'title' },
+                    { id: 'invalid-icon', type: 'image', z: 5, box: { x: 112, y: 220, width: 120, height: 120 }, path: 'assets/fluent-system-icons/svg/regular/shield-checkmark.svg', assetKind: 'fluent', alt: 'Shield', provenance: 'ai-generated' },
                 ],
             }],
         };
@@ -288,30 +417,31 @@ test('deck validation rejects AI-generated icon assets', async () => {
 test('renderer creates standalone slides with inlined Fluent SVG', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-slide-kit-'));
     try {
+        const staleSlide = path.join(output, '99-stale-layout.html');
+        await writeFile(staleSlide, '<section class="layout-cards">stale</section>');
         await execFileAsync(process.execPath, [
             'tools/render-deck.mjs',
             'examples/deck.json',
             '--output',
             output,
         ], { cwd: kitRoot });
+        await assert.rejects(readFile(staleSlide, 'utf8'), { code: 'ENOENT' });
         const manifest = JSON.parse(await readFile(path.join(output, 'deck-manifest.json'), 'utf8'));
-        assert.equal(manifest.slides.length, 4);
-        const cards = await readFile(path.join(output, '02-quality-system.html'), 'utf8');
-        assert.match(cards, /data-scene-slide="quality-system"/);
-        assert.match(cards, /data-scene-element="item-1-visual"/);
-        assert.match(cards, /data-scene-element="item-1-surface"[^>]+border-radius:8px/);
-        assert.match(cards, /data-scene-element="item-1-surface"[^>]+background:#EBF3FC[^>]+border:2px solid #0F6CBD/);
-        assert.match(cards, /data-scene-element="item-2-surface"[^>]+background:#F5F5F5[^>]+border:1px solid #D1D1D1/);
-        assert.match(cards, /data-scene-element="item-3-surface"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
+        assert.equal(manifest.slides.length, 3);
+        const cards = await readFile(path.join(output, '02-quality-contract.html'), 'utf8');
+        assert.match(cards, /data-scene-slide="quality-contract"/);
+        assert.match(cards, /data-scene-element="assets-icon"/);
+        assert.match(cards, /data-scene-element="assets-card"[^>]+border-radius:8px/);
+        assert.match(cards, /data-scene-element="assets-card"[^>]+background:#EBF3FC[^>]+border:2px solid #0F6CBD/);
+        assert.match(cards, /data-scene-element="composition-card"[^>]+background:#F5F5F5[^>]+border:1px solid #D1D1D1/);
+        assert.match(cards, /data-scene-element="validation-card"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
         assert.match(cards, /currentColor/i);
         assert.match(cards, /data-scene-element="footer-confidentiality"[^>]*>Microsoft Confidential<\/div>/);
         assert.doesNotMatch(cards, /data-scene-element="footer-(?:source|meta)"|>Source:/);
-        const architecture = await readFile(path.join(output, '03-azure-flow.html'), 'utf8');
+        const architecture = await readFile(path.join(output, '03-azure-journey.html'), 'utf8');
         assert.match(architecture, /10023-icon-service-Kubernetes-Services\.svg/);
-        const diagram = await readFile(path.join(output, '04-azure-workflow.html'), 'utf8');
-        assert.match(diagram, /data-diagram-node="route"/);
-        assert.match(diagram, /data-diagram-edge="queue-work"/);
-        assert.match(diagram, /data:image\/svg\+xml;base64,/);
+        assert.match(architecture, /data-scene-element="front-door-to-aks"/);
+        assert.match(architecture, /marker-end=/);
         const scene = JSON.parse(await readFile(path.join(output, 'deck.scene.json'), 'utf8'));
         assert.equal(scene.source, 'examples/deck.json');
         assert.equal(scene.brandProfile, 'fluent-aligned');
@@ -358,6 +488,41 @@ test('flow nodes keep icons labels and descriptions separated', async () => {
     }
 });
 
+test('flow layout keeps long edge labels clear of node cards', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-flow-edge-labels-'));
+    try {
+        const input = path.join(output, 'long-edge-label.json');
+        const validationOutput = path.join(output, 'validation');
+        await writeFile(input, JSON.stringify({
+            schemaVersion: 1,
+            diagramType: 'flow',
+            id: 'long-edge-label',
+            title: 'Long edge labels remain clear',
+            direction: 'right',
+            theme: 'light',
+            nodes: [
+                { id: 'advisor', label: 'Advisor skill', kind: 'process' },
+                { id: 'resiliency', label: 'Resiliency skill', kind: 'process' },
+            ],
+            edges: [
+                { id: 'remediate', source: 'advisor', target: 'resiliency', label: 'Remediate reliability recommendation' },
+            ],
+        }));
+        await execFileAsync(process.execPath, [
+            'tools/validate-diagram.mjs',
+            input,
+            '--output',
+            validationOutput,
+            '--no-screenshot',
+        ], { cwd: kitRoot });
+        const report = JSON.parse(await readFile(path.join(validationOutput, 'validation-report.json'), 'utf8'));
+        assert.equal(report.passed, true);
+        assert.deepEqual(report.inspection.geometry.edgeLabelNodeCollisions, []);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
 test('flow nodes share one card shape and signal kind with a glyph', async () => {
     const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
     const svg = await renderDiagramSvg(diagram);
@@ -368,6 +533,46 @@ test('flow nodes share one card shape and signal kind with a glyph', async () =>
     }
     assert.match(svg, /data-diagram-node="route"[\s\S]*?class="node-glyph/);
     assert.match(svg, /data-diagram-node="work-queue"[\s\S]*?class="node-glyph/);
+});
+
+test('flow edge labels render above every connector path', async () => {
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
+    const svg = await renderDiagramSvg(diagram);
+    assert.ok(svg.indexOf('class="edge-label"') > svg.lastIndexOf('class="diagram-edge'));
+    assert.equal((svg.match(/data-diagram-edge-label=/g) ?? []).length, diagram.edges.filter((edge) => edge.label).length);
+});
+
+test('flow edge labels can align with the target node', async () => {
+    const diagram = {
+        schemaVersion: 1,
+        diagramType: 'flow',
+        id: 'target-label-position',
+        title: 'Target-aligned edge label',
+        direction: 'right',
+        theme: 'light',
+        nodes: [
+            { id: 'source', label: 'Source', kind: 'process' },
+            { id: 'upper-target', label: 'Upper target', kind: 'process', group: 'target-boundary' },
+            { id: 'lower-target', label: 'Lower target', kind: 'process', group: 'target-boundary' },
+        ],
+        edges: [
+            { id: 'upper', source: 'source', target: 'upper-target' },
+            { id: 'lower', source: 'source', target: 'lower-target', label: 'Apply changes', labelPosition: 'target' },
+        ],
+        groups: [
+            { id: 'target-boundary', label: 'Target boundary' },
+        ],
+    };
+    const contract = await validateDiagram(diagram);
+    assert.deepEqual(contract.errors, []);
+    const svg = await renderDiagramSvg(diagram);
+    const labelY = Number(svg.match(/data-diagram-edge-label="lower"[\s\S]*?<rect[^>]+y="([\d.]+)"/)?.[1]) + 16;
+    const targetY = Number(svg.match(/data-diagram-node="lower-target"[\s\S]*?class="node-shape[^>]+y="([\d.]+)"[^>]+height="([\d.]+)"/)?.[1])
+        + Number(svg.match(/data-diagram-node="lower-target"[\s\S]*?class="node-shape[^>]+y="([\d.]+)"[^>]+height="([\d.]+)"/)?.[2]) / 2;
+    assert.equal(labelY, targetY);
+    const labelRectangle = svg.match(/data-diagram-edge-label="lower"[\s\S]*?<rect[^>]+x="([\d.]+)"[^>]+width="([\d.]+)"/);
+    const boundaryX = Number(svg.match(/class="diagram-group[^>]*><rect x="([\d.]+)"/)?.[1]);
+    assert.ok(Number(labelRectangle?.[1]) + Number(labelRectangle?.[2]) <= boundaryX - 8);
 });
 
 test('diagram validation rejects cycles unless they are intentional', async () => {

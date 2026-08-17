@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { compileDeckScene, kitRoot } from './scene-core.mjs';
+import { compileDeckScene, kitRoot } from './composition-core.mjs';
 
 const arguments_ = process.argv.slice(2);
 const input = arguments_.find((argument) => !argument.startsWith('--'));

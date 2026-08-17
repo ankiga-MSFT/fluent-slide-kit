@@ -5,7 +5,7 @@
                 "/decks/*.json",
                 "/examples/*.json"
             ],
-            "url": "./schemas/deck.schema.json"
+            "url": "./schemas/composition.schema.json"
         },
         {
             "fileMatch": [

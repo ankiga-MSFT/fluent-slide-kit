@@ -1,0 +1,1868 @@
+{
+    "schemaVersion": 1,
+    "title": "Static Fluent presentation patterns",
+    "brandProfile": "design/brand-profiles/fluent-aligned.json",
+    "theme": "light",
+    "locale": "en",
+    "slides": [
+        {
+            "id": "status-message",
+            "title": "Status messages make action unmistakable",
+            "takeaway": "A static status message combines semantic tone, a visible label, concise context, and an explicit owner without relying on motion or interaction.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1696,
+                        "height": 70
+                    },
+                    "text": "Status messages make action unmistakable",
+                    "typography": "title"
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Use semantic color only when the message carries that meaning.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "status-surface",
+                    "type": "shape",
+                    "group": "status",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 292,
+                        "width": 1696,
+                        "height": 284
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$warningSubtle",
+                        "stroke": "$warning",
+                        "strokeWidth": 2,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "status-icon",
+                    "type": "image",
+                    "group": "status",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 370,
+                        "width": 76,
+                        "height": 76
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/warning.svg",
+                    "assetKind": "fluent",
+                    "alt": "Warning status",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$warning"
+                    }
+                },
+                {
+                    "id": "status-label",
+                    "type": "text",
+                    "group": "status",
+                    "z": 10,
+                    "box": {
+                        "x": 284,
+                        "y": 326,
+                        "width": 560,
+                        "height": 40
+                    },
+                    "text": "DECISION REQUIRED",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$foreground",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "status-heading",
+                    "type": "text",
+                    "group": "status",
+                    "z": 10,
+                    "box": {
+                        "x": 284,
+                        "y": 382,
+                        "width": 1160,
+                        "height": 62
+                    },
+                    "text": "Confirm the release owner",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "status-detail",
+                    "type": "text",
+                    "group": "status",
+                    "z": 10,
+                    "box": {
+                        "x": 284,
+                        "y": 468,
+                        "width": 1280,
+                        "height": 62
+                    },
+                    "text": "Name one accountable owner before the next gate so the audience knows who acts.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "owner-surface",
+                    "type": "shape",
+                    "group": "owner",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 650,
+                        "width": 760,
+                        "height": 144
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 12
+                    }
+                },
+                {
+                    "id": "owner-label",
+                    "type": "text",
+                    "group": "owner",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 678,
+                        "width": 260,
+                        "height": 34
+                    },
+                    "text": "ACTION OWNER",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "owner-value",
+                    "type": "text",
+                    "group": "owner",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 728,
+                        "width": 650,
+                        "height": 42
+                    },
+                    "text": "[Name or role] · Due [date]",
+                    "typography": "body",
+                    "style": {
+                        "fontWeight": 600
+                    }
+                }
+            ],
+            "notes": "Static native status-message pattern. Replace bracketed owner and date placeholders. Keep the warning treatment only when a real decision or risk exists."
+        },
+        {
+            "id": "persona-owner",
+            "title": "Ownership stays visible at a glance",
+            "takeaway": "Static persona blocks identify accountable roles and decision rights without simulating interactive profile controls.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1696,
+                        "height": 70
+                    },
+                    "text": "Ownership stays visible at a glance",
+                    "typography": "title"
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Show role, responsibility, and decision relationship in one scan.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "sponsor-surface",
+                    "type": "shape",
+                    "group": "sponsor",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 2,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "sponsor-icon",
+                    "type": "image",
+                    "group": "sponsor",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 350,
+                        "width": 78,
+                        "height": 78
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/person.svg",
+                    "assetKind": "fluent",
+                    "alt": "Program sponsor role",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "sponsor-title",
+                    "type": "text",
+                    "group": "sponsor",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 464,
+                        "width": 420,
+                        "height": 52
+                    },
+                    "text": "Program sponsor",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "sponsor-detail",
+                    "type": "text",
+                    "group": "sponsor",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 542,
+                        "width": 400,
+                        "height": 76
+                    },
+                    "text": "Approves scope and funding.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "sponsor-status",
+                    "type": "text",
+                    "group": "sponsor",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 654,
+                        "width": 300,
+                        "height": 36
+                    },
+                    "text": "●  Accountable",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brand",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "platform-surface",
+                    "type": "shape",
+                    "group": "platform",
+                    "z": 4,
+                    "box": {
+                        "x": 700,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "platform-icon",
+                    "type": "image",
+                    "group": "platform",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 350,
+                        "width": 78,
+                        "height": 78
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/person.svg",
+                    "assetKind": "fluent",
+                    "alt": "Platform owner role",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$foreground"
+                    }
+                },
+                {
+                    "id": "platform-title",
+                    "type": "text",
+                    "group": "platform",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 464,
+                        "width": 420,
+                        "height": 52
+                    },
+                    "text": "Platform owner",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "platform-detail",
+                    "type": "text",
+                    "group": "platform",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 542,
+                        "width": 400,
+                        "height": 76
+                    },
+                    "text": "Owns delivery and operations.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "platform-status",
+                    "type": "text",
+                    "group": "platform",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 654,
+                        "width": 300,
+                        "height": 36
+                    },
+                    "text": "●  Responsible",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$success",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "security-surface",
+                    "type": "shape",
+                    "group": "security",
+                    "z": 4,
+                    "box": {
+                        "x": 1288,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "security-icon",
+                    "type": "image",
+                    "group": "security",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 350,
+                        "width": 78,
+                        "height": 78
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/person.svg",
+                    "assetKind": "fluent",
+                    "alt": "Security lead role",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$foreground"
+                    }
+                },
+                {
+                    "id": "security-title",
+                    "type": "text",
+                    "group": "security",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 464,
+                        "width": 420,
+                        "height": 52
+                    },
+                    "text": "Security lead",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "security-detail",
+                    "type": "text",
+                    "group": "security",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 542,
+                        "width": 400,
+                        "height": 76
+                    },
+                    "text": "Reviews controls and exceptions.",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "security-status",
+                    "type": "text",
+                    "group": "security",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 654,
+                        "width": 300,
+                        "height": 36
+                    },
+                    "text": "●  Consulted",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted",
+                        "fontWeight": 600
+                    }
+                }
+            ],
+            "notes": "Static native persona pattern using generic role examples. Replace roles and descriptions with the actual governance model."
+        },
+        {
+            "id": "progress-milestones",
+            "title": "Progress exposes the next decision",
+            "takeaway": "A determinate static track shows completed, current, and future gates while making the next required action visible.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1696,
+                        "height": 70
+                    },
+                    "text": "Progress exposes the next decision",
+                    "typography": "title"
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Illustrative: 2 of 4 gates complete.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "progress-track",
+                    "type": "shape",
+                    "group": "progress-bar",
+                    "z": 3,
+                    "box": {
+                        "x": 112,
+                        "y": 284,
+                        "width": 1696,
+                        "height": 28
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$stroke",
+                        "radius": 14
+                    }
+                },
+                {
+                    "id": "progress-complete",
+                    "type": "shape",
+                    "group": "progress-bar",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 284,
+                        "width": 848,
+                        "height": 28
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brand",
+                        "radius": 14
+                    }
+                },
+                {
+                    "id": "next-surface",
+                    "type": "shape",
+                    "group": "next-gate",
+                    "z": 4,
+                    "box": {
+                        "x": 540,
+                        "y": 378,
+                        "width": 840,
+                        "height": 174
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 2,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "next-icon",
+                    "type": "image",
+                    "group": "next-gate",
+                    "z": 10,
+                    "box": {
+                        "x": 584,
+                        "y": 428,
+                        "width": 68,
+                        "height": 68
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/clock-lock.svg",
+                    "assetKind": "fluent",
+                    "alt": "Current gated milestone",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "next-label",
+                    "type": "text",
+                    "group": "next-gate",
+                    "z": 10,
+                    "box": {
+                        "x": 696,
+                        "y": 410,
+                        "width": 560,
+                        "height": 38
+                    },
+                    "text": "NEXT GATE",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brand",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "next-title",
+                    "type": "text",
+                    "group": "next-gate",
+                    "z": 10,
+                    "box": {
+                        "x": 696,
+                        "y": 460,
+                        "width": 600,
+                        "height": 54
+                    },
+                    "text": "Security review · [date]",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "milestone-line",
+                    "type": "line",
+                    "z": 3,
+                    "start": {
+                        "x": 240,
+                        "y": 690
+                    },
+                    "end": {
+                        "x": 1680,
+                        "y": 690
+                    },
+                    "style": {
+                        "color": "$strokeStrong",
+                        "width": 4
+                    }
+                },
+                {
+                    "id": "milestone-complete-line",
+                    "type": "line",
+                    "z": 4,
+                    "start": {
+                        "x": 240,
+                        "y": 690
+                    },
+                    "end": {
+                        "x": 720,
+                        "y": 690
+                    },
+                    "style": {
+                        "color": "$brand",
+                        "width": 6
+                    }
+                },
+                {
+                    "id": "discover-node",
+                    "type": "shape",
+                    "z": 6,
+                    "box": {
+                        "x": 213,
+                        "y": 663,
+                        "width": 54,
+                        "height": 54
+                    },
+                    "shape": "ellipse",
+                    "style": {
+                        "fill": "$brand",
+                        "stroke": "$brand",
+                        "strokeWidth": 2
+                    }
+                },
+                {
+                    "id": "design-node",
+                    "type": "shape",
+                    "z": 6,
+                    "box": {
+                        "x": 693,
+                        "y": 663,
+                        "width": 54,
+                        "height": 54
+                    },
+                    "shape": "ellipse",
+                    "style": {
+                        "fill": "$brand",
+                        "stroke": "$brand",
+                        "strokeWidth": 2
+                    }
+                },
+                {
+                    "id": "review-node",
+                    "type": "shape",
+                    "z": 6,
+                    "box": {
+                        "x": 1173,
+                        "y": 663,
+                        "width": 54,
+                        "height": 54
+                    },
+                    "shape": "ellipse",
+                    "style": {
+                        "fill": "$surface",
+                        "stroke": "$brand",
+                        "strokeWidth": 4
+                    }
+                },
+                {
+                    "id": "release-node",
+                    "type": "shape",
+                    "z": 6,
+                    "box": {
+                        "x": 1653,
+                        "y": 663,
+                        "width": 54,
+                        "height": 54
+                    },
+                    "shape": "ellipse",
+                    "style": {
+                        "fill": "$surface",
+                        "stroke": "$strokeStrong",
+                        "strokeWidth": 3
+                    }
+                },
+                {
+                    "id": "discover-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 746,
+                        "width": 160,
+                        "height": 42
+                    },
+                    "text": "Discover",
+                    "typography": "caption",
+                    "style": {
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "design-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 640,
+                        "y": 746,
+                        "width": 160,
+                        "height": 42
+                    },
+                    "text": "Design",
+                    "typography": "caption",
+                    "style": {
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "review-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 1120,
+                        "y": 746,
+                        "width": 160,
+                        "height": 42
+                    },
+                    "text": "Review",
+                    "typography": "caption",
+                    "style": {
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "release-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 1600,
+                        "y": 746,
+                        "width": 160,
+                        "height": 42
+                    },
+                    "text": "Release",
+                    "typography": "caption",
+                    "style": {
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                }
+            ],
+            "notes": "Static native determinate-progress pattern. Replace the illustrative count, gate names, and date with sourced program data."
+        },
+        {
+            "id": "structured-table",
+            "title": "Tables make ownership comparable",
+            "takeaway": "A compact native table supports repeated executive scanning when each column has a clear purpose and status remains visibly labeled.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1540,
+                        "height": 70
+                    },
+                    "text": "Tables make ownership comparable",
+                    "typography": "title"
+                },
+                {
+                    "id": "table-icon",
+                    "type": "image",
+                    "z": 20,
+                    "box": {
+                        "x": 1724,
+                        "y": 76,
+                        "width": 56,
+                        "height": 56
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/table.svg",
+                    "assetKind": "fluent",
+                    "alt": "Structured data table",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Keep columns purposeful and use text with every status color.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "table-surface",
+                    "type": "shape",
+                    "group": "data-table",
+                    "z": 3,
+                    "box": {
+                        "x": 112,
+                        "y": 278,
+                        "width": 1696,
+                        "height": 526
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$surface",
+                        "stroke": "$stroke",
+                        "strokeWidth": 2,
+                        "radius": 12
+                    }
+                },
+                {
+                    "id": "table-header",
+                    "type": "shape",
+                    "group": "data-table",
+                    "z": 4,
+                    "box": {
+                        "x": 114,
+                        "y": 280,
+                        "width": 1692,
+                        "height": 82
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "radius": 10
+                    }
+                },
+                {
+                    "id": "row-line-1",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 112,
+                        "y": 362
+                    },
+                    "end": {
+                        "x": 1808,
+                        "y": 362
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 2
+                    }
+                },
+                {
+                    "id": "row-line-2",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 112,
+                        "y": 510
+                    },
+                    "end": {
+                        "x": 1808,
+                        "y": 510
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 1
+                    }
+                },
+                {
+                    "id": "row-line-3",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 112,
+                        "y": 658
+                    },
+                    "end": {
+                        "x": 1808,
+                        "y": 658
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 1
+                    }
+                },
+                {
+                    "id": "column-line-1",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 620,
+                        "y": 278
+                    },
+                    "end": {
+                        "x": 620,
+                        "y": 804
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 1
+                    }
+                },
+                {
+                    "id": "column-line-2",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 1020,
+                        "y": 278
+                    },
+                    "end": {
+                        "x": 1020,
+                        "y": 804
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 1
+                    }
+                },
+                {
+                    "id": "column-line-3",
+                    "type": "line",
+                    "group": "data-table",
+                    "z": 5,
+                    "start": {
+                        "x": 1370,
+                        "y": 278
+                    },
+                    "end": {
+                        "x": 1370,
+                        "y": 804
+                    },
+                    "style": {
+                        "color": "$stroke",
+                        "width": 1
+                    }
+                },
+                {
+                    "id": "header-workstream",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 302,
+                        "width": 420,
+                        "height": 38
+                    },
+                    "text": "WORKSTREAM",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "header-owner",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 660,
+                        "y": 302,
+                        "width": 300,
+                        "height": 38
+                    },
+                    "text": "OWNER",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "header-status",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1060,
+                        "y": 302,
+                        "width": 260,
+                        "height": 38
+                    },
+                    "text": "STATUS",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "header-gate",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1410,
+                        "y": 302,
+                        "width": 330,
+                        "height": 38
+                    },
+                    "text": "NEXT GATE",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "identity-name",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 410,
+                        "width": 420,
+                        "height": 44
+                    },
+                    "text": "Identity",
+                    "typography": "body",
+                    "style": {
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "identity-owner",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 660,
+                        "y": 410,
+                        "width": 300,
+                        "height": 44
+                    },
+                    "text": "Platform owner",
+                    "typography": "body"
+                },
+                {
+                    "id": "identity-status",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1060,
+                        "y": 410,
+                        "width": 260,
+                        "height": 44
+                    },
+                    "text": "●  Ready",
+                    "typography": "body",
+                    "style": {
+                        "color": "$success",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "identity-gate",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1410,
+                        "y": 410,
+                        "width": 330,
+                        "height": 44
+                    },
+                    "text": "Design approved",
+                    "typography": "body"
+                },
+                {
+                    "id": "data-name",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 558,
+                        "width": 420,
+                        "height": 44
+                    },
+                    "text": "Data",
+                    "typography": "body",
+                    "style": {
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "data-owner",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 660,
+                        "y": 558,
+                        "width": 300,
+                        "height": 44
+                    },
+                    "text": "Data owner",
+                    "typography": "body"
+                },
+                {
+                    "id": "data-status",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1060,
+                        "y": 558,
+                        "width": 260,
+                        "height": 44
+                    },
+                    "text": "▲  At risk",
+                    "typography": "body",
+                    "style": {
+                        "color": "$warning",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "data-gate",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1410,
+                        "y": 558,
+                        "width": 330,
+                        "height": 44
+                    },
+                    "text": "Resolve dependency",
+                    "typography": "body"
+                },
+                {
+                    "id": "operations-name",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 152,
+                        "y": 706,
+                        "width": 420,
+                        "height": 44
+                    },
+                    "text": "Operations",
+                    "typography": "body",
+                    "style": {
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "operations-owner",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 660,
+                        "y": 706,
+                        "width": 300,
+                        "height": 44
+                    },
+                    "text": "Service owner",
+                    "typography": "body"
+                },
+                {
+                    "id": "operations-status",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1060,
+                        "y": 706,
+                        "width": 260,
+                        "height": 44
+                    },
+                    "text": "○  Planned",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "operations-gate",
+                    "type": "text",
+                    "group": "data-table",
+                    "z": 10,
+                    "box": {
+                        "x": 1410,
+                        "y": 706,
+                        "width": 330,
+                        "height": 44
+                    },
+                    "text": "Confirm runbook",
+                    "typography": "body"
+                }
+            ],
+            "notes": "Static native table pattern with illustrative rows. Replace every row with sourced workstream data and preserve text or shape cues alongside status color."
+        },
+        {
+            "id": "metadata-tags",
+            "title": "Labels organize metadata without noise",
+            "takeaway": "Compact static tags make category, priority, and status scannable when color remains restrained and semantically meaningful.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1540,
+                        "height": 70
+                    },
+                    "text": "Labels organize metadata without noise",
+                    "typography": "title"
+                },
+                {
+                    "id": "tag-icon",
+                    "type": "image",
+                    "z": 20,
+                    "box": {
+                        "x": 1724,
+                        "y": 76,
+                        "width": 56,
+                        "height": 56
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/tag.svg",
+                    "assetKind": "fluent",
+                    "alt": "Metadata tag",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Use neutral labels for taxonomy and semantic labels only for real status.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "item-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 112,
+                        "y": 306,
+                        "width": 400,
+                        "height": 38
+                    },
+                    "text": "EXAMPLE ITEM",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "item-title",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 112,
+                        "y": 362,
+                        "width": 1200,
+                        "height": 68
+                    },
+                    "text": "Release readiness review",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "domain-shape",
+                    "type": "shape",
+                    "group": "domain-tag",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 478,
+                        "width": 244,
+                        "height": 64
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 32
+                    }
+                },
+                {
+                    "id": "domain-text",
+                    "type": "text",
+                    "group": "domain-tag",
+                    "z": 10,
+                    "box": {
+                        "x": 144,
+                        "y": 493,
+                        "width": 180,
+                        "height": 34
+                    },
+                    "text": "Platform",
+                    "typography": "caption",
+                    "style": {
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "priority-shape",
+                    "type": "shape",
+                    "group": "priority-tag",
+                    "z": 4,
+                    "box": {
+                        "x": 388,
+                        "y": 478,
+                        "width": 244,
+                        "height": 64
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 1,
+                        "radius": 32
+                    }
+                },
+                {
+                    "id": "priority-text",
+                    "type": "text",
+                    "group": "priority-tag",
+                    "z": 10,
+                    "box": {
+                        "x": 420,
+                        "y": 493,
+                        "width": 180,
+                        "height": 34
+                    },
+                    "text": "Priority",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "semantic-label",
+                    "type": "text",
+                    "z": 10,
+                    "box": {
+                        "x": 112,
+                        "y": 646,
+                        "width": 600,
+                        "height": 44
+                    },
+                    "text": "Semantic status examples",
+                    "typography": "itemTitle"
+                },
+                {
+                    "id": "ready-shape",
+                    "type": "shape",
+                    "group": "ready-tag",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 726,
+                        "width": 244,
+                        "height": 64
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$successSubtle",
+                        "stroke": "$success",
+                        "strokeWidth": 1,
+                        "radius": 32
+                    }
+                },
+                {
+                    "id": "ready-text",
+                    "type": "text",
+                    "group": "ready-tag",
+                    "z": 10,
+                    "box": {
+                        "x": 144,
+                        "y": 741,
+                        "width": 180,
+                        "height": 34
+                    },
+                    "text": "●  Ready",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$success",
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "risk-shape",
+                    "type": "shape",
+                    "group": "risk-tag",
+                    "z": 4,
+                    "box": {
+                        "x": 388,
+                        "y": 726,
+                        "width": 244,
+                        "height": 64
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$warningSubtle",
+                        "stroke": "$warning",
+                        "strokeWidth": 1,
+                        "radius": 32
+                    }
+                },
+                {
+                    "id": "risk-text",
+                    "type": "text",
+                    "group": "risk-tag",
+                    "z": 10,
+                    "box": {
+                        "x": 420,
+                        "y": 741,
+                        "width": 180,
+                        "height": 34
+                    },
+                    "text": "▲  At risk",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$foreground",
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                },
+                {
+                    "id": "blocked-shape",
+                    "type": "shape",
+                    "group": "blocked-tag",
+                    "z": 4,
+                    "box": {
+                        "x": 664,
+                        "y": 726,
+                        "width": 244,
+                        "height": 64
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$dangerSubtle",
+                        "stroke": "$danger",
+                        "strokeWidth": 1,
+                        "radius": 32
+                    }
+                },
+                {
+                    "id": "blocked-text",
+                    "type": "text",
+                    "group": "blocked-tag",
+                    "z": 10,
+                    "box": {
+                        "x": 696,
+                        "y": 741,
+                        "width": 180,
+                        "height": 34
+                    },
+                    "text": "■  Blocked",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$danger",
+                        "align": "center",
+                        "fontWeight": 600
+                    }
+                }
+            ],
+            "notes": "Static native tag pattern. Neutral and brand tags classify content; success, warning, and danger tags are reserved for truthful status."
+        },
+        {
+            "id": "kpi-summary",
+            "title": "KPIs pair the number with meaning",
+            "takeaway": "A static KPI block needs a labeled value, comparison context, timeframe, and source rather than an isolated oversized number.",
+            "elements": [
+                {
+                    "id": "title",
+                    "type": "text",
+                    "role": "title",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 68,
+                        "width": 1540,
+                        "height": 70
+                    },
+                    "text": "KPIs pair the number with meaning",
+                    "typography": "title"
+                },
+                {
+                    "id": "kpi-icon",
+                    "type": "image",
+                    "z": 20,
+                    "box": {
+                        "x": 1724,
+                        "y": 76,
+                        "width": 56,
+                        "height": 56
+                    },
+                    "path": "assets/fluent-system-icons/svg/regular/data-trending.svg",
+                    "assetKind": "fluent",
+                    "alt": "KPI trend",
+                    "provenance": "local-catalog",
+                    "style": {
+                        "color": "$brand"
+                    }
+                },
+                {
+                    "id": "subtitle",
+                    "type": "text",
+                    "role": "subtitle",
+                    "z": 20,
+                    "box": {
+                        "x": 112,
+                        "y": 154,
+                        "width": 1500,
+                        "height": 62
+                    },
+                    "text": "Bracketed values mark evidence that must be supplied before publication.",
+                    "typography": "subtitle",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "adoption-surface",
+                    "type": "shape",
+                    "group": "adoption",
+                    "z": 4,
+                    "box": {
+                        "x": 112,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$brandSubtle",
+                        "stroke": "$brand",
+                        "strokeWidth": 2,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "adoption-label",
+                    "type": "text",
+                    "group": "adoption",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 346,
+                        "width": 420,
+                        "height": 38
+                    },
+                    "text": "ADOPTION",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$brandStrong",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "adoption-value",
+                    "type": "text",
+                    "group": "adoption",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 414,
+                        "width": 420,
+                        "height": 108
+                    },
+                    "text": "[72%]",
+                    "typography": "stat",
+                    "style": {
+                        "color": "$brandStrong"
+                    }
+                },
+                {
+                    "id": "adoption-context",
+                    "type": "text",
+                    "group": "adoption",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 554,
+                        "width": 400,
+                        "height": 72
+                    },
+                    "text": "Against [target] by [date]",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "adoption-source",
+                    "type": "text",
+                    "group": "adoption",
+                    "z": 10,
+                    "box": {
+                        "x": 160,
+                        "y": 662,
+                        "width": 400,
+                        "height": 34
+                    },
+                    "text": "Source: [system or owner]",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted"
+                    }
+                },
+                {
+                    "id": "decisions-surface",
+                    "type": "shape",
+                    "group": "decisions",
+                    "z": 4,
+                    "box": {
+                        "x": 700,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "decisions-label",
+                    "type": "text",
+                    "group": "decisions",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 346,
+                        "width": 420,
+                        "height": 38
+                    },
+                    "text": "OPEN DECISIONS",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$secondary",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "decisions-value",
+                    "type": "text",
+                    "group": "decisions",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 414,
+                        "width": 420,
+                        "height": 108
+                    },
+                    "text": "[24]",
+                    "typography": "stat"
+                },
+                {
+                    "id": "decisions-context",
+                    "type": "text",
+                    "group": "decisions",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 554,
+                        "width": 400,
+                        "height": 72
+                    },
+                    "text": "[Change] since [period]",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "decisions-source",
+                    "type": "text",
+                    "group": "decisions",
+                    "z": 10,
+                    "box": {
+                        "x": 748,
+                        "y": 662,
+                        "width": 400,
+                        "height": 34
+                    },
+                    "text": "Source: [decision log]",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted"
+                    }
+                },
+                {
+                    "id": "benefit-surface",
+                    "type": "shape",
+                    "group": "benefit",
+                    "z": 4,
+                    "box": {
+                        "x": 1288,
+                        "y": 300,
+                        "width": 520,
+                        "height": 430
+                    },
+                    "shape": "roundRect",
+                    "style": {
+                        "fill": "$subtle",
+                        "stroke": "$stroke",
+                        "strokeWidth": 1,
+                        "radius": 16
+                    }
+                },
+                {
+                    "id": "benefit-label",
+                    "type": "text",
+                    "group": "benefit",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 346,
+                        "width": 420,
+                        "height": 38
+                    },
+                    "text": "RUN-RATE BENEFIT",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$secondary",
+                        "fontWeight": 700
+                    }
+                },
+                {
+                    "id": "benefit-value",
+                    "type": "text",
+                    "group": "benefit",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 414,
+                        "width": 420,
+                        "height": 108
+                    },
+                    "text": "[$1.2M]",
+                    "typography": "stat"
+                },
+                {
+                    "id": "benefit-context",
+                    "type": "text",
+                    "group": "benefit",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 554,
+                        "width": 400,
+                        "height": 72
+                    },
+                    "text": "Annualized as of [date]",
+                    "typography": "body",
+                    "style": {
+                        "color": "$secondary"
+                    }
+                },
+                {
+                    "id": "benefit-source",
+                    "type": "text",
+                    "group": "benefit",
+                    "z": 10,
+                    "box": {
+                        "x": 1336,
+                        "y": 662,
+                        "width": 400,
+                        "height": 34
+                    },
+                    "text": "Source: [finance model]",
+                    "typography": "caption",
+                    "style": {
+                        "color": "$muted"
+                    }
+                }
+            ],
+            "notes": "Static native KPI pattern. Every bracketed metric, comparator, date, and source must be replaced with verified evidence before publication."
+        }
+    ]
+}

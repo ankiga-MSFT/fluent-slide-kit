@@ -100,6 +100,24 @@
                 }
             }
         },
+        "point": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "x",
+                "y"
+            ],
+            "properties": {
+                "x": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "y": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
         "style": {
             "type": "object",
             "additionalProperties": true
@@ -129,6 +147,9 @@
                 "role": {
                     "type": "string"
                 },
+                "group": {
+                    "$ref": "#/$defs/id"
+                },
                 "box": {
                     "$ref": "#/$defs/box"
                 },
@@ -138,6 +159,12 @@
                 },
                 "text": {
                     "type": "string"
+                },
+                "start": {
+                    "$ref": "#/$defs/point"
+                },
+                "end": {
+                    "$ref": "#/$defs/point"
                 },
                 "shape": {
                     "enum": [
@@ -205,6 +232,22 @@
                     "if": {
                         "properties": {
                             "type": {
+                                "const": "line"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "start",
+                            "end",
+                            "style"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
                                 "const": "image"
                             }
                         }
@@ -240,7 +283,6 @@
             "required": [
                 "id",
                 "number",
-                "layout",
                 "title",
                 "takeaway",
                 "theme",
@@ -255,10 +297,6 @@
                 "number": {
                     "type": "integer",
                     "minimum": 1
-                },
-                "layout": {
-                    "type": "string",
-                    "minLength": 1
                 },
                 "title": {
                     "type": "string",

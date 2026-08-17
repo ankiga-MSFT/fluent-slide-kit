@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { compileDeckScene, kitRoot } from './scene-core.mjs';
+import { compileDeckScene, kitRoot } from './composition-core.mjs';
 import { renderSceneToDirectory } from './render-scene-html.mjs';
 
 const parseArguments = (arguments_) => {

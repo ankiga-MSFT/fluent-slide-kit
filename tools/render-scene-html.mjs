@@ -1,7 +1,7 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { renderDiagramFile, resolveDiagramPath } from './diagram-core.mjs';
-import { kitRoot } from './scene-core.mjs';
+import { kitRoot } from './composition-core.mjs';
 
 const assetsRoot = path.join(kitRoot, 'assets');
 const DEFAULT_CORNER_RADIUS = 8;
@@ -31,6 +31,16 @@ const boxStyle = (elementBox, z) => [
     `z-index:${z}`,
 ].join(';');
 
+const transformStyle = (style = {}) => [
+    style.opacity === undefined ? '' : `opacity:${style.opacity}`,
+    style.rotation === undefined ? '' : `transform:rotate(${style.rotation}deg)`,
+].filter(Boolean).join(';');
+
+const sceneAttributes = (element) => [
+    `data-scene-element="${escapeHtml(element.id)}"`,
+    element.group ? `data-scene-group="${escapeHtml(element.group)}"` : '',
+].filter(Boolean).join(' ');
+
 const renderText = (element) => {
     const style = element.style ?? {};
     const fontFace = String(style.fontFace ?? 'Segoe UI').replaceAll("'", '');
@@ -42,13 +52,15 @@ const renderText = (element) => {
         `line-height:${style.lineHeight ?? 1.25}`,
         `color:${style.color ?? '#242424'}`,
         `text-align:${style.align ?? 'left'}`,
+        `font-style:${style.italic ? 'italic' : 'normal'}`,
         `justify-content:${style.verticalAlign === 'middle' ? 'center' : style.verticalAlign === 'bottom' ? 'flex-end' : 'flex-start'}`,
+        transformStyle(style),
     ].join(';');
     const content = escapeHtml(element.text);
     const body = style.hyperlink
         ? `<a href="${escapeHtml(style.hyperlink)}">${content}</a>`
         : content;
-    return `<div class="scene-element scene-text role-${escapeHtml(element.role ?? 'text')}" data-scene-element="${escapeHtml(element.id)}" style="${textStyle}">${body}</div>`;
+    return `<div class="scene-element scene-text role-${escapeHtml(element.role ?? 'text')}" ${sceneAttributes(element)} style="${textStyle}">${body}</div>`;
 };
 
 const renderShape = (element) => {
@@ -64,8 +76,9 @@ const renderShape = (element) => {
         `border:${style.strokeWidth ?? 0}px solid ${style.stroke ?? 'transparent'}`,
         `border-radius:${radius}`,
         style.accentTop ? `border-top:${style.accentTop.width}px solid ${style.accentTop.color}` : '',
+        transformStyle(style),
     ].filter(Boolean).join(';');
-    return `<div class="scene-element scene-shape" data-scene-element="${escapeHtml(element.id)}" aria-hidden="true" style="${shapeStyle}"></div>`;
+    return `<div class="scene-element scene-shape" ${sceneAttributes(element)} aria-hidden="true" style="${shapeStyle}"></div>`;
 };
 
 const renderLine = (element) => {
@@ -73,33 +86,38 @@ const renderLine = (element) => {
     const markerId = `${element.id}-arrow`;
     const width = Math.max(1, element.box.width);
     const height = Math.max(1, element.box.height);
-    const horizontal = width >= height;
-    const x2 = horizontal ? width - (style.endArrow ? 10 : 0) : width / 2;
-    const y2 = horizontal ? height / 2 : height - (style.endArrow ? 10 : 0);
-    return `<svg class="scene-element scene-line" data-scene-element="${escapeHtml(element.id)}" style="${boxStyle(element.box, element.z)};overflow:visible" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
-  ${style.endArrow ? `<defs><marker id="${escapeHtml(markerId)}" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,8 L10,4 z" fill="${escapeHtml(style.color ?? '#424242')}" /></marker></defs>` : ''}
-  <line x1="${horizontal ? 0 : width / 2}" y1="${horizontal ? height / 2 : 0}" x2="${x2}" y2="${y2}" stroke="${escapeHtml(style.color ?? '#424242')}" stroke-width="${style.width ?? 2}" stroke-linecap="round"${style.endArrow ? ` marker-end="url(#${escapeHtml(markerId)})"` : ''} />
+    const start = element.start ?? { x: element.box.x, y: element.box.y + height / 2 };
+    const end = element.end ?? { x: element.box.x + width, y: element.box.y + height / 2 };
+    const x1 = start.x - element.box.x;
+    const y1 = start.y - element.box.y;
+    const x2 = end.x - element.box.x;
+    const y2 = end.y - element.box.y;
+    const dashArray = style.dashType === 'dash' ? '12 8' : style.dashType === 'dot' ? '2 7' : undefined;
+    return `<svg class="scene-element scene-line" ${sceneAttributes(element)} style="${boxStyle(element.box, element.z)};overflow:visible;${transformStyle(style)}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+    ${(style.beginArrow || style.endArrow) ? `<defs><marker id="${escapeHtml(markerId)}" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0,0 L0,8 L10,4 z" fill="${escapeHtml(style.color ?? '#424242')}" /></marker></defs>` : ''}
+    <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${escapeHtml(style.color ?? '#424242')}" stroke-width="${style.width ?? 2}" stroke-linecap="round"${dashArray ? ` stroke-dasharray="${dashArray}"` : ''}${style.beginArrow ? ` marker-start="url(#${escapeHtml(markerId)})"` : ''}${style.endArrow ? ` marker-end="url(#${escapeHtml(markerId)})"` : ''} />
 </svg>`;
 };
 
 const renderImage = async (element, outputDirectory) => {
     const absolutePath = resolveAsset(element.path);
-    const style = `${boxStyle(element.box, element.z)};color:#0F6CBD`;
+    const imageStyle = element.style ?? {};
+    const style = `${boxStyle(element.box, element.z)};color:${imageStyle.color ?? '#0F6CBD'};${transformStyle(imageStyle)}`;
     if (element.assetKind === 'fluent') {
         const svg = await readFile(absolutePath, 'utf8');
         const accessibility = element.alt
             ? `role="img" aria-label="${escapeHtml(element.alt)}"`
             : 'aria-hidden="true" focusable="false"';
         const inlineSvg = svg.replace(/<svg\b/, `<svg ${accessibility}`);
-        return `<div class="scene-element scene-image" data-scene-element="${escapeHtml(element.id)}" style="${style}">${inlineSvg}</div>`;
+        return `<div class="scene-element scene-image" ${sceneAttributes(element)} style="${style}">${inlineSvg}</div>`;
     }
     const source = toPosix(path.relative(outputDirectory, absolutePath));
-    return `<div class="scene-element scene-image" data-scene-element="${escapeHtml(element.id)}" style="${style}"><img src="${escapeHtml(source)}" alt="${escapeHtml(element.alt)}" /></div>`;
+    return `<div class="scene-element scene-image" ${sceneAttributes(element)} style="${style}"><img src="${escapeHtml(source)}" alt="${escapeHtml(element.alt)}" style="object-fit:${imageStyle.fit ?? 'contain'}" /></div>`;
 };
 
 const renderDiagram = async (element, theme) => {
     const { svg } = await renderDiagramFile(resolveDiagramPath(element.diagramPath), { theme });
-    return `<div class="scene-element scene-diagram" data-scene-element="${escapeHtml(element.id)}" style="${boxStyle(element.box, element.z)}" role="img" aria-label="${escapeHtml(element.alt)}">${svg}</div>`;
+    return `<div class="scene-element scene-diagram" ${sceneAttributes(element)} style="${boxStyle(element.box, element.z)};${transformStyle(element.style)}" role="img" aria-label="${escapeHtml(element.alt)}">${svg}</div>`;
 };
 
 const renderElement = async (element, slide, outputDirectory) => {
@@ -134,7 +152,7 @@ export const renderSceneSlideHtml = async (scene, slide, outputDirectory) => {
         .join('\n');
     const notesPayload = JSON.stringify({ takeaway: slide.takeaway, notes: slide.notes, sources: slide.sources }).replaceAll('<', '\\u003c');
     return `<!doctype html>
-<!-- Scene slide ${slide.number}. Takeaway: ${escapeHtml(slide.takeaway)}. Layout: ${escapeHtml(slide.layout)}. -->
+<!-- Scene slide ${slide.number}. Takeaway: ${escapeHtml(slide.takeaway)}. -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -143,7 +161,7 @@ export const renderSceneSlideHtml = async (scene, slide, outputDirectory) => {
   <style>${baseStyles(scene)}</style>
 </head>
 <body>
-  <section class="scene-slide layout-${escapeHtml(slide.layout)} theme-${escapeHtml(slide.theme)}" role="group" aria-label="Slide ${slide.number}: ${escapeHtml(slide.title)}" data-scene-slide="${escapeHtml(slide.id)}">
+    <section class="scene-slide theme-${escapeHtml(slide.theme)}" role="group" aria-label="Slide ${slide.number}: ${escapeHtml(slide.title)}" data-scene-slide="${escapeHtml(slide.id)}">
 ${elements}
   </section>
   <script type="application/json" id="slide-metadata">${notesPayload}</script>
@@ -153,6 +171,7 @@ ${elements}
 };
 
 export const renderSceneToDirectory = async (scene, outputDirectory) => {
+    await rm(outputDirectory, { recursive: true, force: true });
     await mkdir(outputDirectory, { recursive: true });
     const manifest = { title: scene.title, source: scene.source, sceneVersion: scene.schemaVersion, slides: [] };
     for (const slide of scene.slides) {

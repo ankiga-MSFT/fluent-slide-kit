@@ -1,0 +1,499 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://local.fluent-slide-kit/schemas/composition.schema.json",
+    "title": "Freeform presentation composition",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "schemaVersion",
+        "title",
+        "theme",
+        "slides"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "const": 1
+        },
+        "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+        },
+        "brandProfile": {
+            "type": "string",
+            "pattern": "^design/brand-profiles/[^.].+\\.json$",
+            "default": "design/brand-profiles/fluent-aligned.json"
+        },
+        "theme": {
+            "enum": [
+                "light",
+                "dark"
+            ]
+        },
+        "locale": {
+            "type": "string",
+            "default": "en"
+        },
+        "slides": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/$defs/slide"
+            }
+        }
+    },
+    "$defs": {
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "box": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "x",
+                "y",
+                "width",
+                "height"
+            ],
+            "properties": {
+                "x": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "y": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "height": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            }
+        },
+        "point": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "x",
+                "y"
+            ],
+            "properties": {
+                "x": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "y": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "color": {
+            "type": "string",
+            "anyOf": [
+                {
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                {
+                    "const": "transparent"
+                },
+                {
+                    "enum": [
+                        "$background",
+                        "$surface",
+                        "$subtle",
+                        "$foreground",
+                        "$secondary",
+                        "$muted",
+                        "$stroke",
+                        "$strokeStrong",
+                        "$brand",
+                        "$brandStrong",
+                        "$brandSubtle",
+                        "$onBrand",
+                        "$success",
+                        "$successSubtle",
+                        "$warning",
+                        "$warningSubtle",
+                        "$danger",
+                        "$dangerSubtle"
+                    ]
+                }
+            ]
+        },
+        "style": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "color": {
+                    "$ref": "#/$defs/color"
+                },
+                "fill": {
+                    "$ref": "#/$defs/color"
+                },
+                "stroke": {
+                    "$ref": "#/$defs/color"
+                },
+                "strokeWidth": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                },
+                "radius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                },
+                "fontFace": {
+                    "enum": [
+                        "$heading",
+                        "$body",
+                        "$fallback"
+                    ]
+                },
+                "fontSize": {
+                    "type": "number",
+                    "minimum": 18,
+                    "maximum": 200
+                },
+                "fontWeight": {
+                    "type": "integer",
+                    "minimum": 400,
+                    "maximum": 700
+                },
+                "lineHeight": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 2
+                },
+                "align": {
+                    "enum": [
+                        "left",
+                        "center",
+                        "right"
+                    ]
+                },
+                "verticalAlign": {
+                    "enum": [
+                        "top",
+                        "middle",
+                        "bottom"
+                    ]
+                },
+                "italic": {
+                    "type": "boolean"
+                },
+                "hyperlink": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 20
+                },
+                "beginArrow": {
+                    "type": "boolean"
+                },
+                "endArrow": {
+                    "type": "boolean"
+                },
+                "dashType": {
+                    "enum": [
+                        "solid",
+                        "dash",
+                        "dot"
+                    ]
+                },
+                "fit": {
+                    "enum": [
+                        "contain",
+                        "cover",
+                        "fill"
+                    ]
+                },
+                "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "rotation": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMaximum": 360
+                }
+            }
+        },
+        "element": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "type",
+                "z"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/id"
+                },
+                "type": {
+                    "enum": [
+                        "text",
+                        "shape",
+                        "line",
+                        "image",
+                        "diagram"
+                    ]
+                },
+                "role": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                },
+                "group": {
+                    "$ref": "#/$defs/id"
+                },
+                "box": {
+                    "$ref": "#/$defs/box"
+                },
+                "start": {
+                    "$ref": "#/$defs/point"
+                },
+                "end": {
+                    "$ref": "#/$defs/point"
+                },
+                "z": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 999
+                },
+                "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                },
+                "typography": {
+                    "enum": [
+                        "display",
+                        "title",
+                        "subtitle",
+                        "itemTitle",
+                        "body",
+                        "caption",
+                        "stat"
+                    ]
+                },
+                "shape": {
+                    "enum": [
+                        "rect",
+                        "roundRect",
+                        "ellipse"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "pattern": "^assets/[^.].+\\.(svg|png|jpg|jpeg)$"
+                },
+                "diagramPath": {
+                    "type": "string",
+                    "pattern": "^diagrams/[^.].+\\.json$"
+                },
+                "assetKind": {
+                    "enum": [
+                        "fluent",
+                        "azure",
+                        "image"
+                    ]
+                },
+                "alt": {
+                    "type": "string",
+                    "maxLength": 300
+                },
+                "provenance": {
+                    "enum": [
+                        "local-catalog",
+                        "user-supplied",
+                        "ai-generated"
+                    ]
+                },
+                "style": {
+                    "$ref": "#/$defs/style"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "text"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "box",
+                            "text",
+                            "typography"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "shape"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "box",
+                            "shape",
+                            "style"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "line"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "start",
+                            "end"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "image"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "box",
+                            "path",
+                            "assetKind",
+                            "alt",
+                            "provenance"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "diagram"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "box",
+                            "diagramPath",
+                            "alt"
+                        ]
+                    }
+                }
+            ]
+        },
+        "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "label"
+            ],
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "accessed": {
+                    "type": "string",
+                    "maxLength": 40
+                }
+            }
+        },
+        "slide": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "title",
+                "takeaway",
+                "elements"
+            ],
+            "properties": {
+                "id": {
+                    "$ref": "#/$defs/id"
+                },
+                "number": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                },
+                "takeaway": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                },
+                "theme": {
+                    "enum": [
+                        "light",
+                        "dark"
+                    ]
+                },
+                "background": {
+                    "$ref": "#/$defs/color"
+                },
+                "footerColor": {
+                    "$ref": "#/$defs/color"
+                },
+                "elements": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                        "$ref": "#/$defs/element"
+                    }
+                },
+                "sources": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "$ref": "#/$defs/source"
+                    }
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 6000
+                }
+            }
+        }
+    }
+}

@@ -17,6 +17,32 @@
             "faqFile": "assets/azure-public-service-icons/legal/Azure_Icons_FAQ.pdf"
         }
     ],
+    "designData": [
+        {
+            "name": "Fluent UI foundation token snapshot",
+            "upstreamPackage": "@fluentui/tokens",
+            "upstreamVersion": "1.0.0-alpha.24",
+            "revision": "203c5b8d8eafa443f78665e66412668205529b65",
+            "source": "https://github.com/microsoft/fluentui/tree/master/packages/tokens",
+            "license": "MIT",
+            "licenseSource": "https://github.com/microsoft/fluentui/blob/203c5b8d8eafa443f78665e66412668205529b65/packages/tokens/LICENSE",
+            "licenseFile": "legal/fluent-ui-tokens-LICENSE.txt",
+            "localFile": "design/fluent-foundation.json",
+            "modifications": "Converted stable static-frame token values to compact renderer-neutral JSON; omitted motion durations and curves and included no font or icon binaries."
+        },
+        {
+            "name": "Fluent UI data visualization palette snapshot",
+            "upstreamPackage": "@fluentui/react-charts",
+            "upstreamVersion": "9.3.24",
+            "revision": "203c5b8d8eafa443f78665e66412668205529b65",
+            "source": "https://github.com/microsoft/fluentui/blob/master/packages/charts/react-charts/library/src/utilities/colors.ts",
+            "license": "MIT",
+            "licenseSource": "https://github.com/microsoft/fluentui/blob/203c5b8d8eafa443f78665e66412668205529b65/LICENSE",
+            "licenseFile": "legal/fluent-ui-LICENSE.txt",
+            "localFile": "design/fluent-chart-foundation.json",
+            "modifications": "Converted qualitative and semantic palettes to static renderer-neutral JSON and added static presentation usage rules; no React or D3 runtime included."
+        }
+    ],
     "developmentTools": [
         {
             "name": "Playwright",

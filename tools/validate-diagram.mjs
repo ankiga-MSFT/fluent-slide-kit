@@ -113,6 +113,22 @@ const inspectDiagram = async (page, diagram, quality) => {
                 if (overlapWidth > tolerance && overlapHeight > tolerance) collisions.push(`${left.id} / ${right.id}`);
             }
         }
+        const nodeShapeBounds = [...document.querySelectorAll('[data-diagram-node]')].map((element) => ({
+            id: element.getAttribute('data-diagram-node'),
+            rect: element.querySelector(':scope > .node-shape').getBoundingClientRect(),
+        }));
+        const edgeLabelBounds = [...document.querySelectorAll('[data-diagram-edge-label]')].map((element) => ({
+            id: element.getAttribute('data-diagram-edge-label'),
+            rect: element.querySelector(':scope > rect').getBoundingClientRect(),
+        }));
+        const edgeLabelNodeCollisions = [];
+        for (const label of edgeLabelBounds) {
+            for (const node of nodeShapeBounds) {
+                const overlapWidth = Math.min(label.rect.right, node.rect.right) - Math.max(label.rect.left, node.rect.left);
+                const overlapHeight = Math.min(label.rect.bottom, node.rect.bottom) - Math.max(label.rect.top, node.rect.top);
+                if (overlapWidth > tolerance && overlapHeight > tolerance) edgeLabelNodeCollisions.push(`${label.id} / ${node.id}`);
+            }
+        }
 
         const parseSegments = (pathElement) => {
             const values = [...pathElement.getAttribute('d').matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)]
@@ -160,6 +176,7 @@ const inspectDiagram = async (page, diagram, quality) => {
             nodeContentSpacingViolations,
             shortLayerFlows,
             collisions,
+            edgeLabelNodeCollisions,
             crossings,
         };
     }, { diagramDefinition: diagram, qualityDefinition: quality });
@@ -195,6 +212,7 @@ const inspectDiagram = async (page, diagram, quality) => {
     if (geometry.nodeContentSpacingViolations.length) errors.push(`Flow-node content overlaps or is too tightly spaced: ${geometry.nodeContentSpacingViolations.map((violation) => `${violation.id}: ${violation.parts} (${violation.gap.toFixed(1)}px)`).join(', ')}`);
     if (geometry.shortLayerFlows.length) errors.push(`Layer connectors without a visible tail: ${geometry.shortLayerFlows.map((flow) => `${flow.id} (${flow.length.toFixed(1)}px)`).join(', ')}`);
     if (geometry.collisions.length) errors.push(`Overlapping diagram items: ${geometry.collisions.join(', ')}`);
+    if (geometry.edgeLabelNodeCollisions.length) errors.push(`Edge labels overlap diagram nodes: ${geometry.edgeLabelNodeCollisions.join(', ')}`);
     if (geometry.crossings.length) errors.push(`Crossing connectors: ${geometry.crossings.join(', ')}`);
     if (accessibilityViolations.length) errors.push(`Accessibility: ${accessibilityViolations.map((violation) => `${violation.id} (${violation.impact})`).join(', ')}`);
     return { geometry, renderedNodes, renderedEdges, renderedComponents, renderedConcerns, accessibilityViolations, errors };

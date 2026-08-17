@@ -7,9 +7,23 @@
         "height": 1080,
         "aspectRatio": "16:9"
     },
+    "outputMode": {
+        "staticOnly": true,
+        "completeMessagePerFrame": true,
+        "forbidden": [
+            "animation",
+            "slide-transition",
+            "autoplay",
+            "hover-dependent-content",
+            "interactive-control",
+            "loading-state",
+            "motion-dependent-meaning"
+        ]
+    },
     "typography": {
         "fontStack": "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, system-ui, sans-serif",
         "note": "Segoe UI binaries are not redistributed. Slide aliases are larger than the Fluent UI type ramp for projected readability.",
+        "fluentFoundation": "design/fluent-foundation.json",
         "roles": {
             "display": 72,
             "title": 48,
@@ -21,8 +35,12 @@
     },
     "contentBudgets": {
         "titleWords": 10,
-        "bodyWords": 55,
-        "itemsPerSlide": 6
+        "bodyWords": 55
+    },
+    "foundations": {
+        "fluent": "design/fluent-foundation.json",
+        "dataVisualization": "design/fluent-chart-foundation.json",
+        "usage": "Use these attributed snapshots as authoring inputs. Brand-profile presentation aliases remain the renderer-facing contract."
     },
     "diagramQuality": {
         "canvas": {
@@ -59,7 +77,6 @@
         "https://fluent2.microsoft.design/color",
         "https://fluent2.microsoft.design/typography",
         "https://fluent2.microsoft.design/layout",
-        "https://fluent2.microsoft.design/iconography",
-        "https://fluent2.microsoft.design/motion"
+        "https://fluent2.microsoft.design/iconography"
     ]
 }

@@ -1,6 +1,6 @@
 ---
 name: fluent-presentation
-description: "Create, revise, review, or export an executive-ready Microsoft or Azure presentation from a natural-language business brief. Use when an executive asks for a slide, deck, PowerPoint, presentation, visual, Azure architecture, process flow, recommendation, decision narrative, HTML preview, or executive summary. Own the complete workflow: clarify essential business intent, research current Microsoft facts, choose layouts and assets, author semantic sources, compile a shared scene, render and validate editable PowerPoint plus HTML previews, visually review, repair, and deliver without asking the user to run commands or edit files."
+description: "Create, revise, review, or export an executive-ready Microsoft or Azure presentation from a natural-language business brief. Use when an executive asks for a slide, deck, PowerPoint, presentation, visual, Azure architecture, process flow, recommendation, decision narrative, HTML preview, or executive summary. Own the complete workflow: clarify essential business intent, research current Microsoft facts, compose the visual argument, resolve assets, compile a shared scene, render and validate editable PowerPoint plus HTML previews, visually review, repair, and deliver without asking the user to run commands or edit files."
 argument-hint: "Describe the audience, message or decision, evidence, and desired slide or deck"
 ---
 
@@ -55,15 +55,14 @@ Use explicit placeholders when private evidence is unavailable.
 Choose the workflow without asking the user:
 
 - Narrative slide or deck: follow the internal [deck playbook](../fluent-deck/SKILL.md).
-- Architecture, workflow, decision flow, or topology: follow the internal
-  [diagram playbook](../fluent-diagram/SKILL.md), then embed it in a deck unless the user explicitly
-  requests only a standalone diagram.
+- Architecture or workflow: compose directly when a few native elements communicate the story clearly.
+  Follow the internal [diagram playbook](../fluent-diagram/SKILL.md) when branching, merging, decisions,
+  boundaries, swim lanes, cycles, or layered topology need semantic validation.
 - Mixed request: create the diagram first, validate it, then create the surrounding deck.
 - Existing artifact review or repair: reproduce the issue, repair the owning source, revalidate, and
   return the revised deliverable.
 
-Use the simple `architecture` slide layout only for a linear sequence of two to five nodes. Within the
-structured diagram workflow, choose `flow` when sequence and connectors carry the meaning; choose
+Within the structured diagram workflow, choose `flow` when sequence and connectors carry the meaning; choose
 `layered-architecture` when layers, channels, capabilities, or cross-cutting governance carry the meaning.
 
 ## 3. Ground content and visuals
@@ -73,13 +72,23 @@ If the user asks about actual deployed resources or recommendations, use an appr
 skill or tool and confirm only the required business scope. Do not imply that a conceptual diagram is
 Microsoft's private implementation architecture or the user's deployed topology.
 
-Search the local asset catalogs yourself for every visual. Use exact returned paths. Preserve official
-Azure icon colors and proportions. If an official product icon is unavailable, use a clearly conceptual
-Fluent icon or labeled process node; never counterfeit an Azure service icon.
+Before authoring, load `assets/manifest.json`, `design/design-contract.json`, the selected brand profile,
+`design/fluent-foundation.json`, and `design/fluent-chart-foundation.json`. The brand profile remains the
+renderer-facing color and typography contract; the foundation snapshots are attributed authoring references
+for spacing, shape, hierarchy, shadows, and static data-visualization semantics.
+
+Search the local catalogs under `assets/` yourself for every visual by running `npm run assets:search`.
+Use exact returned paths and never guess an asset filename. Preserve official Azure icon colors and
+proportions. If an official product icon is unavailable, use a clearly conceptual Fluent icon or labeled
+process node; never counterfeit an Azure service icon.
 
 Use image generation only for hero photography, conceptual illustration, or an editorial background.
 Never generate a whole slide, logo, Microsoft product icon, slide text, chart, architecture diagram, or
 workflow as an image. Keep narrative text, data, and diagrams as structured editable content.
+
+Every presentation is a static still-frame experience. Do not author animations, slide transitions,
+autoplay, hover-dependent content, interactive controls, loading states, or motion-dependent meaning.
+Motion tokens in the foundation snapshot are provenance-only and must not be applied to generated output.
 
 ## 4. Author the internal sources
 
@@ -89,12 +98,9 @@ inputs for the current request but are intentionally ignored by Git; only reusab
 one takeaway per slide, make titles communicate claims, and add speaker notes and
 sources. Prefer another slide over shrinking text or overloading one frame.
 
-For a single architecture slide, create both:
-
-1. a structured diagram source under `diagrams/`;
-2. a one-slide deck source under `decks/` that embeds the diagram.
-
-These files preserve reproducibility and future revision, but do not require user involvement.
+For a single architecture slide, create a one-slide composition under `decks/`. Add a structured source
+under `diagrams/` only when the architecture meets the semantic threshold above, then embed it as one
+positioned element. These files preserve reproducibility and future revision without user involvement.
 
 ## 5. Execute the pipeline autonomously
 

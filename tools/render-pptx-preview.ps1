@@ -20,6 +20,8 @@ if ($existingPowerPoint) {
     throw 'An interactive PowerPoint session is already running. Preview rendering was skipped to avoid interrupting or closing user work.'
 }
 
+Get-ChildItem -LiteralPath $outputPath -Filter '*.PNG' -File | Remove-Item -Force
+
 $powerPoint = $null
 $presentation = $null
 try {

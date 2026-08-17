@@ -14,7 +14,7 @@ asset paths, or inspect raw reports.
 ## Scope
 
 Use this skill for workflow and architecture communication. It produces an accessible standalone SVG
-from `diagrams/<name>.json` and can embed it in a `diagram` deck slide. Use `fluent-deck` for
+from `diagrams/<name>.json` and can embed it as a positioned `diagram` element. Use `fluent-deck` for
 the surrounding narrative, slide sequence, HTML rendering, and screenshot handoff.
 
 The schema supports two intentionally different visual grammars:
@@ -41,8 +41,8 @@ between owners. Choose `layered-architecture` when the audience must understand 
 capabilities, publication surfaces, governance, or how concerns apply across a system. Do not represent
 a stable layered architecture as a dense workflow merely because services have relationships.
 
-Use the simple deck `architecture` layout instead when the complete message is only a two-to-five-step
-linear sequence.
+Use native shape, text, image, and line elements in the deck composition when the complete message is
+only a short linear sequence.
 
 ## 3. Choose primitives
 
@@ -112,11 +112,12 @@ Reference the validated source graph from a deck slide:
 
 ```json
 {
-  "layout": "diagram",
-  "diagram": {
-    "path": "diagrams/<name>.json",
-    "alt": "Describe the significant nodes, direction, and branches."
-  }
+  "id": "decision-flow",
+  "type": "diagram",
+  "z": 10,
+  "box": { "x": 160, "y": 220, "width": 1600, "height": 720 },
+  "diagramPath": "diagrams/<name>.json",
+  "alt": "Describe the significant nodes, direction, and branches."
 }
 ```
 

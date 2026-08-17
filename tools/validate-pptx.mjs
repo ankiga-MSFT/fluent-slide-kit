@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
 import { loadDiagram, resolveDiagramPath } from './diagram-core.mjs';
-import { compileDeckScene, kitRoot } from './scene-core.mjs';
+import { compileDeckScene, kitRoot } from './composition-core.mjs';
 
 const execFileAsync = promisify(execFile);
 

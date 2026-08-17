@@ -1,0 +1,283 @@
+{
+    "schemaVersion": 1,
+    "id": "fluent-data-visualization-foundation",
+    "description": "Static renderer-neutral snapshot of the Fluent chart qualitative and semantic palettes. It does not include React, D3, hover, animation, or responsive chart behavior.",
+    "upstream": {
+        "repository": "https://github.com/microsoft/fluentui",
+        "package": "@fluentui/react-charts",
+        "packageVersion": "9.3.24",
+        "revision": "203c5b8d8eafa443f78665e66412668205529b65",
+        "license": "MIT",
+        "sourcePaths": [
+            "packages/charts/react-charts/library/src/utilities/colors.ts"
+        ]
+    },
+    "resolution": {
+        "representation": "Every slot stores its resolved light and dark value. Equal values indicate that the upstream dark lookup falls back to the light value.",
+        "darkTheme": "Use the dark value when supplied by the upstream palette; otherwise use the light value.",
+        "qualitativeSequence": "Select ((index + offset) modulo 40) + 1.",
+        "tokenLookup": "Resolve qualitative.<1-40> and semantic.<role> tokens; leave an unrecognized literal color unchanged."
+    },
+    "qualitative": {
+        "usage": "Categorical series with no ordered or semantic relationship. Use slots sequentially and add labels or other non-color cues.",
+        "slots": [
+            {
+                "id": 1,
+                "light": "#637CEF",
+                "dark": "#637CEF"
+            },
+            {
+                "id": 2,
+                "light": "#E3008C",
+                "dark": "#E3008C"
+            },
+            {
+                "id": 3,
+                "light": "#2AA0A4",
+                "dark": "#2AA0A4"
+            },
+            {
+                "id": 4,
+                "light": "#9373C0",
+                "dark": "#9373C0"
+            },
+            {
+                "id": 5,
+                "light": "#13A10E",
+                "dark": "#13A10E"
+            },
+            {
+                "id": 6,
+                "light": "#3A96DD",
+                "dark": "#3A96DD"
+            },
+            {
+                "id": 7,
+                "light": "#CA5010",
+                "dark": "#CA5010"
+            },
+            {
+                "id": 8,
+                "light": "#57811B",
+                "dark": "#57811B"
+            },
+            {
+                "id": 9,
+                "light": "#B146C2",
+                "dark": "#B146C2"
+            },
+            {
+                "id": 10,
+                "light": "#AE8C00",
+                "dark": "#AE8C00"
+            },
+            {
+                "id": 11,
+                "light": "#3C51B4",
+                "dark": "#93A4F4"
+            },
+            {
+                "id": 12,
+                "light": "#AD006A",
+                "dark": "#EE5FB7"
+            },
+            {
+                "id": 13,
+                "light": "#026467",
+                "dark": "#4CB4B7"
+            },
+            {
+                "id": 14,
+                "light": "#674C8C",
+                "dark": "#A083C9"
+            },
+            {
+                "id": 15,
+                "light": "#0E7A0B",
+                "dark": "#27AC22"
+            },
+            {
+                "id": 16,
+                "light": "#2C72A8",
+                "dark": "#4FA1E1"
+            },
+            {
+                "id": 17,
+                "light": "#9A3D0C",
+                "dark": "#D77440"
+            },
+            {
+                "id": 18,
+                "light": "#405F14",
+                "dark": "#73AA24"
+            },
+            {
+                "id": 19,
+                "light": "#863593",
+                "dark": "#C36BD1"
+            },
+            {
+                "id": 20,
+                "light": "#6D5700",
+                "dark": "#D0B232"
+            },
+            {
+                "id": 21,
+                "light": "#4F6BED",
+                "dark": "#4F6BED"
+            },
+            {
+                "id": 22,
+                "light": "#EA38A6",
+                "dark": "#EA38A6"
+            },
+            {
+                "id": 23,
+                "light": "#038387",
+                "dark": "#038387"
+            },
+            {
+                "id": 24,
+                "light": "#8764B8",
+                "dark": "#8764B8"
+            },
+            {
+                "id": 25,
+                "light": "#11910D",
+                "dark": "#11910D"
+            },
+            {
+                "id": 26,
+                "light": "#3487C7",
+                "dark": "#3487C7"
+            },
+            {
+                "id": 27,
+                "light": "#D06228",
+                "dark": "#D06228"
+            },
+            {
+                "id": 28,
+                "light": "#689920",
+                "dark": "#689920"
+            },
+            {
+                "id": 29,
+                "light": "#BA58C9",
+                "dark": "#BA58C9"
+            },
+            {
+                "id": 30,
+                "light": "#937700",
+                "dark": "#C19C00"
+            },
+            {
+                "id": 31,
+                "light": "#2C3C85",
+                "dark": "#C8D1FA"
+            },
+            {
+                "id": 32,
+                "light": "#7F004E",
+                "dark": "#F7ADDA"
+            },
+            {
+                "id": 33,
+                "light": "#02494C",
+                "dark": "#9BD9DB"
+            },
+            {
+                "id": 34,
+                "light": "#4C3867",
+                "dark": "#B29AD4"
+            },
+            {
+                "id": 35,
+                "light": "#0B5A08",
+                "dark": "#A7E3A5"
+            },
+            {
+                "id": 36,
+                "light": "#20547C",
+                "dark": "#83BDEB"
+            },
+            {
+                "id": 37,
+                "light": "#712D09",
+                "dark": "#DF8E64"
+            },
+            {
+                "id": 38,
+                "light": "#23330B",
+                "dark": "#A4CC6C"
+            },
+            {
+                "id": 39,
+                "light": "#63276D",
+                "dark": "#CF87DA"
+            },
+            {
+                "id": 40,
+                "light": "#3A2F00",
+                "dark": "#DAC157"
+            }
+        ]
+    },
+    "semantic": {
+        "usage": "Status colors keep the same meaning in every chart and must not be used merely to distinguish adjacent series.",
+        "roles": {
+            "info": {
+                "light": "#015CDA",
+                "dark": "#015CDA"
+            },
+            "disabled": {
+                "light": "#DBDBDB",
+                "dark": "#4D4D4D"
+            },
+            "highError": {
+                "light": "#6E0811",
+                "dark": "#CC2635"
+            },
+            "error": {
+                "light": "#C50F1F",
+                "dark": "#DC626D"
+            },
+            "warning": {
+                "light": "#F7630C",
+                "dark": "#F87528"
+            },
+            "success": {
+                "light": "#107C10",
+                "dark": "#54B054"
+            },
+            "highSuccess": {
+                "light": "#094509",
+                "dark": "#218C21"
+            }
+        }
+    },
+    "staticChartRules": {
+        "required": [
+            "descriptive title",
+            "visible summary or takeaway",
+            "series labels or legend",
+            "source when factual data is shown",
+            "alt text",
+            "non-color differentiation when series or status could be ambiguous"
+        ],
+        "excluded": [
+            "hover-only detail",
+            "keyboard-only disclosure",
+            "animation-dependent meaning",
+            "unlabeled color-only status"
+        ],
+        "recommendedNativePatterns": [
+            "bar",
+            "line",
+            "area",
+            "donut",
+            "kpi",
+            "gauge"
+        ]
+    }
+}

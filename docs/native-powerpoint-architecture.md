@@ -2,14 +2,14 @@
 
 ## Product contract
 
-The semantic deck JSON is the authoring source. It compiles into one fixed `1920x1080` scene. HTML and
+The freeform composition JSON is the authoring source. It compiles into one fixed `1920x1080` scene. HTML and
 PowerPoint consume that scene independently; PowerPoint is never produced by converting arbitrary HTML.
 
 ```text
 business brief + evidence
         |
         v
-semantic deck / diagram JSON
+composition JSON + optional diagram JSON
         |
         v
 renderer-neutral scene (pixels, roles, stable ids)
@@ -30,7 +30,7 @@ This maps the `1920x1080` scene exactly to PowerPoint's `13.333x7.5` wide layout
 |---|---|
 | Titles, body, captions, metrics | Native text boxes |
 | Cards, bands, rails, boundaries | Native shapes |
-| Simple architecture connectors | Native lines with arrowheads |
+| Authored connectors | Native lines with arrowheads |
 | Layered architecture | Native shapes, text, connectors, and individual icons |
 | Complex flow diagram | Validated `1600x720` PNG graphic in the current implementation |
 | Fluent and Azure assets | Individual image objects |
@@ -58,7 +58,7 @@ This Selection Pane identity is the contract for a future PowerPoint task-pane a
 can target managed objects without attempting to understand arbitrary user-created slides.
 
 PowerPoint supports light final edits. The current implementation intentionally does not import arbitrary
-Office edits back into semantic JSON. Regeneration remains deterministic and source-driven. A future add-in
+Office edits back into composition JSON. Regeneration remains deterministic and source-driven. A future add-in
 should submit the selected slide id, managed object ids, natural-language instruction, and evidence delta to
 an authenticated revision service, then replace only the affected managed objects.
 
@@ -103,6 +103,6 @@ workflows as images. Those elements must remain structured, grounded, accessible
 ## Dependency boundary
 
 PptxGenJS 4.0.1 is pinned. Its `image-size` dependency has denial-of-service advisories for untrusted
-ICNS/JXL/HEIF inputs. The deck schema and validators restrict the kit to local SVG/PNG/JPEG presentation assets,
+ICNS/JXL/HEIF inputs. The composition schema and validators restrict the kit to local SVG/PNG/JPEG presentation assets,
 so those parsers are outside the accepted input path. Do not broaden image formats without revisiting the
 advisory and adding resource limits.
