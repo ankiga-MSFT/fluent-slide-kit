@@ -31,7 +31,7 @@ This maps the `1920x1080` scene exactly to PowerPoint's `13.333x7.5` wide layout
 | Titles, body, captions, metrics | Native text boxes |
 | Cards, bands, rails, boundaries | Native shapes |
 | Authored connectors | Native lines with arrowheads |
-| Layered architecture | Native shapes, text, connectors, and individual icons |
+| Freeform architecture | Native shapes, text, connectors, and individual icons |
 | Complex flow diagram | Validated `1600x720` PNG graphic in the current implementation |
 | Fluent and Azure assets | Individual image objects |
 | Sources and takeaway | Speaker notes; the visible footer is limited to Microsoft Confidential |
@@ -46,12 +46,6 @@ Every Office object is named:
 
 ```text
 fluent-slide-kit:<slide-id>:<element-id>
-```
-
-Layered diagram children extend the element id, for example:
-
-```text
-fluent-slide-kit:layered-template:diagram-component-front-door
 ```
 
 This Selection Pane identity is the contract for a future PowerPoint task-pane add-in. A revision request
@@ -86,8 +80,12 @@ PowerPoint validation checks:
 - scene element coverage;
 - speaker notes and takeaway;
 - rejection of screenshot-only slides;
-- optional desktop PowerPoint rendering at `1920x1080`;
+- optional desktop PowerPoint rendering at `3840x2160`;
 - nonblank preview pixel sampling.
+
+Native text, shapes, lines, and SVG media remain resolution-independent. Source PNG/JPEG assets are
+embedded without downsampling. The only deliberate raster fallback, a complex flow diagram, is captured
+at `3200x1440`. Package compression is lossless ZIP compression and does not reduce image quality.
 
 Desktop rendering refuses to start while an interactive PowerPoint process is open. This avoids attaching
 to and closing a user's presentation. Structural validation does not require Office.

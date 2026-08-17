@@ -4,13 +4,15 @@
   "purpose": "Compact, web-native icon assets with deterministic AI lookup.",
   "entryPoints": {
     "fluentCatalog": "fluent-system-icons/catalog.json",
-    "azureCatalog": "azure-public-service-icons/catalog.json"
+    "azureCatalog": "azure-public-service-icons/catalog.json",
+    "externalCatalog": "external-icons/catalog.json"
   },
   "inventory": {
     "fluentConcepts": 2973,
     "fluentSvgAssets": 5855,
     "fluentFontAssets": 3,
-    "azureSvgAssets": 714
+    "azureSvgAssets": 714,
+    "externalSvgAssets": 1
   },
   "collections": [
     {
@@ -25,18 +27,27 @@
       "useFor": "Azure products, services, and architecture diagrams.",
       "svg": "azure-public-service-icons/svg/{category}/{official-file-name}.svg",
       "terms": "azure-public-service-icons/legal/Microsoft_Terms_of_Use.pdf"
+    },
+    {
+      "id": "external-icons",
+      "useFor": "Approved non-Azure, non-Fluent product and vendor icons from official sources.",
+      "catalog": "external-icons/catalog.json",
+      "svg": "external-icons/svg/{icon-id}.svg",
+      "policy": "Each entry records an immutable official source, license file, and trademark notice."
     }
   ],
   "rendering": {
     "fluentSvg": "Inline SVG content to inherit CSS currentColor, or use the file as a CSS mask.",
     "fluentFont": "Load the included CSS, then use its icon-ic_fluent_* class names.",
-    "azureSvg": "Use as an img source or inline SVG; preserve official colors and proportions."
+    "azureSvg": "Use as an img source or inline SVG; preserve official colors and proportions.",
+    "externalSvg": "Use as an img source; preserve the official artwork, proportions, and recorded trademark constraints."
   },
   "compactness": {
     "included": [
       "One canonical Regular and Filled SVG per available Fluent icon concept.",
       "One Resizable Fluent WOFF2 font, CSS class map, and JSON glyph map.",
       "All Azure V24 SVGs with their category hierarchy, terms, and FAQ.",
+      "Approved external SVG icons with pinned official sources, license files, and trademark notices.",
       "Searchable per-collection JSON catalogs and required Fluent legal files."
     ],
     "excluded": [

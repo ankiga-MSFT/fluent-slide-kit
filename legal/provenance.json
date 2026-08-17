@@ -15,6 +15,16 @@
             "source": "https://learn.microsoft.com/azure/architecture/icons/",
             "termsFile": "assets/azure-public-service-icons/legal/Microsoft_Terms_of_Use.pdf",
             "faqFile": "assets/azure-public-service-icons/legal/Azure_Icons_FAQ.pdf"
+        },
+        {
+            "name": "GitHub Copilot Octicon",
+            "version": "Primer Octicons revision 0e21a4c2d8449102f10e533d241f04797af0914c",
+            "source": "https://github.com/primer/octicons/blob/0e21a4c2d8449102f10e533d241f04797af0914c/icons/copilot-48.svg",
+            "license": "MIT",
+            "licenseFile": "assets/external-icons/legal/primer-octicons-LICENSE.txt",
+            "localFile": "assets/external-icons/svg/github-copilot.svg",
+            "modifications": "Renamed only; SVG geometry is unchanged.",
+            "trademarkNotice": "GitHub and GitHub Copilot are trademarks of GitHub, Inc.; use does not imply endorsement."
         }
     ],
     "designData": [

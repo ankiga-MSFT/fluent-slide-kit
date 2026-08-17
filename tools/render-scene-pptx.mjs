@@ -2,10 +2,12 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 import PptxGenJS from 'pptxgenjs';
-import { compileLayeredArchitectureDiagram, loadDiagram, renderDiagramFile, resolveDiagramPath } from './diagram-core.mjs';
+import { renderDiagramFile, resolveDiagramPath } from './diagram-core.mjs';
 import { kitRoot } from './composition-core.mjs';
 
 const assetsRoot = path.join(kitRoot, 'assets');
+const rasterQualityPromise = readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8')
+    .then((source) => JSON.parse(source).rasterQuality);
 const PX_PER_INCH = 144;
 const PX_PER_POINT = 2;
 const DEFAULT_CORNER_RADIUS = 8;
@@ -31,18 +33,31 @@ const resolveAsset = (assetPath) => {
 };
 
 const svgData = (svg) => `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+const pngDimensions = (buffer) => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
 
 const rasterizeSvg = async (svg) => {
     let browser;
     try {
+        const quality = await rasterQualityPromise;
+        const target = quality.powerPointDiagramFallback;
         try {
             browser = await chromium.launch({ channel: 'msedge', headless: true });
         } catch {
             browser = await chromium.launch({ headless: true });
         }
-        const page = await browser.newPage({ viewport: { width: 1600, height: 720 }, deviceScaleFactor: 1 });
+        const page = await browser.newPage({
+            viewport: {
+                width: target.width / quality.deviceScaleFactor,
+                height: target.height / quality.deviceScaleFactor,
+            },
+            deviceScaleFactor: quality.deviceScaleFactor,
+        });
         await page.setContent(`<style>html,body{margin:0;width:1600px;height:720px;overflow:hidden}svg{display:block;width:1600px;height:720px}</style>${svg}`, { waitUntil: 'load' });
-        const png = await page.locator('svg').screenshot({ type: 'png' });
+        const png = await page.locator('svg').screenshot({ type: 'png', scale: 'device' });
+        const dimensions = pngDimensions(png);
+        if (dimensions.width !== target.width || dimensions.height !== target.height) {
+            throw new Error(`PowerPoint diagram fallback is ${dimensions.width}x${dimensions.height}; expected ${target.width}x${target.height}.`);
+        }
         return `data:image/png;base64,${png.toString('base64')}`;
     } finally {
         await browser?.close();
@@ -115,7 +130,13 @@ const addShape = (pptx, pptxSlide, sceneSlide, element) => {
 const addLine = (pptx, pptxSlide, sceneSlide, element) => {
     const style = element.style ?? {};
     const start = element.start ?? { x: element.box.x, y: element.box.y + element.box.height / 2 };
-    const end = element.end ?? { x: element.box.x + element.box.width, y: element.box.y + element.box.height / 2 };
+    const authoredEnd = element.end ?? { x: element.box.x + element.box.width, y: element.box.y + element.box.height / 2 };
+    const distance = Math.hypot(authoredEnd.x - start.x, authoredEnd.y - start.y);
+    const inset = style.endArrow ? Math.min(style.endInset ?? 0, Math.max(0, distance - 1)) : 0;
+    const end = distance > 0 ? {
+        x: authoredEnd.x - ((authoredEnd.x - start.x) / distance) * inset,
+        y: authoredEnd.y - ((authoredEnd.y - start.y) / distance) * inset,
+    } : authoredEnd;
     pptxSlide.addShape(pptx.ShapeType.line, {
         x: inches(Math.min(start.x, end.x)),
         y: inches(Math.min(start.y, end.y)),
@@ -152,174 +173,8 @@ const addAsset = async (pptxSlide, sceneSlide, element) => {
     });
 };
 
-const mapDiagramBox = (hostBox, compiled, diagramBox) => {
-    const scale = Math.min(hostBox.width / compiled.width, hostBox.height / compiled.height);
-    const offsetX = hostBox.x + (hostBox.width - compiled.width * scale) / 2;
-    const offsetY = hostBox.y + (hostBox.height - compiled.height * scale) / 2;
-    return {
-        x: offsetX + diagramBox.x * scale,
-        y: offsetY + diagramBox.y * scale,
-        width: diagramBox.width * scale,
-        height: diagramBox.height * scale,
-        scale,
-    };
-};
-
-const diagramToneColor = (compiled, tone = 'neutral') => ({
-    brand: compiled.colors.brand,
-    success: compiled.colors.success,
-    warning: compiled.colors.warning,
-    danger: compiled.colors.danger,
-    neutral: compiled.colors.stroke,
-}[tone] ?? compiled.colors.stroke);
-
-const diagramToneFill = (compiled, tone = 'neutral', neutral = compiled.colors.surface) => ({
-    brand: compiled.colors.brandSubtle,
-    success: compiled.colors.successSubtle,
-    warning: compiled.colors.warningSubtle,
-    danger: compiled.colors.dangerSubtle,
-    neutral,
-}[tone] ?? neutral);
-
-const addDiagramText = (pptxSlide, sceneSlide, hostElement, compiled, id, text, diagramBox, style = {}) => {
-    const mapped = mapDiagramBox(hostElement.box, compiled, diagramBox);
-    addText(pptxSlide, sceneSlide, {
-        id: `diagram-${id}`,
-        type: 'text',
-        role: style.role ?? 'diagram-text',
-        box: mapped,
-        z: hostElement.z + 4,
-        text,
-        style: {
-            fontFace: style.fontFace ?? 'Segoe UI',
-            fontSize: (style.fontSize ?? 18) * mapped.scale,
-            fontWeight: style.fontWeight ?? 400,
-            color: style.color,
-            align: style.align ?? 'left',
-            verticalAlign: style.verticalAlign ?? 'top',
-            lineHeight: style.lineHeight ?? 1.15,
-            // Match the SVG's exact leading; a multiplier would be applied to PowerPoint's own default instead.
-            lineSpacing: style.lineSpacing ? points(style.lineSpacing * mapped.scale) : undefined,
-        },
-    });
-};
-
-const addLayeredArchitecture = async (pptx, pptxSlide, sceneSlide, hostElement, diagram) => {
-    const compiled = compileLayeredArchitectureDiagram(diagram, { theme: sceneSlide.theme });
-    const addNativeShape = (id, diagramBox, shape, fill, stroke, strokeWidth = 1) => {
-        const mapped = mapDiagramBox(hostElement.box, compiled, diagramBox);
-        addShape(pptx, pptxSlide, sceneSlide, {
-            id: `diagram-${id}`,
-            type: 'shape',
-            shape,
-            box: mapped,
-            z: hostElement.z + 1,
-            style: { fill, stroke, strokeWidth, radius: DEFAULT_CORNER_RADIUS * mapped.scale },
-        });
-    };
-
-    for (const column of compiled.columns) {
-        addNativeShape(`column-${column.id}`, column.box, 'roundRect', compiled.colors.lane, compiled.colors.stroke, 1);
-        addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `column-${column.id}-label`, column.label, {
-            x: column.box.x + 8,
-            y: column.box.y + 9,
-            width: column.box.width - 16,
-            height: column.box.height - 12,
-        }, { fontSize: 18, fontWeight: 600, color: compiled.colors.secondary, align: 'center', verticalAlign: 'middle' });
-    }
-
-    for (const layer of compiled.layers) {
-        addNativeShape(`layer-${layer.id}-band`, layer.bandBox, 'roundRect', diagramToneFill(compiled, layer.tone, compiled.colors.lane), diagramToneColor(compiled, layer.tone), 1.5);
-        addNativeShape(`layer-${layer.id}-surface`, layer.surfaceBox, 'roundRect', compiled.colors.group, compiled.colors.stroke, 1.25);
-        addNativeShape(`layer-${layer.id}-number`, {
-            x: layer.numberCircle.cx - layer.numberCircle.radius,
-            y: layer.numberCircle.cy - layer.numberCircle.radius,
-            width: layer.numberCircle.radius * 2,
-            height: layer.numberCircle.radius * 2,
-        }, 'ellipse', '#0F6CBD', '#0F6CBD', 0);
-        addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `layer-${layer.id}-number-label`, String(layer.number), {
-            x: layer.numberCircle.cx - layer.numberCircle.radius,
-            y: layer.numberCircle.cy - 12,
-            width: layer.numberCircle.radius * 2,
-            height: 24,
-        }, { fontSize: 18, fontWeight: 700, color: '#FFFFFF', align: 'center', verticalAlign: 'middle' });
-        addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `layer-${layer.id}-label`, layer.labelLines.join('\n'), {
-            x: compiled.layout.padding + 52,
-            y: layer.labelY - 18,
-            width: compiled.layout.layerRailWidth - 60,
-            height: layer.labelLines.length * 23 + 4,
-        }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle', lineSpacing: 23 });
-
-        for (const component of layer.components) {
-            addNativeShape(`component-${component.id}`, component.box, 'roundRect', diagramToneFill(compiled, component.tone), diagramToneColor(compiled, component.tone), component.emphasis ? 3 : 1.5);
-            if (component.asset) {
-                const mappedAsset = mapDiagramBox(hostElement.box, compiled, component.imageBox);
-                await addAsset(pptxSlide, sceneSlide, {
-                    id: `diagram-component-${component.id}-asset`,
-                    type: 'image',
-                    box: mappedAsset,
-                    path: component.asset.path,
-                    assetKind: component.asset.kind,
-                    alt: component.asset.alt,
-                    style: { color: compiled.colors.text },
-                });
-            }
-            addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `component-${component.id}-label`, component.labelLines.join('\n'), {
-                x: component.textX,
-                y: component.labelY - 17,
-                width: component.textWidth,
-                height: component.labelLines.length * 22 + 3,
-            }, { fontSize: 19, fontWeight: 600, color: compiled.colors.text, verticalAlign: 'middle', lineSpacing: 22 });
-            if (component.descriptionLines.length) {
-                addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `component-${component.id}-description`, component.descriptionLines.join('\n'), {
-                    x: component.textX,
-                    y: component.descriptionY - 16,
-                    width: component.textWidth,
-                    height: component.descriptionLines.length * 20 + 3,
-                }, { fontSize: 18, color: compiled.colors.muted, verticalAlign: 'middle', lineSpacing: 20 });
-            }
-        }
-    }
-
-    for (const flow of compiled.flows) {
-        const start = mapDiagramBox(hostElement.box, compiled, { x: flow.x1, y: flow.y1, width: 1, height: 1 });
-        const end = mapDiagramBox(hostElement.box, compiled, { x: flow.x2, y: flow.y2, width: 1, height: 1 });
-        addLine(pptx, pptxSlide, sceneSlide, {
-            id: `diagram-layer-flow-${flow.id}`,
-            type: 'line',
-            box: { x: start.x, y: start.y, width: end.x - start.x, height: end.y - start.y },
-            z: hostElement.z + 3,
-            style: { color: '#0F6CBD', width: 3, endArrow: 'triangle' },
-        });
-    }
-
-    if (compiled.concernRail) {
-        const rail = compiled.concernRail;
-        addNativeShape('concern-rail', rail.box, 'roundRect', compiled.colors.lane, '#0F6CBD', 1.5);
-        addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, 'concern-title', rail.title, {
-            x: rail.box.x + 18,
-            y: rail.box.y + 10,
-            width: rail.box.width - 36,
-            height: 30,
-        }, { fontSize: 18, fontWeight: 700, color: compiled.colors.text, verticalAlign: 'middle' });
-        for (const concern of rail.items) {
-            addNativeShape(`concern-${concern.id}`, concern.box, 'roundRect', diagramToneFill(compiled, concern.tone), diagramToneColor(compiled, concern.tone), 1.5);
-            addDiagramText(pptxSlide, sceneSlide, hostElement, compiled, `concern-${concern.id}-label`, concern.labelLines.join('\n'), {
-                x: concern.box.x + 16,
-                y: concern.textPosition.y - 17,
-                width: concern.box.width - 32,
-                height: concern.labelLines.length * 22 + 4,
-            }, { fontSize: 18, fontWeight: 600, color: compiled.colors.secondary, verticalAlign: 'middle' });
-        }
-    }
-};
-
 const addDiagram = async (pptxSlide, sceneSlide, element) => {
     const inputPath = resolveDiagramPath(element.diagramPath);
-    const diagram = await loadDiagram(inputPath);
-    if (diagram.diagramType === 'layered-architecture') {
-        return addLayeredArchitecture(pptxSlide._pptx, pptxSlide, sceneSlide, element, diagram);
-    }
     const { svg } = await renderDiagramFile(inputPath, { theme: sceneSlide.theme });
     pptxSlide.addImage({
         data: await rasterizeSvg(svg),
@@ -335,14 +190,7 @@ const addSceneElement = async (pptx, pptxSlide, sceneSlide, element) => {
     if (element.type === 'shape') return addShape(pptx, pptxSlide, sceneSlide, element);
     if (element.type === 'line') return addLine(pptx, pptxSlide, sceneSlide, element);
     if (element.type === 'image') return addAsset(pptxSlide, sceneSlide, element);
-    if (element.type === 'diagram') {
-        const inputPath = resolveDiagramPath(element.diagramPath);
-        const diagram = await loadDiagram(inputPath);
-        if (diagram.diagramType === 'layered-architecture') {
-            return addLayeredArchitecture(pptx, pptxSlide, sceneSlide, element, diagram);
-        }
-        return addDiagram(pptxSlide, sceneSlide, element);
-    }
+    if (element.type === 'diagram') return addDiagram(pptxSlide, sceneSlide, element);
     throw new Error(`Unsupported scene element type for PowerPoint: ${element.type}`);
 };
 

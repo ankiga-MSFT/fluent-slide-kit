@@ -3,7 +3,6 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
-import { loadDiagram, resolveDiagramPath } from './diagram-core.mjs';
 import { compileDeckScene, kitRoot } from './composition-core.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -33,6 +32,10 @@ const runNode = async (script, arguments_) => {
 
 const main = async () => {
     const options = parseArguments(process.argv.slice(2));
+    const [designContract, externalCatalog] = await Promise.all([
+        readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8').then(JSON.parse),
+        readFile(path.join(kitRoot, 'assets', 'external-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+    ]);
     const htmlDirectory = path.join(options.output, 'html');
     const pptxPath = path.join(options.output, `${path.basename(options.input, path.extname(options.input))}.pptx`);
     const pptxValidationDirectory = path.join(options.output, 'pptx-validation');
@@ -50,13 +53,29 @@ const main = async () => {
     const scene = await compileDeckScene(deck, { source: path.relative(kitRoot, options.input).split(path.sep).join('/') });
     const slides = [];
     for (const slide of scene.slides) {
-        let powerPointMode = 'native-shapes';
-        for (const element of slide.elements.filter((item) => item.type === 'diagram')) {
-            const diagram = await loadDiagram(resolveDiagramPath(element.diagramPath));
-            if (diagram.diagramType === 'flow') powerPointMode = 'validated-graphic';
-        }
+        const powerPointMode = slide.elements.some((element) => element.type === 'diagram')
+            ? 'validated-graphic'
+            : 'native-shapes';
         slides.push({ id: slide.id, powerPointMode });
     }
+    const externalCatalogByPath = new Map(externalCatalog.icons.map((icon) => [`assets/${icon.path}`, icon]));
+    const externalAssets = [...new Set(scene.slides
+        .flatMap((slide) => slide.elements)
+        .filter((element) => element.type === 'image' && element.assetKind === 'external')
+        .map((element) => element.path))]
+        .map((assetPath) => {
+            const icon = externalCatalogByPath.get(assetPath);
+            return {
+                id: icon.id,
+                name: icon.name,
+                vendor: icon.vendor,
+                path: assetPath,
+                source: icon.source,
+                sourceRevision: icon.sourceRevision,
+                license: icon.license,
+                trademarkNotice: icon.trademarkNotice,
+            };
+        });
     const manifest = {
         schemaVersion: 1,
         title: deck.title,
@@ -71,12 +90,34 @@ const main = async () => {
             powerPointValidation: 'pptx-validation/validation-report.json',
             powerPointPreviews: options.preview ? 'pptx-validation/previews/' : undefined,
         },
+        quality: {
+            htmlScreenshot: designContract.rasterQuality.htmlScreenshot,
+            powerPointPreview: designContract.powerPointQuality.preview,
+            layout: designContract.layoutQuality,
+            repositoryHygiene: {
+                postBuildCheck: true,
+                approvedScratchPrefixes: ['.tmp/', '.slide-artifacts/'],
+            },
+            powerPointMedia: {
+                vectorFirst: designContract.powerPointQuality.preferVectorMedia,
+                preserveSourceRaster: designContract.powerPointQuality.preserveSourceRaster,
+                diagramFallback: designContract.rasterQuality.powerPointDiagramFallback,
+            },
+        },
+        assetResolution: {
+            componentInventoryRequired: designContract.assetResolution.componentInventoryRequired,
+            exactCatalogMembership: true,
+            structuralNativeRoles: Object.keys(designContract.assetResolution.structuralNativeRoles),
+            fallbackMetadata: designContract.assetResolution.fallback.metadata,
+            externalAssets,
+        },
         slides,
         limitations: slides.some((slide) => slide.powerPointMode === 'validated-graphic')
             ? ['Opt-in complex flow elements are embedded as validated graphics; all other authored primitives remain native Office objects.']
             : [],
     };
     await writeFile(path.join(options.output, 'delivery-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+    await runNode('check-repo-hygiene.mjs', []);
     console.log(`Built validated HTML and editable PowerPoint deliverables in ${options.output}`);
 };
 

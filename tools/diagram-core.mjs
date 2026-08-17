@@ -6,6 +6,16 @@ import Ajv2020 from 'ajv/dist/2020.js';
 export const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const assetsRoot = path.join(kitRoot, 'assets');
 const diagramsRoot = path.join(kitRoot, 'diagrams');
+const catalogPathsPromise = Promise.all([
+    readFile(path.join(assetsRoot, 'fluent-system-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+    readFile(path.join(assetsRoot, 'azure-public-service-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+    readFile(path.join(assetsRoot, 'external-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+]).then(([fluentCatalog, azureCatalog, externalCatalog]) => ({
+    fluent: new Set(fluentCatalog.icons.flatMap((icon) =>
+        Object.values(icon.styles).filter(Boolean).map((asset) => `assets/${asset.path}`))),
+    azure: new Set(azureCatalog.icons.map((icon) => `assets/${icon.path}`)),
+    external: new Set(externalCatalog.icons.map((icon) => `assets/${icon.path}`)),
+}));
 
 const NODE_WIDTH = 214;
 const NODE_HEIGHT = 140;
@@ -20,8 +30,8 @@ const SLOT_GAP = 16;
 const OUTER_PADDING = 24;
 const LANE_LABEL_SIZE = 24;
 const GROUP_LANE_INSET = 14;
-const ARCHITECTURE_WIDTH = 1600;
-const ARCHITECTURE_HEIGHT = 720;
+const DIAGRAM_WIDTH = 1600;
+const DIAGRAM_HEIGHT = 720;
 const EDGE_LABEL_MIN_WIDTH = 52;
 const EDGE_LABEL_CHARACTER_WIDTH = 7.5;
 const EDGE_LABEL_PADDING = 20;
@@ -29,6 +39,7 @@ const EDGE_LABEL_NODE_GAP = 8;
 const GROUP_HORIZONTAL_PADDING = 22;
 const GROUP_TOP_PADDING = 38;
 const GROUP_BOTTOM_PADDING = 18;
+const RANK_SKIP_CHANNEL_OFFSET = NODE_HEIGHT / 2 + 40;
 
 const edgeLabelWidth = (label) => Math.max(EDGE_LABEL_MIN_WIDTH, String(label ?? '').length * EDGE_LABEL_CHARACTER_WIDTH + EDGE_LABEL_PADDING);
 
@@ -114,9 +125,10 @@ const disconnectedNodes = (nodeIds, edges) => {
 };
 
 export const validateDiagram = async (diagram) => {
-    const [schema, designContract] = await Promise.all([
+    const [schema, designContract, catalogPaths] = await Promise.all([
         readFile(path.join(kitRoot, 'schemas', 'diagram.schema.json'), 'utf8').then(JSON.parse),
         readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8').then(JSON.parse),
+        catalogPathsPromise,
     ]);
     const quality = designContract.diagramQuality;
     const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
@@ -149,56 +161,17 @@ export const validateDiagram = async (diagram) => {
         if (!['.svg', '.png', '.jpg', '.jpeg'].includes(path.extname(absolutePath).toLowerCase())) {
             errors.push(`${owner} asset uses an unsupported format; use SVG, PNG, or JPEG: ${asset.path}`);
         }
+        if (asset.kind === 'fluent' && !catalogPaths.fluent.has(asset.path)) {
+            errors.push(`${owner} Fluent asset is not an exact local catalog entry: ${asset.path}. Resolve it with npm run assets:search.`);
+        }
+        if (asset.kind === 'azure' && !catalogPaths.azure.has(asset.path)) {
+            errors.push(`${owner} Azure asset is not an exact local catalog entry: ${asset.path}. Resolve it with npm run assets:search.`);
+        }
+        if (asset.kind === 'external' && !catalogPaths.external.has(asset.path)) {
+            errors.push(`${owner} external asset is not an exact approved external catalog entry: ${asset.path}. Add it under assets/external-icons with source and license metadata.`);
+        }
         if (!asset.alt.trim()) errors.push(`${owner} asset requires useful alt text.`);
     };
-
-    if (diagram.diagramType === 'layered-architecture') {
-        const columnIds = uniqueIds(diagram.columns, 'Column');
-        const layerIds = uniqueIds(diagram.layers, 'Layer');
-        const concernsIds = uniqueIds(diagram.crossCuttingConcerns, 'Cross-cutting concern');
-        const components = diagram.layers.flatMap((layer) => layer.components);
-        const componentIds = uniqueIds(components, 'Component');
-        const allIds = [...columnIds, ...layerIds, ...concernsIds, ...componentIds];
-        if (new Set(allIds).size !== allIds.length) {
-            errors.push('Column, layer, component, and cross-cutting concern ids must be globally unique.');
-        }
-
-        for (const layer of diagram.layers) {
-            await validateAsset(`Layer ${layer.id}`, layer.asset);
-            const occupiedColumns = new Set();
-            for (const component of layer.components) {
-                const start = diagram.columns.findIndex((column) => column.id === component.column);
-                const span = component.span ?? 1;
-                if (start < 0) {
-                    errors.push(`Component ${component.id} references missing column: ${component.column}`);
-                    continue;
-                }
-                if (start + span > diagram.columns.length) {
-                    errors.push(`Component ${component.id} span extends beyond the available columns.`);
-                    continue;
-                }
-                for (let index = start; index < start + span; index += 1) {
-                    const columnId = diagram.columns[index].id;
-                    if (occupiedColumns.has(columnId)) {
-                        errors.push(`Layer ${layer.id} has overlapping components in column ${columnId}.`);
-                    }
-                    occupiedColumns.add(columnId);
-                }
-                await validateAsset(`Component ${component.id}`, component.asset);
-            }
-        }
-        for (const concern of diagram.crossCuttingConcerns ?? []) {
-            await validateAsset(`Cross-cutting concern ${concern.id}`, concern.asset);
-        }
-
-        if (components.length > quality.maximumArchitectureComponents) {
-            errors.push(`Layered architecture is limited to ${quality.maximumArchitectureComponents} components; split denser content across views.`);
-        }
-        if (diagram.layers.length === 6 && components.some((component) => component.description)) {
-            errors.push('Six-layer architectures cannot include component descriptions; split the diagram or remove detail.');
-        }
-        return { errors, warnings };
-    }
 
     const nodeIds = uniqueIds(diagram.nodes, 'Node');
     const edgeIds = uniqueIds(diagram.edges, 'Edge');
@@ -283,6 +256,17 @@ const layoutDiagram = (diagram) => {
     const direction = diagram.direction ?? 'right';
     const rank = calculateRanks(diagram.nodes, diagram.edges);
     const rankCount = Math.max(...rank.values()) + 1;
+    const skippedRanks = new Set();
+    const usesHorizontalRankSkipChannel = diagram.rankSkipRouting === 'horizontal-channel';
+    if (usesHorizontalRankSkipChannel) {
+        for (const edge of diagram.edges) {
+            const sourceRank = rank.get(edge.source);
+            const targetRank = rank.get(edge.target);
+            for (let skippedRank = sourceRank + 1; skippedRank < targetRank; skippedRank += 1) {
+                skippedRanks.add(skippedRank);
+            }
+        }
+    }
     const rankGaps = Array.from({ length: Math.max(0, rankCount - 1) }, () => RANK_GAP);
     if (direction === 'right') {
         for (const edge of diagram.edges.filter((candidate) => candidate.label)) {
@@ -324,16 +308,19 @@ const layoutDiagram = (diagram) => {
         const crossNodeSize = direction === 'right' ? NODE_HEIGHT : NODE_WIDTH;
         // Lanes holding a group need extra room so the group frame stays inside the lane band.
         const groupInset = members.some((node) => node.group) ? GROUP_LANE_INSET : 0;
-        const bandSize = LANE_LABEL_SIZE + OUTER_PADDING + groupInset * 2 + maxInRank * crossNodeSize + (maxInRank - 1) * SLOT_GAP;
+        const rankSkipOffset = [...buckets.keys()].some((nodeRank) => skippedRanks.has(nodeRank)) ? RANK_SKIP_CHANNEL_OFFSET : 0;
+        const bandSize = LANE_LABEL_SIZE + OUTER_PADDING + groupInset * 2 + rankSkipOffset + maxInRank * crossNodeSize + (maxInRank - 1) * SLOT_GAP;
         laneMetrics.push({ ...lane, start: crossCursor, size: bandSize });
 
         for (const [nodeRank, bucket] of buckets) {
             bucket.forEach((node, index) => {
                 const primary = primaryPosition(nodeRank);
-                const cross = crossCursor + LANE_LABEL_SIZE + OUTER_PADDING / 2 + groupInset + index * (crossNodeSize + SLOT_GAP);
+                const cross = crossCursor + LANE_LABEL_SIZE + OUTER_PADDING / 2 + groupInset
+                    + (skippedRanks.has(nodeRank) ? RANK_SKIP_CHANNEL_OFFSET : 0)
+                    + index * (crossNodeSize + SLOT_GAP);
                 positions.set(node.id, direction === 'right'
-                    ? { x: primary, y: cross, width: NODE_WIDTH, height: NODE_HEIGHT }
-                    : { x: cross, y: primary, width: NODE_WIDTH, height: NODE_HEIGHT });
+                    ? { x: primary, y: cross, width: NODE_WIDTH, height: NODE_HEIGHT, rank: nodeRank, usesHorizontalRankSkipChannel }
+                    : { x: cross, y: primary, width: NODE_WIDTH, height: NODE_HEIGHT, rank: nodeRank, usesHorizontalRankSkipChannel });
             });
         }
         crossCursor += bandSize + SLOT_GAP;
@@ -441,6 +428,13 @@ const edgeGeometry = (edge, source, target, direction, index) => {
         const start = { x: source.x + source.width, y: source.y + source.height / 2 };
         const end = { x: target.x, y: target.y + target.height / 2 };
         if (end.x > start.x) {
+            if (target.rank > source.rank + 1) {
+                if (source.usesHorizontalRankSkipChannel && target.usesHorizontalRankSkipChannel && start.y === end.y) {
+                    return { path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, label: { x: (start.x + end.x) / 2, y: start.y - 8 } };
+                }
+                const routeY = Math.max(5, Math.min(source.y, target.y) - GROUP_TOP_PADDING - 8);
+                return { path: `M ${start.x} ${start.y} L ${start.x + 30} ${start.y} L ${start.x + 30} ${routeY} L ${end.x - 30} ${routeY} L ${end.x - 30} ${end.y} L ${end.x} ${end.y}`, label: { x: (start.x + end.x) / 2, y: routeY + 18 } };
+            }
             const middleX = (start.x + end.x) / 2;
             // Unspecified labels stay source-biased; explicit positions align to the routed edge segments.
             return { path: `M ${start.x} ${start.y} L ${middleX} ${start.y} L ${middleX} ${end.y} L ${end.x} ${end.y}`, label: { x: middleX, y: start.y + (end.y - start.y) * labelFraction } };
@@ -488,7 +482,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
         .map((lane) => `<g class="diagram-lane"><rect x="${lane.x}" y="${lane.y}" width="${lane.width}" height="${lane.height}" rx="8" /><text x="${lane.x + 16}" y="${lane.y + 28}" class="lane-label">${escapeXml(lane.label)}</text></g>`)
         .join('\n');
     const groupMarkup = groups
-        .map((group) => `<g class="diagram-group tone-${group.tone ?? 'neutral'}"><rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="8" /><text x="${group.x + 14}" y="${group.y + 27}" class="group-label">${escapeXml(group.label)}</text></g>`)
+        .map((group) => `<g class="diagram-group tone-${group.tone ?? 'neutral'} boundary-${group.borderStyle ?? 'dashed'}"><rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="8" /><text x="${group.x + 14}" y="${group.y + 27}" class="group-label">${escapeXml(group.label)}</text></g>`)
         .join('\n');
     const renderedEdges = diagram.edges.map((edge, index) => {
         const geometry = edgeGeometry(edge, layout.positions.get(edge.source), layout.positions.get(edge.target), layout.direction, index);
@@ -512,7 +506,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
     }).join('\n');
     const description = diagram.description ?? `${diagram.nodes.length} nodes and ${diagram.edges.length} connections.`;
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 ${ARCHITECTURE_WIDTH} ${ARCHITECTURE_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagram-title diagram-description" data-diagram-type="flow">
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 ${DIAGRAM_WIDTH} ${DIAGRAM_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagram-title diagram-description" data-diagram-type="flow">
   <title id="diagram-title">${escapeXml(diagram.title)}</title>
   <desc id="diagram-description">${escapeXml(description)}</desc>
   <defs>
@@ -525,6 +519,8 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
       .diagram-lane rect { fill: ${colors.lane}; stroke: ${colors.stroke}; stroke-width: 1.5; }
     .lane-label { fill: ${colors.secondary}; font: 600 18px "Segoe UI", sans-serif; }
       .diagram-group rect { fill: ${colors.group}; fill-opacity: .72; stroke: #7A7574; stroke-width: 1.5; stroke-dasharray: 7 5; }
+            .diagram-group.boundary-solid rect { stroke-dasharray: none; }
+            .diagram-group.boundary-dotted rect { stroke-dasharray: 1 6; stroke-linecap: round; }
     .group-label { fill: ${colors.secondary}; font: 600 18px "Segoe UI", sans-serif; }
       .node-shape { fill: ${colors.surface}; stroke: ${colors.card}; stroke-width: 1.5; }
       .node-shape--external { stroke-dasharray: 6 4; }
@@ -549,7 +545,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
       .legend-item line { stroke: #424242; stroke-width: 2.5; }
     </style>
   </defs>
-    <rect data-canvas-background="true" width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
+    <rect data-canvas-background="true" width="${DIAGRAM_WIDTH}" height="${DIAGRAM_HEIGHT}" fill="${colors.background}" />
   ${laneMarkup}
   ${groupMarkup}
   ${edgeMarkup}
@@ -559,218 +555,7 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
 </svg>`;
 };
 
-const layeredArchitectureLayout = (diagram) => {
-    const padding = 24;
-    const layerRailWidth = 170;
-    const concernGap = diagram.crossCuttingConcerns?.length ? 20 : 0;
-    const concernWidth = diagram.crossCuttingConcerns?.length ? 232 : 0;
-    const mainX = padding + layerRailWidth + 16;
-    const mainWidth = ARCHITECTURE_WIDTH - mainX - padding - concernGap - concernWidth;
-    const columnGap = 22;
-    // Columns sit inside the layer surface, so the surface keeps a visible margin on both ends.
-    const surfacePadding = 12;
-    const contentX = mainX + surfacePadding;
-    const contentWidth = mainWidth - surfacePadding * 2;
-    const columnWidth = (contentWidth - columnGap * (diagram.columns.length - 1)) / diagram.columns.length;
-    const headerY = 16;
-    const headerHeight = 44;
-    const layersY = 76;
-    const layerGap = 38;
-    const layerHeight = (ARCHITECTURE_HEIGHT - layersY - padding - layerGap * (diagram.layers.length - 1)) / diagram.layers.length;
-    const concernX = mainX + mainWidth + concernGap;
-    return { padding, layerRailWidth, mainX, mainWidth, contentX, contentWidth, surfacePadding, columnGap, columnWidth, headerY, headerHeight, layersY, layerGap, layerHeight, concernX, concernWidth };
-};
-
-export const compileLayeredArchitectureDiagram = (diagram, options = {}) => {
-    if (diagram.diagramType !== 'layered-architecture') {
-        throw new Error(`Expected layered-architecture diagram; received ${diagram.diagramType}.`);
-    }
-    const layout = layeredArchitectureLayout(diagram);
-    const colors = palette(options.theme ?? diagram.theme ?? 'light');
-    const columns = diagram.columns.map((column, index) => ({
-        ...column,
-        box: {
-            x: layout.contentX + index * (layout.columnWidth + layout.columnGap),
-            y: layout.headerY,
-            width: layout.columnWidth,
-            height: layout.headerHeight,
-        },
-    }));
-    const layers = diagram.layers.map((layer, index) => {
-        const y = layout.layersY + index * (layout.layerHeight + layout.layerGap);
-        const number = layer.number ?? index + 1;
-        const labelLines = wrapWords(layer.label, 14, 2);
-        const labelY = y + (layout.layerHeight - labelLines.length * 23) / 2 + 18;
-        const components = layer.components.map((component) => {
-            const columnIndex = diagram.columns.findIndex((column) => column.id === component.column);
-            const span = component.span ?? 1;
-            const x = layout.contentX + columnIndex * (layout.columnWidth + layout.columnGap);
-            const width = span * layout.columnWidth + (span - 1) * layout.columnGap;
-            const height = Math.min(104, layout.layerHeight - 22);
-            const componentY = y + (layout.layerHeight - height) / 2;
-            const textX = x + (component.asset ? 52 : 18);
-            const textWidth = width - (component.asset ? 66 : 36);
-            const componentLabelLines = wrapWords(component.label, Math.max(10, Math.floor(textWidth / 9.3)), 2);
-            const descriptionLines = wrapWords(component.description, Math.max(12, Math.floor(textWidth / 8.4)), 2);
-            const contentHeight = componentLabelLines.length * 22 + descriptionLines.length * 20 + (descriptionLines.length ? 3 : 0);
-            const componentLabelY = componentY + (height - contentHeight) / 2 + 17;
-            return {
-                ...component,
-                tone: component.tone ?? 'neutral',
-                box: { x, y: componentY, width, height },
-                imageBox: component.asset ? { x: x + 14, y: componentY + (height - 32) / 2, width: 32, height: 32 } : undefined,
-                textX,
-                textWidth,
-                labelLines: componentLabelLines,
-                labelY: componentLabelY,
-                descriptionLines,
-                descriptionY: componentLabelY + componentLabelLines.length * 22 + 3,
-                aria: [component.label, component.description, component.asset?.alt].filter(Boolean).join('. '),
-            };
-        });
-        return {
-            ...layer,
-            number,
-            tone: layer.tone ?? 'neutral',
-            y,
-            labelLines,
-            labelY,
-            bandBox: { x: layout.padding, y, width: layout.layerRailWidth, height: layout.layerHeight },
-            numberCircle: { cx: layout.padding + 25, cy: y + layout.layerHeight / 2, radius: 17 },
-            surfaceBox: { x: layout.mainX, y, width: layout.mainWidth, height: layout.layerHeight },
-            components,
-        };
-    });
-    const flows = diagram.showLayerFlow === false ? [] : diagram.layers.slice(0, -1).map((layer, index) => {
-        const startY = layout.layersY + (index + 1) * layout.layerHeight + index * layout.layerGap;
-        const x = layout.mainX + layout.mainWidth / 2;
-        return { id: layer.id, x1: x, y1: startY + 1, x2: x, y2: startY + layout.layerGap - 3 };
-    });
-    const concerns = diagram.crossCuttingConcerns ?? [];
-    const concernRail = concerns.length ? (() => {
-        const y = layout.layersY;
-        const height = ARCHITECTURE_HEIGHT - y - layout.padding;
-        const titleHeight = 48;
-        const itemGap = 10;
-        const itemHeight = Math.min(82, (height - titleHeight - 20 - itemGap * Math.max(0, concerns.length - 1)) / concerns.length);
-        return {
-            box: { x: layout.concernX, y, width: layout.concernWidth, height },
-            title: 'Cross-cutting concerns',
-            titlePosition: { x: layout.concernX + 18, y: y + 31 },
-            items: concerns.map((concern, index) => {
-                const itemY = y + titleHeight + 12 + index * (itemHeight + itemGap);
-                const labelLines = wrapWords(concern.label, 18, 2);
-                return {
-                    ...concern,
-                    tone: concern.tone ?? 'neutral',
-                    box: { x: layout.concernX + 12, y: itemY, width: layout.concernWidth - 24, height: itemHeight },
-                    labelLines,
-                    textPosition: { x: layout.concernX + 28, y: itemY + (itemHeight - labelLines.length * 22) / 2 + 17 },
-                };
-            }),
-        };
-    })() : undefined;
-    return { width: ARCHITECTURE_WIDTH, height: ARCHITECTURE_HEIGHT, colors, layout, columns, layers, flows, concernRail };
-};
-
-const renderArchitectureComponent = async (component, colors) => {
-    const { x, y, width, height } = component.box;
-    const assetUri = await assetDataUri(component.asset, colors.text);
-    return `<g class="architecture-component tone-${component.tone}${component.emphasis ? ' architecture-component--emphasis' : ''}" role="group" aria-label="${escapeXml(component.aria)}" data-diagram-component="${escapeXml(component.id)}">
-            <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" />
-            ${assetUri ? `<image href="${assetUri}" x="${component.imageBox.x}" y="${component.imageBox.y}" width="${component.imageBox.width}" height="${component.imageBox.height}" preserveAspectRatio="xMidYMid meet" />` : ''}
-            ${textLines(component.labelLines, component.textX, component.labelY, 'component-label', 22, 'start')}
-            ${component.descriptionLines.length ? textLines(component.descriptionLines, component.textX, component.descriptionY, 'component-description', 20, 'start') : ''}
-        </g>`;
-};
-
-const renderLayeredArchitectureSvg = async (diagram, options = {}) => {
-    const compiled = compileLayeredArchitectureDiagram(diagram, options);
-    const { colors, layout } = compiled;
-    const columnMarkup = compiled.columns.map((column) => {
-        const { x, y, width, height } = column.box;
-        return `<g class="architecture-column"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" /><text x="${x + width / 2}" y="${y + 29}" text-anchor="middle" class="column-label">${escapeXml(column.label)}</text></g>`;
-    }).join('\n');
-
-    const layerMarkup = [];
-    for (const layer of compiled.layers) {
-        const components = await Promise.all(layer.components.map((component) => renderArchitectureComponent(component, colors)));
-        layerMarkup.push(`<g class="architecture-layer tone-${layer.tone}" role="group" aria-label="Layer ${layer.number}: ${escapeXml(layer.label)}" data-diagram-layer="${escapeXml(layer.id)}">
-                    <rect class="layer-band" x="${layer.bandBox.x}" y="${layer.bandBox.y}" width="${layer.bandBox.width}" height="${layer.bandBox.height}" rx="8" />
-                    <circle class="layer-number" cx="${layer.numberCircle.cx}" cy="${layer.numberCircle.cy}" r="${layer.numberCircle.radius}" />
-                    <text x="${layer.numberCircle.cx}" y="${layer.numberCircle.cy + 6}" text-anchor="middle" class="layer-number-label">${layer.number}</text>
-                    ${textLines(layer.labelLines, layout.padding + 52, layer.labelY, 'layer-label', 23, 'start')}
-                    <rect class="layer-surface" x="${layer.surfaceBox.x}" y="${layer.surfaceBox.y}" width="${layer.surfaceBox.width}" height="${layer.surfaceBox.height}" rx="8" />
-                    ${components.join('\n')}
-                </g>`);
-    }
-
-    const flowMarkup = compiled.flows.map((flow) => {
-        return `<line class="layer-flow" x1="${flow.x1}" y1="${flow.y1}" x2="${flow.x2}" y2="${flow.y2}" marker-end="url(#architecture-arrow)" data-diagram-layer-flow="${escapeXml(flow.id)}" />`;
-    }).join('\n');
-
-    const concernMarkup = compiled.concernRail ? (() => {
-        const rail = compiled.concernRail;
-        const items = rail.items.map((concern) => {
-            return `<g class="architecture-concern tone-${concern.tone}" role="group" aria-label="${escapeXml([concern.label, concern.description].filter(Boolean).join('. '))}" data-diagram-concern="${escapeXml(concern.id)}">
-                            <rect x="${concern.box.x}" y="${concern.box.y}" width="${concern.box.width}" height="${concern.box.height}" rx="7" />
-                            ${textLines(concern.labelLines, concern.textPosition.x, concern.textPosition.y, 'concern-label', 22, 'start')}
-                        </g>`;
-        }).join('\n');
-        return `<g class="architecture-concerns"><rect class="concern-rail" x="${rail.box.x}" y="${rail.box.y}" width="${rail.box.width}" height="${rail.box.height}" rx="8" /><text x="${rail.titlePosition.x}" y="${rail.titlePosition.y}" class="concern-title">${escapeXml(rail.title)}</text>${items}</g>`;
-    })() : '';
-    const concerns = diagram.crossCuttingConcerns ?? [];
-    const componentCount = diagram.layers.reduce((sum, layer) => sum + layer.components.length, 0);
-    const description = diagram.description ?? `${diagram.layers.length} architecture layers, ${componentCount} components, and ${concerns.length} cross-cutting concerns.`;
-
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 ${ARCHITECTURE_WIDTH} ${ARCHITECTURE_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagram-title diagram-description" data-diagram-type="layered-architecture">
-    <title id="diagram-title">${escapeXml(diagram.title)}</title>
-    <desc id="diagram-description">${escapeXml(description)}</desc>
-    <defs>
-        <marker id="architecture-arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,14 L12,7 z" fill="#0F6CBD" /></marker>
-        <style>
-            text { font-family: "Segoe UI", sans-serif; }
-            .architecture-column rect { fill: ${colors.lane}; stroke: ${colors.stroke}; stroke-width: 1; }
-            .column-label { fill: ${colors.secondary}; font-size: 18px; font-weight: 600; }
-            .layer-band { fill: ${colors.lane}; stroke: ${colors.stroke}; stroke-width: 1.5; }
-            .layer-surface { fill: ${colors.group}; stroke: ${colors.stroke}; stroke-width: 1.25; }
-            .layer-number { fill: #0F6CBD; }
-            .layer-number-label { fill: #FFFFFF; font-size: 18px; font-weight: 700; }
-            .layer-label { fill: ${colors.text}; font-size: 19px; font-weight: 600; }
-            .architecture-component rect { fill: ${colors.surface}; stroke: ${colors.stroke}; stroke-width: 1.5; }
-            .architecture-component--emphasis rect { stroke-width: 3; }
-            .architecture-component.tone-brand rect { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
-            .architecture-component.tone-success rect { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
-            .architecture-component.tone-warning rect { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
-            .architecture-component.tone-danger rect { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
-            .architecture-layer.tone-brand .layer-band { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
-            .architecture-layer.tone-success .layer-band { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
-            .architecture-layer.tone-warning .layer-band { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
-            .architecture-layer.tone-danger .layer-band { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
-            .component-label { fill: ${colors.text}; font-size: 19px; font-weight: 600; }
-            .component-description { fill: ${colors.muted}; font-size: 18px; }
-            .layer-flow { fill: none; stroke: #0F6CBD; stroke-width: 3.5; stroke-linecap: butt; }
-            .concern-rail { fill: ${colors.lane}; stroke: #0F6CBD; stroke-width: 1.5; }
-            .concern-title { fill: ${colors.text}; font-size: 18px; font-weight: 700; }
-            .architecture-concern rect { fill: ${colors.surface}; stroke: ${colors.stroke}; stroke-width: 1.5; }
-            .architecture-concern.tone-brand rect { fill: ${colors.brandSubtle}; stroke: ${colors.brand}; }
-            .architecture-concern.tone-success rect { fill: ${colors.successSubtle}; stroke: ${colors.success}; }
-            .architecture-concern.tone-warning rect { fill: ${colors.warningSubtle}; stroke: ${colors.warning}; }
-            .architecture-concern.tone-danger rect { fill: ${colors.dangerSubtle}; stroke: ${colors.danger}; }
-            .concern-label { fill: ${colors.secondary}; font-size: 18px; font-weight: 600; }
-        </style>
-    </defs>
-    <rect data-canvas-background="true" width="${ARCHITECTURE_WIDTH}" height="${ARCHITECTURE_HEIGHT}" fill="${colors.background}" />
-    ${columnMarkup}
-    ${layerMarkup.join('\n')}
-    ${flowMarkup}
-    ${concernMarkup}
-</svg>`;
-};
-
-export const renderDiagramSvg = async (diagram, options = {}) => diagram.diagramType === 'layered-architecture'
-    ? renderLayeredArchitectureSvg(diagram, options)
-    : renderFlowDiagramSvg(diagram, options);
+export const renderDiagramSvg = async (diagram, options = {}) => renderFlowDiagramSvg(diagram, options);
 
 export const renderDiagramFile = async (inputPath, options = {}) => {
     const diagram = await loadDiagram(inputPath);

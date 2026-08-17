@@ -1,7 +1,7 @@
 # Fluent slide kit instructions
 
-This repository creates fixed `1920x1080` HTML previews and native editable PowerPoint slides from a
-shared renderer-neutral scene, plus structured SVG diagrams aligned with public Fluent 2 guidance.
+This repository creates fixed `1920x1080` HTML scenes, 2x `3840x2160` PNG previews, and native editable
+PowerPoint slides from a shared renderer-neutral scene, plus structured SVG diagrams aligned with public Fluent 2 guidance.
 It is not proof of Microsoft brand compliance. Use Microsoft logos, product launch icons, and
 organization brand assets only when the user supplies an approved source and applicable terms.
 
@@ -30,22 +30,22 @@ organization brand assets only when the user supplies an approved source and app
 - Treat JSON under `decks/` and top-level `diagrams/` as local request sources; they are Git-ignored. Only reusable fixtures under `examples/` and `diagrams/templates/` belong in version control.
 - Select a profile under `design/brand-profiles/`; public output defaults to `fluent-aligned` and must
 	not be described as Microsoft brand compliant.
-- Compose slides directly from positioned text, shape, line, image, and optional diagram elements. Use stable ids, semantic tokens, explicit z-order, and logical groups for intentionally overlapping elements.
-- Author a structured graph under `diagrams/`, conforming to `schemas/diagram.schema.json`, only when topology semantics or graph-specific validation justify it.
-- Set `diagramType: flow` when sequence and connectors carry the meaning. Set
-	`diagramType: layered-architecture` when tiers, channels, capabilities, or cross-cutting concerns carry it.
-- Treat the selected brand profile, `design/design-contract.json`, and the compiled scene as source of truth.
+- Compose slides directly from positioned text, shape, line, image, and optional flow-diagram elements. Use stable ids, semantic tokens, explicit z-order, and logical groups for intentionally overlapping elements.
+- Author every architecture, capability view, system context, tier map, and reference-image reconstruction directly in the freeform composition. Use native rounded shapes, text, connectors, Azure icons, and Fluent icons without imposing a fixed grid, rail, layer, or topology template.
+- Author a structured `flow` graph under `diagrams/`, conforming to `schemas/diagram.schema.json`, only when branching, merging, decisions, lanes, cycles, or labeled edge semantics justify graph-specific validation.
+- Treat the selected brand profile, `design/design-contract.json`, `assets/manifest.json`, and the compiled scene as source of truth.
 - Compile one scene for both renderers. Never convert arbitrary HTML into PowerPoint.
 - Generate standalone HTML with `npm run deck:render -- <deck.json>`; do not hand-edit generated slides.
 - Generate native PowerPoint with `npm run deck:export:pptx -- <deck.json>`; do not package full-slide screenshots.
+- Deliver browser and available PowerPoint previews at `3840x2160`. Keep PowerPoint vector-first, preserve source raster resolution, and render unavoidable embedded-diagram fallbacks at `3200x1440`.
 - Generate standalone SVG with `npm run diagram:render -- <diagram.json>`; do not hand-edit generated diagrams.
 - Put final handoff bundles under `deliverables/<deck-name>/`. Reserve `.slide-artifacts/` for intermediate validation and previews.
 
 ## Required workflow
 
 1. State one takeaway per slide and choose a visual argument that makes it immediately legible.
-2. Decide whether direct primitives are sufficient or a structured diagram is necessary for topology semantics.
-3. Resolve every visual with `npm run assets:search -- "<concept>" --json` and use exact returned paths.
+2. Compose architecture and simple sequences with direct primitives; opt into a structured flow only when graph semantics require it.
+3. Create an internal component inventory for every visual role, including icons, arrows, line styles, boxes, cards, and boundaries. Run `npm run assets:search -- "<concept>" --json` for every item before selecting an implementation.
 4. Author explicit geometry on the fixed canvas; never guess asset filenames or invent SVG geometry.
 5. Run `npm run deck:build -- <deck.json> --preview` after every substantive composition change.
 6. Inspect every HTML and available PowerPoint screenshot and repair hierarchy or composition issues.
@@ -55,9 +55,19 @@ For branching, merging, decisions, labeled connectors, boundaries, swim lanes, o
 diagram schema and `fluent-diagram` skill. Embed the validated source as a `diagram` element within the
 otherwise freeform composition. Keep simple sequences native with shape, text, image, and line elements.
 
+Use an exact Fluent or Azure catalog result whenever it is a semantically suitable pictogram or standalone
+symbol. Catalog entries such as Arrow Right, Line Dashes, Square, and Card UI are glyphs, not stretchable
+connectors or content containers; structural arrows, dashed paths, boundaries, boxes, and cards remain native
+editable lines and rounded shapes styled by `design/design-contract.json`. If no suitable catalog visual exists,
+search `assets/external-icons/catalog.json` for approved non-Azure, non-Fluent product or vendor icons. Add a new
+external icon only from an official vendor-owned source pinned to an immutable revision, with its license and
+trademark notice recorded in that catalog and `legal/provenance.json`; never use a third-party logo mirror.
+Use a labeled native primitive before inventing an icon. Any permitted generated-image fallback must record
+`metadata.assetFallback.searchQueries` and `metadata.assetFallback.reason`.
+
 ## Content rules
 
-- Titles use at most 10 words. Body copy uses at most 55 words per slide.
+- Titles use at most 10 words. Body copy uses at most 100 words per slide.
 - Never invent metrics, dates, customer names, quotes, service capabilities, or citations. Use a bracketed placeholder.
 - Add per-slide sources for factual claims. Use Microsoft Learn MCP for current Microsoft and Azure facts.
 - Use sentence case. Keep paragraphs left-aligned in LTR languages and use CSS logical properties for RTL work.
@@ -69,8 +79,14 @@ otherwise freeform composition. Keep simple sequences native with shape, text, i
 - Preserve the fixed canvas, safe margins, type sizes, semantic colors, and 4px spacing system from `design/`.
 - Use rounded corners for every visible container, card, boundary, lane, label chip, and diagram component; never introduce square-corner boxes or sharp-corner diamonds.
 - Do not shrink body or caption text to make content fit; cut or split content instead.
-- Keep embedded diagram labels at or above 18px effective size after slide scaling. Reject clipped text,
-	overlapping items, crossing connectors, and layered architecture descriptions that depend on ellipsis.
+- Readability outranks density. Before reducing type or padding, inspect the largest unused canvas regions,
+	shrink low-information bands, and redistribute that space to cramped content. Repeated peer cards must use
+	consistent dimensions and internal padding; no region may remain conspicuously empty while a peer region is compressed.
+- Focal cards with centered composition declare `metadata.contentAlignment: center`; every grouped text box
+	uses center alignment and shares the card's horizontal centerline. Never mix centered and left-aligned text
+	inside the same focal card unless the user explicitly requests an asymmetric composition.
+- Keep embedded flow labels at or above 18px effective size after slide scaling. Reject clipped text,
+	overlapping items, crossing connectors, and labels that depend on ellipsis.
 - Use Regular Fluent icons for supporting concepts and Filled icons only for selected or emphasized states.
 - Keep Azure service icons in original colors and proportions, with visible labels and useful alt text.
 - Use AI-generated images only for hero photography, conceptual illustration, or editorial backgrounds.
@@ -78,6 +94,8 @@ otherwise freeform composition. Keep simple sequences native with shape, text, i
 - Use one restrained accent family. Semantic success, warning, and danger colors communicate meaning, not decoration.
 - Default every card, component, and other box to `$surface`, which resolves to white in the light theme. Use a non-white fill only when the user explicitly requests it or documented focal or semantic intent requires it; never use `$subtle` or alternating fills merely to differentiate adjacent boxes.
 - Use the primary flow connector treatment for ordinary directional arrows: `$secondary`, 2.5px, and a filled triangular arrowhead. Use a different color, weight, dash, or arrowhead only when the user requests it or the connector carries documented semantic meaning.
+- Author connector endpoints at their semantic target boundary; the shared renderers apply the design-contract target clearance so filled arrowheads remain distinct from card borders rather than blending inside them.
+- Structural boundaries render behind every connector that enters or crosses them; never let a filled boundary hide an arrow or path.
 - Avoid gradients, glass effects, decorative blobs, nested cards, emoji icons, text shadows, and center-aligned paragraphs.
 - Slides are still frames: no autoplay, hover-dependent content, or required animation. Respect reduced motion.
 

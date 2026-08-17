@@ -5,9 +5,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$OutputDirectory,
 
-    [int]$Width = 1920,
+    [int]$Width = 3840,
 
-    [int]$Height = 1080
+    [int]$Height = 2160
 )
 
 $ErrorActionPreference = 'Stop'

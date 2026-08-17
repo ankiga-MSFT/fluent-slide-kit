@@ -203,6 +203,11 @@
                 "endArrow": {
                     "type": "boolean"
                 },
+                "endInset": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 40
+                },
                 "dashType": {
                     "enum": [
                         "solid",
@@ -307,6 +312,7 @@
                     "enum": [
                         "fluent",
                         "azure",
+                        "external",
                         "image"
                     ]
                 },
@@ -317,6 +323,7 @@
                 "provenance": {
                     "enum": [
                         "local-catalog",
+                        "external-catalog",
                         "user-supplied",
                         "ai-generated"
                     ]
@@ -473,6 +480,28 @@
                 },
                 "footerColor": {
                     "$ref": "#/$defs/color"
+                },
+                "sourceImageFidelity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "verbatim",
+                        "approvedDeviations"
+                    ],
+                    "properties": {
+                        "verbatim": {
+                            "const": true
+                        },
+                        "approvedDeviations": {
+                            "type": "array",
+                            "maxItems": 20,
+                            "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 240
+                            }
+                        }
+                    }
                 },
                 "elements": {
                     "type": "array",

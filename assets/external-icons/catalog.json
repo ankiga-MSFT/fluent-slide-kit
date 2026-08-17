@@ -1,0 +1,25 @@
+{
+    "schemaVersion": 1,
+    "collection": "Approved External Icons",
+    "policy": "Only official vendor-owned sources with recorded license and immutable revision may be bundled.",
+    "icons": [
+        {
+            "id": "github-copilot",
+            "name": "GitHub Copilot",
+            "vendor": "GitHub",
+            "description": "Current GitHub Copilot Octicon for product identification.",
+            "keywords": [
+                "copilot",
+                "github",
+                "ai assistant",
+                "developer"
+            ],
+            "path": "external-icons/svg/github-copilot.svg",
+            "source": "https://github.com/primer/octicons/blob/0e21a4c2d8449102f10e533d241f04797af0914c/icons/copilot-48.svg",
+            "sourceRevision": "0e21a4c2d8449102f10e533d241f04797af0914c",
+            "license": "MIT",
+            "licenseFile": "external-icons/legal/primer-octicons-LICENSE.txt",
+            "trademarkNotice": "GitHub and GitHub Copilot are trademarks of GitHub, Inc.; use does not imply endorsement."
+        }
+    ]
+}

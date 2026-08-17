@@ -1,9 +1,9 @@
 # Fluent Slide Kit
 
 A compact toolkit for creating executive-ready, editable PowerPoint decks and fixed `1920x1080` HTML
-previews with public Fluent 2 design guidance, local Fluent UI System Icons, and official Azure service
+scenes with 2x `3840x2160` previews, public Fluent 2 design guidance, local Fluent UI System Icons, and official Azure service
 icons. GitHub Copilot authors freeform composition JSON; the kit resolves tokens into one renderer-neutral scene,
-renders HTML and native Office objects, validates both, and delivers `.pptx`, HTML, and PNG previews.
+renders HTML and native Office objects, validates both, and delivers `.pptx`, HTML, and 4K PNG previews.
 
 This project produces **Fluent-aligned** output. It does not certify Microsoft brand compliance.
 Microsoft logos, product launch icons, and organization-specific templates require an approved
@@ -33,9 +33,10 @@ Examples:
 > Review the latest presentation, fix content and visual issues, and return the revised deck.
 
 The `fluent-presentation` skill automatically interprets the brief, asks only essential business
-questions, researches current Microsoft facts, chooses visuals, creates any required architecture or
-workflow diagram, renders the slides, runs quality checks, visually reviews and repairs screenshots,
-and returns an editable `.pptx`, validated HTML pages, and automatically generated PNG previews.
+questions, researches current Microsoft facts, chooses visuals, authors architecture directly with
+native slide primitives, creates a structured flow only when branching semantics require it, renders
+the slides, runs quality checks, visually reviews and repairs screenshots, and returns an editable
+`.pptx`, validated HTML pages, and automatically generated 4K PNG previews.
 
 The handoff leads with the editable PowerPoint, then preview images and HTML. Technical semantic sources,
 the compiled scene, and validation reports remain available for reproducibility but require no executive input.
@@ -45,7 +46,7 @@ the compiled scene, and validation reports remain available for reproducibility 
 | Path | Purpose |
 |---|---|
 | `schemas/composition.schema.json` | Machine-enforced freeform composition contract |
-| `schemas/diagram.schema.json` | Machine-enforced flow and layered-architecture contract |
+| `schemas/diagram.schema.json` | Machine-enforced branching-flow contract |
 | `schemas/scene.schema.json` | Renderer-neutral positioned element contract |
 | `schemas/brand-profile.schema.json` | Fonts, colors, brand status, and asset-policy contract |
 | `design/design-contract.json` | Canvas, static-only output policy, type aliases, content budgets, and guidance sources |
@@ -64,11 +65,11 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `examples/deck.json` | Versioned reusable freeform composition with Fluent and Azure visuals |
 | `examples/static-patterns.json` | Six validated native patterns: status, owner, progress, table, tags, and KPI |
 | `diagrams/templates/flow.json` | Versioned reusable branching-flow template |
-| `diagrams/templates/layered-architecture.json` | Versioned reusable layered-architecture template |
 | `.github/skills/fluent-presentation/SKILL.md` | Executive-facing natural-language orchestration workflow |
 | `.github/skills/fluent-deck/SKILL.md` | Hidden internal deck implementation playbook |
 | `.github/skills/fluent-diagram/SKILL.md` | Hidden internal diagram implementation playbook |
 | `assets/manifest.json` | Entry point for the local icon collections |
+| `assets/external-icons/catalog.json` | Approved non-Azure, non-Fluent vendor icons with pinned source and license metadata |
 | `legal/provenance.json` | Asset/tool versions, licenses, terms, and brand boundary |
 | `docs/native-powerpoint-architecture.md` | Shared-scene, native editability, validation, and add-in design |
 
@@ -78,8 +79,9 @@ and preview material under `.slide-artifacts/`. General temporary helpers and co
 top-level `diagrams/` are local-only; reusable fixtures under `examples/` and `diagrams/templates/` remain versioned.
 
 Generated HTML remains offline. PowerPoint uses native text, shapes, lines, and individual image objects.
-Layered architectures are fully native. Complex flow diagrams are browser-rasterized validated graphics
-until a native flow connector renderer is added; the delivery manifest discloses this per slide.
+Architectures are fully native because they are authored directly in the freeform composition. Complex
+flow diagrams are browser-rasterized validated graphics until a native flow connector renderer is added;
+the delivery manifest discloses this per slide.
 
 Every slide is a static still frame. The kit excludes animations, slide transitions, autoplay,
 hover-dependent disclosure, interactive controls, loading states, and motion-dependent meaning.
@@ -91,7 +93,10 @@ requestor must execute.
 
 1. Create local `decks/<name>.json` from `examples/deck.json`; request sources under `decks/` are Git-ignored.
 2. Give every slide one takeaway and compose its complete static visual argument directly from positioned primitives.
-3. Search assets locally and copy exact returned paths into the composition JSON.
+3. Inventory every visual role, search each concept locally, and copy exact catalog paths for suitable
+  pictograms or symbols. Resolve non-Azure/non-Fluent product icons from `assets/external-icons/`; new entries
+  require an official pinned source, license file, and trademark notice. Structural connectors, dash patterns,
+  boundaries, and cards remain native editable geometry.
 4. When graph semantics require it, copy a fixture from `diagrams/templates/`, author and validate
   `diagrams/<name>.json`, then embed it as a positioned `diagram` element. Request diagrams are Git-ignored.
 5. Add sources for factual claims and bracketed placeholders for missing evidence.
@@ -105,6 +110,8 @@ Put every disposable helper script, probe, download, extraction, log, cache, or 
 Operating-system temporary directories remain appropriate for isolated tests. Never place temporary files
 in the repository root or a source-controlled directory. The workspace Stop hook and `npm run repo:check`
 reject common temporary artifact patterns that escape these approved scratch locations.
+Every validated `deck:build` also runs the repository hygiene checker after writing its deliverables, so
+temporary archives, extraction directories, probes, and command captures cannot survive a successful handoff.
 
 ### Maintainer commands
 
@@ -116,7 +123,7 @@ through the skill instead.
 npm run assets:search -- "growth trend" --collection fluent --style regular
 npm run assets:search -- "Azure Cosmos DB" --collection azure --json
 
-# Render or validate an architecture/workflow graph
+# Render or validate a branching workflow graph
 npm run diagram:render -- diagrams/templates/flow.json
 npm run diagram:validate -- diagrams/templates/flow.json
 
@@ -146,21 +153,19 @@ completion and inline errors while the AI or a human edits them.
 
 ## Diagram workflow
 
-Use native text, shape, image, and line elements for a short sequence. Use `diagramType: flow` when
-branching, decisions, connectors, merging, or ownership carry the message. Use
-`diagramType: layered-architecture` when tiers, channels, capabilities, component rows, or cross-cutting
-governance carry the message.
+Use native text, shape, image, and line elements for architecture, system context, capability views,
+deployment views, reference-image reconstruction, and short sequences. Use `diagramType: flow` only when
+branching, decisions, merging, cycles, lanes, or labeled edge semantics carry the message.
 
 Diagram sources remain editable JSON. The renderer supports Azure service, process, decision,
-data-store, queue, actor, and external-system flow nodes, plus fixed-canvas layered architectures with
-aligned columns and a concern rail. Both deterministic renderers have no additional runtime dependency.
-Generated SVG is a handoff artifact and must not be edited manually.
+data-store, queue, actor, and external-system flow nodes. The deterministic renderer has no additional
+runtime dependency. Generated SVG is a handoff artifact and must not be edited manually.
 
 The diagram validator checks schema, globally unique ids, endpoint and container references, asset
 paths, decision labels, empty groups and lanes, disconnected nodes, accidental cycles, SVG asset
 embedding, fixed `1600x720` geometry, effective type size, text containment, item collisions, connector
 crossings, serious accessibility issues, and a deterministic screenshot. Flows are limited to 18 nodes;
-layered architectures are limited to 15 components, five columns, six layers, and five concerns.
+freeform architecture density is judged through content budgets, geometry validation, and screenshot review.
 
 ## Composition model
 
@@ -173,9 +178,16 @@ The schema constrains valid primitives and provenance, not storytelling template
 comparisons, paths, evidence views, and architecture slides are compositions rather than named layouts.
 Adding another slide is preferable to shrinking typography or overloading one frame.
 
+Readability takes priority over density. The validator enforces minimum rendered content padding inside the
+smallest containing card. Screenshot review must also compare dense and unused regions, redistribute available
+canvas before shrinking content, and keep repeated peer cards consistent in dimensions and padding.
+Centered focal cards declare `metadata.contentAlignment: center`; their grouped heading and supporting text
+must both use center alignment and share the container's horizontal centerline.
+
 Neutral cards, components, and boxes default to `$surface`, which is white in the light theme. Non-white
 fills are reserved for explicit user direction or documented focal or semantic meaning. Ordinary directional
 arrows share the flow-diagram primary connector treatment: `$secondary`, 2.5px, with a filled triangle.
+The renderer applies a shared target clearance so arrowheads stop visibly before card boundaries in both HTML and PowerPoint.
 
 For common executive content, use `examples/static-patterns.json` as the anatomy reference. It contains
 native, editable still-frame examples for a status message, owner/persona view, determinate progress and
@@ -199,11 +211,11 @@ The quality gate checks:
 - Canvas overflow, clipped content, and group-aware element overlap
 - Embedded diagram viewBox, effective 18px minimum type, text containment, collisions, and crossings
 - Serious WCAG 2.0/2.1 A and AA violations through axe-core
-- A deterministic `1920x1080` screenshot for every slide
+- A deterministic 2x `3840x2160` screenshot for every `1920x1080` logical slide
 - Native Office objects with stable scene-derived names rather than full-slide screenshots
 - Speaker notes and per-slide scene identity in the PowerPoint package
 - Expected PowerPoint slide and scene-element coverage
-- Optional desktop PowerPoint rendering at `1920x1080`, including a nonblank pixel check
+- Optional desktop PowerPoint rendering at `3840x2160`, including a nonblank pixel check
 
 Screenshot review remains mandatory because automated checks cannot judge narrative quality,
 visual hierarchy, misleading diagrams, or whether the selected image supports the message.
@@ -211,9 +223,11 @@ visual hierarchy, misleading diagrams, or whether the selected image supports th
 ## PowerPoint, HTML, and scene delivery
 
 Composition JSON is the authoring source and `deck.scene.json` is the resolved geometry shared by both renderers.
-PowerPoint is the primary executive artifact: text, cards, simple architecture, and layered architecture
-remain editable. HTML is the rapid deterministic QA surface. The validators capture both browser and,
+PowerPoint is the primary executive artifact: text, cards, and freeform architecture remain editable.
+HTML is the rapid deterministic QA surface. The validators capture both browser and,
 when desktop Office is available and no interactive session is open, PowerPoint-rendered previews.
+Native geometry and SVG media remain resolution-independent, source PNG/JPEG assets are not downsampled,
+and the validated graphic fallback for a complex flow is rendered at `3200x1440`.
 
 PowerPoint light edits are expected, but regeneration remains source-driven; arbitrary Office edits are
 not reverse-engineered into deck JSON. Stable Selection Pane names (`fluent-slide-kit:<slide>:<element>`)
@@ -229,7 +243,7 @@ Implemented:
 - freeform composition and optional structured diagram sources;
 - renderer-neutral scene compilation with stable element ids;
 - scene-driven HTML and native editable PowerPoint renderers;
-- native text, shape, line, image, and layered-architecture objects;
+- native text, shape, line, image, and unrestricted freeform architecture objects;
 - validated graphic fallback for complex flow diagrams;
 - brand-profile schema and explicit `aligned-not-certified` status;
 - HTML, Open XML, speaker-note, Office-preview, and pixel validation;
@@ -276,8 +290,9 @@ is the design source of truth.
 
 - Fluent UI System Icons: MIT, version `1.1.335`; compact Regular/Filled canonical SVGs.
 - Azure Public Service Icons: V24; original category hierarchy, FAQ, and terms included.
+- Approved external icons: official vendor-owned SVGs pinned by revision under `assets/external-icons/`, with per-entry license and trademark metadata.
 - Azure artwork is not recolored, distorted, shadowed, or used to imply endorsement.
-- Product launch icons, Microsoft logos, stock photography, and Fluent Emoji are not included.
+- Microsoft product launch icons, Microsoft logos, stock photography, and Fluent Emoji are not included.
 
 AI-generated imagery is permitted only for hero photography, conceptual illustration, and editorial
 backgrounds stored under `assets/generated/`. It is prohibited for whole slides, text, charts, logos,

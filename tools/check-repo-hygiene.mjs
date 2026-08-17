@@ -7,6 +7,7 @@ const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const approvedScratchPrefixes = ['.tmp/', '.slide-artifacts/'];
 const requiredIgnoreRules = ['.tmp/', '.slide-artifacts/'];
 const temporaryBasenamePatterns = [
+    /^(?:tmp|temp|scratch|probe)(?:[_-].*)?(?:\.[^.]+)?$/i,
     /^run[_-]?searches?(?:[_-].*)?\.(?:cjs|mjs|js|ts|py|ps1|sh|cmd|bat|txt|json)$/i,
     /^(?:tmp|temp|scratch|probe)(?:[_-].*)?\.(?:cjs|mjs|js|ts|py|ps1|sh|cmd|bat|txt|json)$/i,
     /\.(?:tmp|temp|bak|orig|rej|swp|swo)$/i,
@@ -18,13 +19,24 @@ const normalizePath = (filePath) => filePath.replaceAll('\\', '/').replace(/^\.\
 export const isTemporaryArtifactPath = (filePath) => {
     const normalized = normalizePath(filePath);
     if (approvedScratchPrefixes.some((prefix) => normalized.startsWith(prefix))) return false;
-    const basename = path.posix.basename(normalized);
-    return temporaryBasenamePatterns.some((pattern) => pattern.test(basename));
+    return normalized.split('/').some((segment) =>
+        temporaryBasenamePatterns.some((pattern) => pattern.test(segment)));
+};
+
+const temporaryArtifactRoot = (filePath) => {
+    const normalized = normalizePath(filePath);
+    if (approvedScratchPrefixes.some((prefix) => normalized.startsWith(prefix))) return undefined;
+    const segments = normalized.split('/');
+    const index = segments.findIndex((segment) =>
+        temporaryBasenamePatterns.some((pattern) => pattern.test(segment)));
+    if (index < 0) return undefined;
+    const root = segments.slice(0, index + 1).join('/');
+    return index < segments.length - 1 ? `${root}/` : root;
 };
 
 export const findTemporaryArtifactPaths = (paths) => [...new Set(paths
-    .map(normalizePath)
-    .filter(isTemporaryArtifactPath))].sort();
+    .map(temporaryArtifactRoot)
+    .filter(Boolean))].sort();
 
 const listTrackedAndUntrackedPaths = () => execFileSync('git', [
     'ls-files',

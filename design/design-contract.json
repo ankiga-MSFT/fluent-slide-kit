@@ -7,6 +7,21 @@
         "height": 1080,
         "aspectRatio": "16:9"
     },
+    "rasterQuality": {
+        "deviceScaleFactor": 2,
+        "htmlScreenshot": {
+            "width": 3840,
+            "height": 2160
+        },
+        "diagramScreenshot": {
+            "width": 3200,
+            "height": 1440
+        },
+        "powerPointDiagramFallback": {
+            "width": 3200,
+            "height": 1440
+        }
+    },
     "outputMode": {
         "staticOnly": true,
         "completeMessagePerFrame": true,
@@ -27,11 +42,22 @@
             "nonWhiteFillRequires": "Explicit user direction or documented focal or semantic intent",
             "exceptionMetadata": "fillIntent"
         },
+        "focalContent": {
+            "alignment": "center",
+            "metadata": "contentAlignment",
+            "centerTolerance": 1,
+            "inlineIconMetadata": [
+                "focalIconId",
+                "focalHeadingId"
+            ],
+            "rule": "When a container declares centered focal content, grouped text shares the container centerline unless a focal icon and heading are declared; that icon-heading union must share the container centerline and remaining grouped text stays centered."
+        },
         "connectors": {
             "color": "$secondary",
             "lightResolvedColor": "#424242",
             "width": 2.5,
             "arrowhead": "filled-triangle",
+            "targetClearance": 10,
             "exceptionMetadata": "connectorIntent",
             "marker": {
                 "width": 10,
@@ -40,7 +66,55 @@
                 "refY": 3,
                 "path": "M0,0 L0,6 L9,3 z",
                 "units": "strokeWidth"
-            }
+            },
+            "boundaryLayering": "A structural boundary must use a lower z-order than every connector entering or crossing it.",
+            "targetClearanceRule": "Arrow tips stop before the target boundary by targetClearance pixels so filled arrowheads remain visually distinct from card edges."
+        }
+    },
+    "assetResolution": {
+        "componentInventoryRequired": true,
+        "searchCommand": "npm run assets:search -- <concept> --json",
+        "catalogPriority": [
+            "azure",
+            "fluent",
+            "external"
+        ],
+        "externalIcons": {
+            "folder": "assets/external-icons/",
+            "catalog": "assets/external-icons/catalog.json",
+            "useFor": "Approved non-Azure, non-Fluent product and vendor icons only",
+            "requiredMetadata": [
+                "vendor",
+                "source",
+                "sourceRevision",
+                "license",
+                "licenseFile",
+                "trademarkNotice"
+            ],
+            "sourcePolicy": "Use an official vendor-owned source pinned to an immutable revision; do not use third-party logo mirrors."
+        },
+        "catalogFirstRoles": [
+            "Azure product or service",
+            "concept pictogram",
+            "action or state symbol",
+            "object icon",
+            "supporting illustration"
+        ],
+        "structuralNativeRoles": {
+            "connector": "Native line with semantic arrowhead or dash pattern",
+            "container": "Native rounded shape styled with Fluent tokens",
+            "boundary": "Native rounded shape styled with Fluent tokens",
+            "card": "Native rounded shape plus separate catalog icon and editable text"
+        },
+        "structuralRationale": "Arrow, line, square, rectangle, and Card UI catalog entries are standalone glyphs; they do not replace stretchable connectors, boundaries, or editable content containers.",
+        "fallback": {
+            "requiresNoSuitableCatalogMatch": true,
+            "metadata": "assetFallback",
+            "requiredFields": [
+                "searchQueries",
+                "reason"
+            ],
+            "preferredNoIconFallback": "Use a labeled native primitive instead of inventing or counterfeiting an icon."
         }
     },
     "typography": {
@@ -58,7 +132,19 @@
     },
     "contentBudgets": {
         "titleWords": 10,
-        "bodyWords": 55
+        "bodyWords": 100
+    },
+    "layoutQuality": {
+        "readabilityFirst": true,
+        "minimumRenderedContentPadding": 8,
+        "peerCardConsistencyRequired": true,
+        "balanceReviewRequired": true,
+        "redistributionOrder": [
+            "Use meaningful empty canvas before compressing dense components",
+            "Reduce low-information band height before reducing content padding",
+            "Increase peer card dimensions consistently before reducing typography",
+            "Split the slide before violating minimum type, padding, clipping, or overlap rules"
+        ]
     },
     "foundations": {
         "fluent": "design/fluent-foundation.json",
@@ -72,11 +158,6 @@
         },
         "minimumEffectiveFontSize": 18,
         "maximumFlowNodes": 18,
-        "maximumArchitectureComponents": 15,
-        "maximumArchitectureColumns": 5,
-        "maximumArchitectureLayers": 6,
-        "maximumCrossCuttingConcerns": 5,
-        "minimumLayerConnectorLength": 24,
         "minimumNodeContentGap": 4,
         "minimumCornerRadius": 6,
         "maximumItemCollisions": 0,
@@ -88,6 +169,12 @@
             "width": 1920,
             "height": 1080
         },
+        "preview": {
+            "width": 3840,
+            "height": 2160
+        },
+        "preferVectorMedia": true,
+        "preserveSourceRaster": true,
         "requireSceneElementCoverage": true,
         "requireSpeakerNotes": true,
         "requireRoundedContainers": true,

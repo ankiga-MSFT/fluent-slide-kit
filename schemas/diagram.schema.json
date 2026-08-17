@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://local.fluent-slide-kit/schemas/diagram.schema.json",
-    "title": "Fluent architecture or workflow diagram",
+    "title": "Fluent workflow diagram",
     "type": "object",
     "additionalProperties": false,
     "required": [
@@ -9,17 +9,16 @@
         "diagramType",
         "id",
         "title",
-        "theme"
+        "theme",
+        "nodes",
+        "edges"
     ],
     "properties": {
         "schemaVersion": {
             "const": 1
         },
         "diagramType": {
-            "enum": [
-                "flow",
-                "layered-architecture"
-            ]
+            "const": "flow"
         },
         "id": {
             "$ref": "#/$defs/id"
@@ -49,6 +48,11 @@
         "allowCycles": {
             "type": "boolean",
             "default": false
+        },
+        "rankSkipRouting": {
+            "enum": [
+                "horizontal-channel"
+            ]
         },
         "nodes": {
             "type": "array",
@@ -86,107 +90,8 @@
             "items": {
                 "$ref": "#/$defs/legendItem"
             }
-        },
-        "columns": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 5,
-            "items": {
-                "$ref": "#/$defs/column"
-            }
-        },
-        "layers": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 6,
-            "items": {
-                "$ref": "#/$defs/layer"
-            }
-        },
-        "crossCuttingConcerns": {
-            "type": "array",
-            "maxItems": 5,
-            "items": {
-                "$ref": "#/$defs/concern"
-            }
-        },
-        "showLayerFlow": {
-            "type": "boolean",
-            "default": true
         }
     },
-    "oneOf": [
-        {
-            "properties": {
-                "diagramType": {
-                    "const": "flow"
-                }
-            },
-            "required": [
-                "nodes",
-                "edges"
-            ],
-            "not": {
-                "anyOf": [
-                    {
-                        "required": [
-                            "layers"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "columns"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "crossCuttingConcerns"
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "properties": {
-                "diagramType": {
-                    "const": "layered-architecture"
-                }
-            },
-            "required": [
-                "columns",
-                "layers"
-            ],
-            "not": {
-                "anyOf": [
-                    {
-                        "required": [
-                            "nodes"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "edges"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "lanes"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "groups"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "legend"
-                        ]
-                    }
-                ]
-            }
-        }
-    ],
     "$defs": {
         "id": {
             "type": "string",
@@ -213,7 +118,8 @@
                 "kind": {
                     "enum": [
                         "fluent",
-                        "azure"
+                        "azure",
+                        "external"
                     ]
                 },
                 "path": {
@@ -334,6 +240,14 @@
                 },
                 "tone": {
                     "$ref": "#/$defs/tone"
+                },
+                "borderStyle": {
+                    "enum": [
+                        "solid",
+                        "dashed",
+                        "dotted"
+                    ],
+                    "default": "dashed"
                 }
             }
         },
@@ -378,136 +292,6 @@
                         "dependency",
                         "error"
                     ]
-                }
-            }
-        },
-        "column": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "label"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/id"
-                },
-                "label": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                }
-            }
-        },
-        "component": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "label",
-                "column"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/id"
-                },
-                "label": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 48
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 80
-                },
-                "column": {
-                    "$ref": "#/$defs/id"
-                },
-                "span": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 5,
-                    "default": 1
-                },
-                "tone": {
-                    "$ref": "#/$defs/tone"
-                },
-                "emphasis": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "asset": {
-                    "$ref": "#/$defs/asset"
-                }
-            }
-        },
-        "layer": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "label",
-                "components"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/id"
-                },
-                "number": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 9
-                },
-                "label": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                },
-                "subtitle": {
-                    "type": "string",
-                    "maxLength": 52
-                },
-                "tone": {
-                    "$ref": "#/$defs/tone"
-                },
-                "asset": {
-                    "$ref": "#/$defs/asset"
-                },
-                "components": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 6,
-                    "items": {
-                        "$ref": "#/$defs/component"
-                    }
-                }
-            }
-        },
-        "concern": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "id",
-                "label"
-            ],
-            "properties": {
-                "id": {
-                    "$ref": "#/$defs/id"
-                },
-                "label": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 36
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 60
-                },
-                "tone": {
-                    "$ref": "#/$defs/tone"
-                },
-                "asset": {
-                    "$ref": "#/$defs/asset"
                 }
             }
         }

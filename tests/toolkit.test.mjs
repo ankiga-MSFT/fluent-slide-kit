@@ -10,10 +10,12 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import { findTemporaryArtifactPaths, isTemporaryArtifactPath } from '../tools/check-repo-hygiene.mjs';
 import { renderDiagramSvg, validateDiagram } from '../tools/diagram-core.mjs';
 import { compileDeckScene } from '../tools/composition-core.mjs';
+import { renderSceneSlideHtml } from '../tools/render-scene-html.mjs';
 import { renderSceneToPptx } from '../tools/render-scene-pptx.mjs';
 
 const execFileAsync = promisify(execFile);
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const pngDimensions = (buffer) => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
 
 const relativeLuminance = (hex) => {
     const channels = hex.slice(1).match(/.{2}/g).map((value) => Number.parseInt(value, 16) / 255)
@@ -60,6 +62,11 @@ test('Fluent foundation snapshots stay complete, attributed, and renderer-neutra
     assert.equal(designData.get('design/fluent-chart-foundation.json').license, 'MIT');
     await readFile(path.join(kitRoot, designData.get('design/fluent-foundation.json').licenseFile), 'utf8');
     await readFile(path.join(kitRoot, designData.get('design/fluent-chart-foundation.json').licenseFile), 'utf8');
+    const copilot = provenance.assets.find((item) => item.name === 'GitHub Copilot Octicon');
+    assert.ok(copilot);
+    assert.match(copilot.version, /0e21a4c2d8449102f10e533d241f04797af0914c/);
+    await readFile(path.join(kitRoot, copilot.licenseFile), 'utf8');
+    await readFile(path.join(kitRoot, copilot.localFile), 'utf8');
 });
 
 test('presentation skills require local assets, Fluent foundations, and static output', async () => {
@@ -80,7 +87,23 @@ test('presentation skills require local assets, Fluent foundations, and static o
         assert.match(source, /\$surface/);
         assert.match(source, /2\.5px/);
         assert.match(source, /filled triangular arrowhead/);
+        assert.match(source, /3840x2160/);
+        assert.match(source, /vector-first/);
+        assert.match(source, /component inventory/i);
+        assert.match(source, /assetFallback/);
+        assert.match(source, /standalone (?:visual|symbol|glyph)/i);
+        assert.match(source, /external-icons/);
+        assert.match(source, /readability/i);
+        assert.match(source, /unused (?:canvas|region|space)/i);
     }
+    assert.match(presentationSkill, /Reference-image fidelity gate/);
+    assert.match(presentationSkill, /verbatim content inventory/);
+    assert.match(presentationSkill, /Source content and relationships are immutable by default/);
+    assert.match(presentationSkill, /Do not paraphrase/);
+    assert.match(presentationSkill, /Standard content budgets must never cause silent omission/);
+    assert.match(presentationSkill, /Every visible source\s+item and semantic relationship must be accounted for exactly/);
+    assert.match(presentationSkill, /sourceImageFidelity\.verbatim/);
+    assert.equal(designContract.contentBudgets.bodyWords, 100);
     assert.equal(designContract.outputMode.staticOnly, true);
     assert.equal(designContract.outputMode.completeMessagePerFrame, true);
     assert.deepEqual(designContract.outputMode.forbidden, [
@@ -95,10 +118,16 @@ test('presentation skills require local assets, Fluent foundations, and static o
     assert.equal(designContract.authoringDefaults.containers.fill, '$surface');
     assert.equal(designContract.authoringDefaults.containers.lightResolvedFill, '#FFFFFF');
     assert.equal(designContract.authoringDefaults.containers.exceptionMetadata, 'fillIntent');
+    assert.equal(designContract.authoringDefaults.focalContent.alignment, 'center');
+    assert.equal(designContract.authoringDefaults.focalContent.metadata, 'contentAlignment');
+    assert.equal(designContract.authoringDefaults.focalContent.centerTolerance, 1);
+    assert.deepEqual(designContract.authoringDefaults.focalContent.inlineIconMetadata, ['focalIconId', 'focalHeadingId']);
     assert.equal(designContract.authoringDefaults.connectors.color, '$secondary');
     assert.equal(designContract.authoringDefaults.connectors.lightResolvedColor, '#424242');
     assert.equal(designContract.authoringDefaults.connectors.width, 2.5);
     assert.equal(designContract.authoringDefaults.connectors.arrowhead, 'filled-triangle');
+    assert.equal(designContract.authoringDefaults.connectors.targetClearance, 10);
+    assert.match(designContract.authoringDefaults.connectors.targetClearanceRule, /remain visually distinct/);
     assert.equal(designContract.authoringDefaults.connectors.exceptionMetadata, 'connectorIntent');
     assert.deepEqual(designContract.authoringDefaults.connectors.marker, {
         width: 10,
@@ -108,6 +137,25 @@ test('presentation skills require local assets, Fluent foundations, and static o
         path: 'M0,0 L0,6 L9,3 z',
         units: 'strokeWidth',
     });
+    assert.match(designContract.authoringDefaults.connectors.boundaryLayering, /lower z-order/);
+    assert.equal(designContract.rasterQuality.deviceScaleFactor, 2);
+    assert.deepEqual(designContract.rasterQuality.htmlScreenshot, { width: 3840, height: 2160 });
+    assert.deepEqual(designContract.rasterQuality.diagramScreenshot, { width: 3200, height: 1440 });
+    assert.deepEqual(designContract.rasterQuality.powerPointDiagramFallback, { width: 3200, height: 1440 });
+    assert.deepEqual(designContract.powerPointQuality.preview, { width: 3840, height: 2160 });
+    assert.equal(designContract.powerPointQuality.preferVectorMedia, true);
+    assert.equal(designContract.powerPointQuality.preserveSourceRaster, true);
+    assert.equal(designContract.assetResolution.componentInventoryRequired, true);
+    assert.match(designContract.assetResolution.searchCommand, /assets:search/);
+    assert.match(designContract.assetResolution.structuralNativeRoles.connector, /Native line/);
+    assert.match(designContract.assetResolution.structuralRationale, /standalone glyphs/);
+    assert.equal(designContract.assetResolution.fallback.metadata, 'assetFallback');
+    assert.equal(designContract.assetResolution.externalIcons.folder, 'assets/external-icons/');
+    assert.match(designContract.assetResolution.externalIcons.sourcePolicy, /official vendor-owned source/);
+    assert.equal(designContract.layoutQuality.readabilityFirst, true);
+    assert.equal(designContract.layoutQuality.minimumRenderedContentPadding, 8);
+    assert.equal(designContract.layoutQuality.peerCardConsistencyRequired, true);
+    assert.equal(designContract.layoutQuality.balanceReviewRequired, true);
 });
 
 test('temporary artifacts stay in ignored dot-prefixed scratch directories', async () => {
@@ -138,6 +186,13 @@ test('temporary artifacts stay in ignored dot-prefixed scratch directories', asy
     assert.equal(isTemporaryArtifactPath('run_searches_correct.cjs'), true);
     assert.equal(isTemporaryArtifactPath('tools/probe.ps1'), true);
     assert.equal(isTemporaryArtifactPath('notes.tmp'), true);
+    assert.equal(isTemporaryArtifactPath('temp-deck.zip'), true);
+    assert.equal(isTemporaryArtifactPath('temp-pptx-unzipped/ppt/presentation.xml'), true);
+    assert.deepEqual(findTemporaryArtifactPaths([
+        'temp-deck.zip',
+        'temp-pptx-unzipped/ppt/presentation.xml',
+        'temp-pptx-unzipped/ppt/media/image.png',
+    ]), ['temp-deck.zip', 'temp-pptx-unzipped/']);
     assert.equal(isTemporaryArtifactPath('.tmp/asset-search/run_searches.cjs'), false);
     assert.equal(isTemporaryArtifactPath('.slide-artifacts/advisor/probe.ps1'), false);
     assert.equal(isTemporaryArtifactPath('tools/render-deck.mjs'), false);
@@ -200,12 +255,30 @@ test('asset search returns exact local Fluent and Azure paths', async () => {
     ], { cwd: kitRoot });
     const azureResults = JSON.parse(azure.stdout).results;
     assert.equal(azureResults[0].name, 'Kubernetes Services');
+
+    const external = await execFileAsync(process.execPath, [
+        'tools/search-assets.mjs',
+        'GitHub Copilot',
+        '--collection',
+        'external',
+        '--json',
+    ], { cwd: kitRoot });
+    const externalResults = JSON.parse(external.stdout).results;
+    assert.equal(externalResults.length, 1);
+    assert.equal(externalResults[0].name, 'GitHub Copilot');
+    assert.equal(externalResults[0].path, 'assets/external-icons/svg/github-copilot.svg');
+    assert.equal(externalResults[0].license, 'MIT');
 });
 
 test('final deliverables are separate from intermediate artifacts', async () => {
     const source = await readFile(path.join(kitRoot, 'tools', 'build-deck.mjs'), 'utf8');
     assert.match(source, /path\.join\(kitRoot, 'deliverables', path\.basename/);
     assert.doesNotMatch(source, /path\.join\(kitRoot, '\.slide-artifacts', 'deliverables'/);
+    assert.match(source, /htmlScreenshot: designContract\.rasterQuality\.htmlScreenshot/);
+    assert.match(source, /vectorFirst: designContract\.powerPointQuality\.preferVectorMedia/);
+    assert.match(source, /exactCatalogMembership: true/);
+    assert.match(source, /check-repo-hygiene\.mjs/);
+    assert.match(source, /postBuildCheck: true/);
 });
 
 test('freeform deck compiles to a valid renderer-neutral scene', async () => {
@@ -270,7 +343,10 @@ test('neutral shapes and primary connectors inherit shared visual defaults', asy
     assert.equal(elements.get('primary-connector').style.color, '#424242');
     assert.equal(elements.get('primary-connector').style.width, 2.5);
     assert.equal(elements.get('primary-connector').style.endArrow, true);
+    assert.equal(elements.get('primary-connector').style.endInset, 10);
     assert.equal(elements.get('divider').style.endArrow, undefined);
+    const html = await renderSceneSlideHtml(scene, scene.slides[0], kitRoot);
+    assert.match(html, /data-scene-element="primary-connector"[\s\S]*?<line x1="0" y1="0" x2="218" y2="0"/);
 });
 
 test('image accessibility descriptions allow up to 300 characters', async () => {
@@ -337,14 +413,18 @@ test('dark theme tokens propagate through scene, SVG, and native PowerPoint', as
     assert.equal(slide.elements.find((element) => element.id === 'success-surface').style.fill, '#0B3B0B');
     assert.equal(slide.elements.find((element) => element.id === 'footer-confidentiality').style.color, '#ADADAD');
 
-    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8'));
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
     diagram.theme = 'dark';
+    diagram.nodes.find((node) => node.id === 'work-queue').asset = {
+        kind: 'fluent',
+        path: 'assets/fluent-system-icons/svg/regular/stack.svg',
+        alt: 'Stack representing a work queue',
+    };
     const svg = await renderDiagramSvg(diagram);
     assert.match(svg, /data-canvas-background="true"[^>]+fill="#202020"/);
-    assert.match(svg, /architecture-component\.tone-brand rect \{ fill: #0C3B5E; stroke: #479EF5; \}/);
-    const fluentComponent = diagram.layers.flatMap((layer) => layer.components).find((component) => component.asset?.kind === 'fluent');
-    const fluentImage = svg.match(new RegExp(`data-diagram-component="${fluentComponent.id}"[\\s\\S]*?href="data:image/svg\\+xml;base64,([^"]+)"`));
-    assert.ok(fluentImage, 'Expected an embedded Fluent component icon.');
+    assert.match(svg, /node-shape\.tone-brand \{ fill: #0C3B5E; stroke: #479EF5; \}/);
+    const fluentImage = svg.match(/data-diagram-node="work-queue"[\s\S]*?href="data:image\/svg\+xml;base64,([^"]+)"/);
+    assert.ok(fluentImage, 'Expected an embedded Fluent flow-node icon.');
     const fluentSvg = Buffer.from(fluentImage[1], 'base64').toString('utf8');
     assert.doesNotMatch(fluentSvg, /currentColor/);
     assert.match(fluentSvg, /#FFFFFF/);
@@ -399,6 +479,7 @@ test('native PowerPoint export contains editable freeform objects and notes', as
         assert.ok(report.slides[0].shapes >= 4);
         assert.ok(report.slides[0].namedObjects.length >= 6);
         assert.equal(report.slides[0].screenshotOnly, false);
+        assert.ok(report.media.svg >= 1);
         assert.equal(report.notes[0].hasTakeaway, true);
         assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:surface`));
         assert.ok(report.slides[0].namedObjects.includes(`fluent-slide-kit:${sourceSlide.id}:advisor-icon`));
@@ -444,6 +525,10 @@ test('freeform composition embeds an opt-in flow as one named PowerPoint graphic
         assert.equal(report.slides[0].screenshotOnly, false);
         assert.ok(report.slides[0].namedObjects.includes('fluent-slide-kit:hybrid-flow:decision-flow'));
         assert.ok(report.slides[0].pictures >= 1);
+        const designContract = JSON.parse(await readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8'));
+        assert.ok(report.media.raster.some((item) =>
+            item.width === designContract.rasterQuality.powerPointDiagramFallback.width
+            && item.height === designContract.rasterQuality.powerPointDiagramFallback.height));
     } finally {
         await rm(output, { recursive: true, force: true });
     }
@@ -510,6 +595,108 @@ test('deck validation requires explicit intent for grey boxes and custom connect
     }
 });
 
+test('deck validation enforces rendered content padding', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-content-padding-'));
+    try {
+        const deckPath = path.join(output, 'padding.json');
+        const deck = {
+            schemaVersion: 1,
+            title: 'Readable card padding',
+            theme: 'light',
+            slides: [{
+                id: 'padding',
+                takeaway: 'Card content retains readable breathing room.',
+                title: 'Readable padding remains enforced',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Readable padding remains enforced', typography: 'title' },
+                    { id: 'card', type: 'shape', group: 'message', z: 3, box: { x: 112, y: 240, width: 400, height: 180 }, shape: 'roundRect', style: { fill: '$surface', stroke: '$stroke', strokeWidth: 1 } },
+                    { id: 'card-label', type: 'text', group: 'message', z: 5, box: { x: 114, y: 242, width: 396, height: 176 }, text: 'Cramped content', typography: 'body', style: { fontSize: 24, verticalAlign: 'middle' } },
+                ],
+            }],
+        };
+        await writeFile(deckPath, JSON.stringify(deck));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
+            /Rendered content padding below 8px/,
+        );
+
+        deck.slides[0].elements[2].box = { x: 136, y: 264, width: 352, height: 132 };
+        await writeFile(deckPath, JSON.stringify(deck));
+        const result = await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
+        assert.match(result.stdout, /PASS: 1 slides checked; 0 errors; 0 warnings\./);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('deck validation enforces centered focal-card text alignment', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-focal-alignment-'));
+    try {
+        const deckPath = path.join(output, 'focal.json');
+        const deck = {
+            schemaVersion: 1,
+            title: 'Centered focal content',
+            theme: 'light',
+            slides: [{
+                id: 'focal',
+                takeaway: 'Focal-card text shares one centerline.',
+                title: 'Focal alignment remains consistent',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Focal alignment remains consistent', typography: 'title' },
+                    { id: 'focal-card', type: 'shape', group: 'focal-content', z: 3, box: { x: 300, y: 260, width: 900, height: 280 }, shape: 'roundRect', style: { fill: '$brandSubtle', stroke: '$brand', strokeWidth: 2 }, metadata: { contentAlignment: 'center' } },
+                    { id: 'focal-heading', type: 'text', group: 'focal-content', z: 5, box: { x: 450, y: 320, width: 600, height: 48 }, text: 'Centered heading', typography: 'itemTitle', style: { fontSize: 30, align: 'left' } },
+                ],
+            }],
+        };
+        await writeFile(deckPath, JSON.stringify(deck));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
+            /focal text focal-heading must use center alignment/,
+        );
+
+        deck.slides[0].elements[2].style.align = 'center';
+        await writeFile(deckPath, JSON.stringify(deck));
+        const result = await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
+        assert.match(result.stdout, /PASS: 1 slides checked; 0 errors; 0 warnings\./);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('deck validation keeps structural boundaries behind connectors', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-boundary-layering-'));
+    try {
+        const deckPath = path.join(output, 'boundary.json');
+        const deck = {
+            schemaVersion: 1,
+            title: 'Visible connector layering',
+            theme: 'light',
+            slides: [{
+                id: 'boundary-layering',
+                takeaway: 'Structural boundaries never conceal connector paths.',
+                title: 'Connectors remain visible',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Connectors remain visible', typography: 'title' },
+                    { id: 'region', type: 'shape', role: 'boundary', z: 8, box: { x: 112, y: 220, width: 900, height: 420 }, shape: 'roundRect', style: { fill: '$brandSubtle', stroke: '$brand', strokeWidth: 1 } },
+                    { id: 'flow', type: 'line', role: 'connector', z: 5, start: { x: 220, y: 420 }, end: { x: 900, y: 420 }, style: { color: '$secondary', width: 2.5, endArrow: true } },
+                ],
+            }],
+        };
+        await writeFile(deckPath, JSON.stringify(deck));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
+            /boundary region at z 8 can obscure connector flow at z 5/,
+        );
+
+        deck.slides[0].elements[1].z = 2;
+        await writeFile(deckPath, JSON.stringify(deck));
+        const result = await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
+        assert.match(result.stdout, /PASS: 1 slides checked; 0 errors; 0 warnings\./);
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
 test('deck validation rejects AI-generated icon assets', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-asset-policy-'));
     try {
@@ -533,6 +720,98 @@ test('deck validation rejects AI-generated icon assets', async () => {
             execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--output', path.join(output, 'render')], { cwd: kitRoot }),
             /AI-generated assets must use kind "image"/,
         );
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('deck validation enforces exact catalog collection membership', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-catalog-membership-'));
+    try {
+        const deckPath = path.join(output, 'invalid-catalog-kind.json');
+        await writeFile(deckPath, JSON.stringify({
+            schemaVersion: 1,
+            title: 'Catalog membership',
+            theme: 'light',
+            slides: [{
+                id: 'invalid-catalog-kind',
+                takeaway: 'Catalog-backed visuals retain their declared collection identity.',
+                title: 'Catalog identity remains exact',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Catalog identity remains exact', typography: 'title' },
+                    { id: 'mislabeled-icon', type: 'image', z: 5, box: { x: 112, y: 220, width: 120, height: 120 }, path: 'assets/azure-public-service-icons/svg/management + governance/00003-icon-service-Advisor.svg', assetKind: 'fluent', alt: 'Azure Advisor', provenance: 'local-catalog' },
+                ],
+            }],
+        }));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'validation')], { cwd: kitRoot }),
+            /Fluent asset is not an exact local catalog entry/,
+        );
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('deck validation accepts approved external icons and rejects uncataloged paths', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-external-icon-'));
+    try {
+        const deckPath = path.join(output, 'external-icon.json');
+        const deck = {
+            schemaVersion: 1,
+            title: 'Approved external icon',
+            theme: 'light',
+            slides: [{
+                id: 'external-icon',
+                takeaway: 'Approved vendor icons retain pinned provenance.',
+                title: 'External icons remain governed',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'External icons remain governed', typography: 'title' },
+                    { id: 'copilot', type: 'image', z: 5, box: { x: 112, y: 220, width: 120, height: 120 }, path: 'assets/external-icons/svg/github-copilot.svg', assetKind: 'external', alt: 'GitHub Copilot', provenance: 'external-catalog' },
+                ],
+            }],
+        };
+        await writeFile(deckPath, JSON.stringify(deck));
+        await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
+
+        deck.slides[0].elements[1].path = 'assets/external-icons/svg/not-cataloged.svg';
+        await writeFile(deckPath, JSON.stringify(deck));
+        await assert.rejects(
+            execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
+            /external asset is not an exact approved external catalog entry/,
+        );
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
+});
+
+test('deliverable screenshots render at 2x resolution', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-4k-screenshot-'));
+    try {
+        const deckPath = path.join(output, 'quality.json');
+        const validationOutput = path.join(output, 'validation');
+        await writeFile(deckPath, JSON.stringify({
+            schemaVersion: 1,
+            title: 'High quality raster delivery',
+            theme: 'light',
+            slides: [{
+                id: 'quality',
+                takeaway: 'Deliverable screenshots retain presentation detail at 2x resolution.',
+                title: 'High quality screenshots remain sharp',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'High quality screenshots remain sharp', typography: 'title' },
+                ],
+                notes: 'High-quality screenshot regression fixture.',
+            }],
+        }));
+        await execFileAsync(process.execPath, [
+            'tools/validate-deck.mjs',
+            deckPath,
+            '--output', validationOutput,
+        ], { cwd: kitRoot });
+        const report = JSON.parse(await readFile(path.join(validationOutput, 'validation-report.json'), 'utf8'));
+        const screenshot = await readFile(report.slides[0].screenshot);
+        assert.deepEqual(report.slides[0].screenshotDimensions, { width: 3840, height: 2160 });
+        assert.deepEqual(pngDimensions(screenshot), { width: 3840, height: 2160 });
     } finally {
         await rm(output, { recursive: true, force: true });
     }
@@ -668,6 +947,43 @@ test('flow edge labels render above every connector path', async () => {
     assert.equal((svg.match(/data-diagram-edge-label=/g) ?? []).length, diagram.edges.filter((edge) => edge.label).length);
 });
 
+test('flow groups support dotted boundaries and rank-skipping edges reserve a horizontal channel', async () => {
+    const diagram = {
+        schemaVersion: 1,
+        diagramType: 'flow',
+        id: 'grouped-skill-invocation',
+        title: 'Grouped skill invocation',
+        direction: 'right',
+        theme: 'light',
+        rankSkipRouting: 'horizontal-channel',
+        nodes: [
+            { id: 'ops', label: 'Azure Ops Skill', kind: 'process', group: 'skills' },
+            { id: 'specialist', label: 'Specialist skill', kind: 'process', group: 'skills' },
+            { id: 'tools', label: 'Azure MCP tools', kind: 'external-system' },
+        ],
+        edges: [
+            { id: 'delegate', source: 'ops', target: 'specialist' },
+            { id: 'specialist-tools', source: 'specialist', target: 'tools' },
+            { id: 'ops-tools', source: 'ops', target: 'tools', kind: 'dependency' },
+        ],
+        groups: [
+            { id: 'skills', label: 'Azure Skills', borderStyle: 'dotted' },
+        ],
+    };
+    const contract = await validateDiagram(diagram);
+    assert.deepEqual(contract.errors, []);
+    const svg = await renderDiagramSvg(diagram);
+    assert.match(svg, /diagram-group[^>]*boundary-dotted/);
+    assert.match(svg, /\.diagram-group\.boundary-dotted rect \{ stroke-dasharray: 1 6; stroke-linecap: round; \}/);
+    const path = svg.match(/data-diagram-edge="ops-tools"[\s\S]*?<path d="([^"]+)"/)?.[1];
+    const coordinates = [...path.matchAll(/(?:M|L) ([\d.]+) ([\d.]+)/g)].map((match) => ({ x: Number(match[1]), y: Number(match[2]) }));
+    const opsY = Number(svg.match(/data-diagram-node="ops"[\s\S]*?class="node-shape[^>]+y="([\d.]+)"/)?.[1]);
+    const specialistY = Number(svg.match(/data-diagram-node="specialist"[\s\S]*?class="node-shape[^>]+y="([\d.]+)"/)?.[1]);
+    assert.ok(specialistY > opsY);
+    assert.equal(coordinates.length, 2);
+    assert.equal(coordinates[0].y, coordinates[1].y);
+});
+
 test('flow edge labels can align with the target node', async () => {
     const diagram = {
         schemaVersion: 1,
@@ -725,62 +1041,36 @@ test('diagram validation rejects cycles unless they are intentional', async () =
     assert.equal(intentional.errors.length, 0);
 });
 
-test('layered architecture renders on a fixed executive canvas', async () => {
-    const source = await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8');
-    const diagram = JSON.parse(source);
-    const contract = await validateDiagram(diagram);
-    assert.deepEqual(contract.errors, []);
+test('diagram validation enforces exact catalog collection membership', async () => {
+    const diagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
+    const node = diagram.nodes.find((candidate) => candidate.asset?.kind === 'azure');
+    assert.ok(node, 'Expected the flow fixture to contain an Azure-backed node.');
+    node.asset.kind = 'fluent';
+    const result = await validateDiagram(diagram);
+    assert.match(result.errors.join('\n'), /Fluent asset is not an exact local catalog entry/);
 
-    const svg = await renderDiagramSvg(diagram);
-    assert.match(svg, /viewBox="0 0 1600 720"/);
-    assert.match(svg, /data-diagram-type="layered-architecture"/);
-    assert.match(svg, diagram.theme === 'dark'
-        ? /architecture-component\.tone-brand rect \{ fill: #0C3B5E; stroke: #479EF5; \}/
-        : /architecture-component\.tone-brand rect \{ fill: #EBF3FC; stroke: #0F6CBD; \}/);
-    assert.match(svg, diagram.theme === 'dark'
-        ? /architecture-component\.tone-success rect \{ fill: #0B3B0B; stroke: #54B054; \}/
-        : /architecture-component\.tone-success rect \{ fill: #F1FAF1; stroke: #107C10; \}/);
-    for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
-        assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
-    }
-    assert.match(svg, new RegExp(`data-diagram-component="${diagram.layers[0].components[0].id}"`));
-    assert.match(svg, new RegExp(`data-diagram-concern="${diagram.crossCuttingConcerns[0].id}"`));
-    assert.match(svg, /id="architecture-arrow"[^>]+markerUnits="userSpaceOnUse"/);
-    const connector = svg.match(/<line class="layer-flow"[^>]+y1="([\d.]+)"[^>]+y2="([\d.]+)"/);
-    assert.ok(connector, 'Expected a connector between architecture layers.');
-    assert.ok(Number(connector[2]) - Number(connector[1]) >= 24, 'Architecture connector must retain a visible tail.');
+    const externalDiagram = JSON.parse(await readFile(path.join(kitRoot, 'diagrams', 'templates', 'flow.json'), 'utf8'));
+    const externalNode = externalDiagram.nodes.find((candidate) => candidate.kind !== 'azure-service');
+    externalNode.asset = {
+        kind: 'external',
+        path: 'assets/external-icons/svg/github-copilot.svg',
+        alt: 'GitHub Copilot',
+    };
+    const externalResult = await validateDiagram(externalDiagram);
+    assert.equal(externalResult.errors.length, 0, externalResult.errors.join('\n'));
+    assert.match(await renderDiagramSvg(externalDiagram), /data:image\/svg\+xml;base64/);
 });
 
-test('layered architecture rejects overlapping column spans', async () => {
-    const source = await readFile(path.join(kitRoot, 'diagrams', 'templates', 'layered-architecture.json'), 'utf8');
-    const diagram = JSON.parse(source);
-    diagram.layers[0].components.push({
-        id: 'overlap',
-        label: 'Overlapping component',
-        column: diagram.layers[0].components[0].column,
-    });
+test('diagram schema rejects retired layered architecture artifacts', async () => {
+    const diagram = {
+        schemaVersion: 1,
+        diagramType: 'layered-architecture',
+        id: 'retired-architecture',
+        title: 'Retired architecture artifact',
+        theme: 'light',
+        columns: [{ id: 'application', label: 'Application' }],
+        layers: [{ id: 'runtime', label: 'Runtime', components: [] }],
+    };
     const contract = await validateDiagram(diagram);
-    assert.match(contract.errors.join('\n'), /overlapping components/);
-});
-
-test('layered architecture template passes browser typography and collision checks', async () => {
-    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-layered-diagram-'));
-    try {
-        await execFileAsync(process.execPath, [
-            'tools/validate-diagram.mjs',
-            'diagrams/templates/layered-architecture.json',
-            '--output',
-            output,
-            '--no-screenshot',
-        ], { cwd: kitRoot });
-        const report = JSON.parse(await readFile(path.join(output, 'validation-report.json'), 'utf8'));
-        assert.equal(report.passed, true);
-        assert.deepEqual(report.inspection.geometry.undersizedText, []);
-        assert.deepEqual(report.inspection.geometry.shortLayerFlows, []);
-        assert.deepEqual(report.inspection.geometry.collisions, []);
-        assert.equal(report.inspection.geometry.viewBox.width, 1600);
-        assert.equal(report.inspection.geometry.viewBox.height, 720);
-    } finally {
-        await rm(output, { recursive: true, force: true });
-    }
+    assert.match(contract.errors.join('\n'), /diagramType.*must be equal to constant|must be equal to constant/);
 });

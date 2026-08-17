@@ -5,7 +5,6 @@ import process from 'node:process';
 import { promisify } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
-import { loadDiagram, resolveDiagramPath } from './diagram-core.mjs';
 import { compileDeckScene, kitRoot } from './composition-core.mjs';
 
 const execFileAsync = promisify(execFile);
@@ -46,6 +45,14 @@ const validateStructure = async (options, report) => {
         if (inspection.slides.length !== expectedScene.slides.length) {
             report.errors.push(`PPTX has ${inspection.slides.length} slides; expected ${expectedScene.slides.length}.`);
         }
+        if (report.quality.preferVectorMedia) {
+            const expectedSvgAssets = expectedScene.slides
+                .flatMap((slide) => slide.elements)
+                .filter((element) => element.type === 'image' && /\.svg$/i.test(element.path)).length;
+            if (inspection.media.svg < expectedSvgAssets) {
+                report.errors.push(`PPTX contains ${inspection.media.svg} SVG media items; expected at least ${expectedSvgAssets} for vector-first output.`);
+            }
+        }
     }
 
     for (const [index, slideInspection] of inspection.slides.entries()) {
@@ -58,8 +65,7 @@ const validateStructure = async (options, report) => {
         if (expectedSlide && report.quality.requireSceneElementCoverage) {
             const missingElements = expectedSlide.elements.filter((element) => {
                 const expectedName = `fluent-slide-kit:${expectedSlide.id}:${element.id}`;
-                if (slideInspection.namedObjects.includes(expectedName)) return false;
-                return element.type !== 'diagram' || !slideInspection.namedObjects.some((name) => name.startsWith(`${expectedName}-`));
+                return !slideInspection.namedObjects.includes(expectedName);
             });
             if (missingElements.length) {
                 report.errors.push(`Slide ${index + 1} is missing Office objects for scene elements: ${missingElements.map((element) => element.id).join(', ')}.`);
@@ -73,22 +79,6 @@ const validateStructure = async (options, report) => {
             };
             for (const element of expectedSlide.elements.filter((element) => element.type === 'shape' && element.id !== 'background')) {
                 requirePreset(`fluent-slide-kit:${expectedSlide.id}:${element.id}`, [element.shape === 'ellipse' ? 'ellipse' : 'roundRect']);
-            }
-            for (const element of expectedSlide.elements.filter((element) => element.type === 'diagram')) {
-                const diagram = await loadDiagram(resolveDiagramPath(element.diagramPath));
-                if (diagram.diagramType !== 'layered-architecture') continue;
-                const prefix = `fluent-slide-kit:${expectedSlide.id}:diagram-`;
-                for (const column of diagram.columns) requirePreset(`${prefix}column-${column.id}`, ['roundRect']);
-                for (const layer of diagram.layers) {
-                    requirePreset(`${prefix}layer-${layer.id}-band`, ['roundRect']);
-                    requirePreset(`${prefix}layer-${layer.id}-surface`, ['roundRect']);
-                    requirePreset(`${prefix}layer-${layer.id}-number`, ['ellipse']);
-                    for (const component of layer.components) requirePreset(`${prefix}component-${component.id}`, ['roundRect']);
-                }
-                if (diagram.crossCuttingConcerns?.length) {
-                    requirePreset(`${prefix}concern-rail`, ['roundRect']);
-                    for (const concern of diagram.crossCuttingConcerns) requirePreset(`${prefix}concern-${concern.id}`, ['roundRect']);
-                }
             }
         }
         report.slides.push({
@@ -159,14 +149,16 @@ const renderPreview = async (options, report) => {
             '-File', path.join(kitRoot, 'tools', 'render-pptx-preview.ps1'),
             options.input,
             '-OutputDirectory', previewDirectory,
+            '-Width', String(report.quality.preview.width),
+            '-Height', String(report.quality.preview.height),
         ], { cwd: kitRoot });
         const preview = JSON.parse(stdout);
         report.preview = preview;
         if (preview.slides !== report.slides.length) report.errors.push(`PowerPoint rendered ${preview.slides} of ${report.slides.length} slides.`);
         for (const imagePath of preview.images) {
             const dimensions = pngDimensions(await readFile(imagePath));
-            if (dimensions.width !== report.quality.canvas.width || dimensions.height !== report.quality.canvas.height) {
-                report.errors.push(`${path.basename(imagePath)} is ${dimensions.width}x${dimensions.height}; expected ${report.quality.canvas.width}x${report.quality.canvas.height}.`);
+            if (dimensions.width !== report.quality.preview.width || dimensions.height !== report.quality.preview.height) {
+                report.errors.push(`${path.basename(imagePath)} is ${dimensions.width}x${dimensions.height}; expected ${report.quality.preview.width}x${report.quality.preview.height}.`);
             }
         }
         report.preview.inspections = await inspectPreviewPixels(preview.images);

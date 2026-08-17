@@ -18,10 +18,11 @@ HTML and editable PowerPoint rendering, validation, and artifact handoff. The au
 fixed canvas of explicit primitives:
 
 - `text`, `shape`, `line`, and `image` remain native Office objects.
-- `diagram` embeds a graph authored and validated through the `fluent-diagram` skill when graph semantics earn the extra structure.
+- `diagram` embeds a flow graph authored and validated through the `fluent-diagram` skill when branching semantics earn the extra structure.
 
-Keep simple sequences in native primitives. Do not hand-build branching, merging, boundaries, decisions,
-swim lanes, cycles, or dense layered topology when the diagram model can validate them.
+Author architectures, capability maps, topology views, and simple sequences directly with native primitives.
+Do not force them into a generic grid or graph grammar. Use the flow model only for branching, merging,
+boundaries, decisions, swim lanes, or cycles that benefit from semantic validation.
 
 All deck output is static. Never add animations, slide transitions, autoplay, hover-only disclosure,
 interactive controls, loading indicators, or motion-dependent meaning. The HTML and PowerPoint renderers
@@ -50,7 +51,7 @@ Start with the takeaway, not a template name. Choose a dominant reading pattern 
 - side-by-side alternatives built for comparison;
 - an ordered path with a clear direction;
 - evidence led by a metric, quotation, or product visual;
-- an opt-in structured diagram for validated graph or layered semantics.
+- an opt-in structured flow for validated branching semantics.
 
 Author exact boxes and points on the `1920x1080` canvas. Keep a clear title zone, preserve safe margins,
 use explicit z-order, and assign the same logical `group` to elements whose overlap is intentional.
@@ -58,23 +59,42 @@ Use semantic color and font tokens so the brand profile resolves presentation st
 slide over shrinking typography or accumulating decorative containers. Composition JSON owns authored
 geometry; the compiler resolves tokens; HTML and PowerPoint renderers consume the same scene.
 
+Readability outranks packing density. Before reducing typography or internal padding, compare the largest
+unused canvas regions with the densest content groups, reduce low-information band height, and redistribute
+the recovered space. Repeated peer cards use consistent heights, alignment, and padding. Do not leave a large
+empty region beside compressed labels or icons when the composition can be rebalanced.
+
+For a centered focal card, set `metadata.contentAlignment: center` on the container. Give all grouped text
+elements `align: center` and the same horizontal centerline as the container. Treat the icon and text as one
+balanced composition; do not leave a centered heading paired with left-aligned supporting copy or vice versa.
+
 Set the confirmed deck theme explicitly; never omit `theme` and rely on a renderer fallback. Preserve
 an existing deck's theme unless the user approves a change. Use slide-level overrides only for an
 intentional section change. An embedded diagram must declare the same theme as its resolved slide.
 
 ## 3. Resolve assets and diagrams
 
-Load `assets/manifest.json` and search before writing every asset path:
+Load `assets/manifest.json`, create a component inventory for every visual role, and search before writing every asset path
+or choosing a native structural primitive. Include arrows, line styles, boxes, cards, and boundaries in
+the inventory even when their final implementation is native geometry:
 
 ```powershell
 npm run assets:search -- "security shield" --collection fluent --style regular --json
 npm run assets:search -- "Azure Kubernetes Service" --collection azure --json
+npm run assets:search -- "GitHub Copilot" --collection external --json
 ```
 
 Copy exact returned paths. Keep Azure icons in original colors and proportions with visible labels
 and useful alt text. Never infer or hand-type a path that was not returned by the local catalog search.
+Non-Azure, non-Fluent product icons must resolve from `assets/external-icons/catalog.json`; new entries
+require an official vendor-owned source, immutable revision, local license file, trademark notice, and
+`legal/provenance.json` record. Never use a third-party logo mirror.
+Use catalog assets for semantically suitable pictograms and standalone symbols. Keep stretchable connectors,
+dash patterns, boundaries, and content cards as native editable lines or rounded shapes: similarly named
+catalog entries are fixed glyphs, not structural components. If no suitable asset exists, prefer a labeled
+native primitive; a permitted generated fallback must record `metadata.assetFallback.searchQueries` and reason.
 
-For a non-linear architecture or workflow, classify it with `fluent-diagram`, author
+For a branching or cyclic workflow, classify it with `fluent-diagram`, author
 `diagrams/<name>.json`, and run:
 
 ```powershell
@@ -89,7 +109,7 @@ rendered SVG. Surround it with native text or supporting primitives only when th
 Create or update `decks/<deck-name>.json` against `schemas/composition.schema.json`, starting from
 `examples/deck.json`. Files under `decks/` are local request sources and are not committed. Store
 takeaways, notes, positioned elements, asset references, diagram references, and sources in JSON. Keep
-titles within 10 words and body copy within 55 words.
+titles within 10 words and body copy within 100 words.
 
 ## 5. Build and validate
 
@@ -103,18 +123,22 @@ The default final bundle is `deliverables/<deck-name>/`. Use `.slide-artifacts/`
 validation, probes, and intermediate previews; never place the final handoff there.
 Keep presentation-specific helper scripts and command captures under `.slide-artifacts/<deck-name>/tmp/`.
 Use `.tmp/<task>/` for general disposable work. Never create temporary files in the repository root or
-a source-controlled directory, and require `npm run repo:check` to pass before handoff.
+a source-controlled directory. The build runs `npm run repo:check` as a mandatory post-build gate; require
+it to pass again before handoff.
 
 The build validates semantic sources and the brand profile, compiles `deck.scene.json`, renders and
 checks standalone HTML in Edge, creates a native editable `.pptx`, validates its Open XML structure,
-and uses desktop PowerPoint for `1920x1080` previews when no interactive Office session is open.
+captures browser PNGs at `3840x2160`, and uses desktop PowerPoint for `3840x2160` previews when no
+interactive Office session is open. PowerPoint keeps native geometry and SVG assets vector-first,
+preserves source raster resolution, and renders unavoidable complex-flow fallbacks at `3200x1440`.
 
 For embedded diagrams it also enforces a fixed `1600x720` SVG viewBox, 18px minimum effective type,
 text containment, item collisions, connector crossings, and rounded corners on every visible container.
 
-PowerPoint output must contain stable named Office objects and speaker notes. Layered architecture is
-native shapes, text, connectors, and individual icons. Complex flow remains a validated graphic until
-its native-shape renderer is implemented; disclose this from `delivery-manifest.json`.
+PowerPoint output must contain stable named Office objects and speaker notes. Architectures remain native
+shapes, text, connectors, and individual icons because they are authored directly in the composition.
+Complex flow remains a validated graphic until its native-shape renderer is implemented; disclose this
+from `delivery-manifest.json`.
 
 The visual footer is fixed: render only `Microsoft Confidential` at bottom left on every slide.
 Keep sources, dates, slide numbers, deck labels, and other metadata in notes or manifests, never in the footer.
@@ -129,9 +153,14 @@ or renderer code only for system-level defects, then run `npm test` and revalida
 - Every slide supports its documented takeaway.
 - Factual claims have sources and unknowns remain explicit placeholders.
 - Visual hierarchy is readable when the screenshot is scaled down.
+- Dense and empty regions are balanced; no peer group is compressed while usable canvas remains elsewhere.
+- Repeated cards maintain consistent dimensions and the minimum rendered-content padding from the design contract.
+- Centered focal cards use one shared text alignment and horizontal centerline for heading and supporting copy.
 - Every visible card, container, boundary, and label chip has rounded corners; only the full-slide background may be rectangular.
 - Neutral containers use `$surface`, which resolves to white in the light theme. A non-white fill requires explicit user direction or documented focal or semantic intent; do not use `$subtle` or alternate tones decoratively.
 - Ordinary directional arrows use the primary flow treatment: `$secondary`, 2.5px, and a filled triangular arrowhead. Different connector styling requires explicit user direction or documented semantic meaning.
+- Connector endpoints target the semantic boundary. Let the shared renderer apply `targetClearance`; do not manually bury arrowheads inside cards or compensate differently between HTML and PowerPoint.
+- Every structural boundary uses a lower z-order than connectors that enter or cross it, so arrow shafts and heads remain visible.
 - Fluent and Azure assets use exact local catalog paths.
 - Diagram edges, labels, lanes, and boundaries match the stated system behavior.
 - Color is not the only carrier of meaning.

@@ -23,6 +23,8 @@ const parseArguments = (arguments_) => {
     return options;
 };
 
+const pngDimensions = (buffer) => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
+
 const launchBrowser = async (requestedBrowser, warnings) => {
     if (requestedBrowser === 'msedge') {
         try {
@@ -41,10 +43,10 @@ const inspectDiagram = async (page, diagram, quality) => {
         const viewBox = svg.viewBox.baseVal;
         const scale = Math.min(bounds.width / viewBox.width, bounds.height / viewBox.height);
         const tolerance = 1;
-        const itemSelector = '[data-diagram-node], [data-diagram-component], [data-diagram-concern]';
+        const itemSelector = '[data-diagram-node]';
         const itemElements = [...document.querySelectorAll(itemSelector)];
         const itemBounds = itemElements.map((element) => ({
-            id: element.getAttribute('data-diagram-node') ?? element.getAttribute('data-diagram-component') ?? element.getAttribute('data-diagram-concern'),
+            id: element.getAttribute('data-diagram-node'),
             rect: element.getBoundingClientRect(),
         }));
         const outside = itemBounds.filter(({ rect: box }) => {
@@ -54,12 +56,10 @@ const inspectDiagram = async (page, diagram, quality) => {
         const invalidImages = [...document.querySelectorAll('image')].filter((element) => !element.getAttribute('href')?.startsWith('data:image/svg+xml;base64,')).length;
         const sharpCornerRectangles = [...document.querySelectorAll('rect:not([data-canvas-background])')]
             .filter((element) => element.rx.baseVal.value < qualityDefinition.minimumCornerRadius)
-            .map((element) => element.closest('[data-diagram-node], [data-diagram-component], [data-diagram-concern], .diagram-lane, .diagram-group, .architecture-column, .architecture-layer, .architecture-concerns')?.getAttribute('data-diagram-node')
-                ?? element.closest('[data-diagram-component]')?.getAttribute('data-diagram-component')
-                ?? element.closest('[data-diagram-concern]')?.getAttribute('data-diagram-concern')
+            .map((element) => element.closest('[data-diagram-node], .diagram-lane, .diagram-group')?.getAttribute('data-diagram-node')
                 ?? element.getAttribute('class')
                 ?? 'unnamed rectangle');
-        const readableText = [...document.querySelectorAll('.node-label, .node-description, .lane-label, .group-label, .column-label, .layer-label, .component-label, .component-description, .concern-title, .concern-label')]
+        const readableText = [...document.querySelectorAll('.node-label, .node-description, .lane-label, .group-label')]
             .map((element) => {
                 const rect = element.getBoundingClientRect();
                 return {
@@ -94,15 +94,6 @@ const inspectDiagram = async (page, diagram, quality) => {
                 }
             }
         }
-        const shortLayerFlows = [...document.querySelectorAll('[data-diagram-layer-flow]')]
-            .map((element) => ({
-                id: element.getAttribute('data-diagram-layer-flow'),
-                length: Math.hypot(
-                    element.x2.baseVal.value - element.x1.baseVal.value,
-                    element.y2.baseVal.value - element.y1.baseVal.value,
-                ),
-            }))
-            .filter((flow) => flow.length < qualityDefinition.minimumLayerConnectorLength);
         const collisions = [];
         for (let leftIndex = 0; leftIndex < itemBounds.length; leftIndex += 1) {
             for (let rightIndex = leftIndex + 1; rightIndex < itemBounds.length; rightIndex += 1) {
@@ -174,7 +165,6 @@ const inspectDiagram = async (page, diagram, quality) => {
             undersizedText,
             outsideText,
             nodeContentSpacingViolations,
-            shortLayerFlows,
             collisions,
             edgeLabelNodeCollisions,
             crossings,
@@ -182,8 +172,6 @@ const inspectDiagram = async (page, diagram, quality) => {
     }, { diagramDefinition: diagram, qualityDefinition: quality });
     const renderedNodes = await page.locator('[data-diagram-node]').count();
     const renderedEdges = await page.locator('[data-diagram-edge]').count();
-    const renderedComponents = await page.locator('[data-diagram-component]').count();
-    const renderedConcerns = await page.locator('[data-diagram-concern]').count();
     await page.evaluate((source) => globalThis.eval(source), axe.source);
     const accessibility = await page.evaluate(async () => window.axe.run(document, {
         runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
@@ -192,17 +180,8 @@ const inspectDiagram = async (page, diagram, quality) => {
         .filter((violation) => ['critical', 'serious'].includes(violation.impact))
         .map((violation) => ({ id: violation.id, impact: violation.impact, help: violation.help }));
     const errors = [];
-    if (diagram.diagramType === 'flow') {
-        if (renderedNodes !== diagram.nodes.length) errors.push(`Rendered ${renderedNodes} of ${diagram.nodes.length} nodes.`);
-        if (renderedEdges !== diagram.edges.length) errors.push(`Rendered ${renderedEdges} of ${diagram.edges.length} edges.`);
-    } else {
-        const expectedComponents = diagram.layers.reduce((sum, layer) => sum + layer.components.length, 0);
-        if (geometry.viewBox.width !== quality.canvas.width || geometry.viewBox.height !== quality.canvas.height) {
-            errors.push(`Layered architecture must use a fixed ${quality.canvas.width}x${quality.canvas.height} viewBox.`);
-        }
-        if (renderedComponents !== expectedComponents) errors.push(`Rendered ${renderedComponents} of ${expectedComponents} components.`);
-        if (renderedConcerns !== (diagram.crossCuttingConcerns?.length ?? 0)) errors.push(`Rendered ${renderedConcerns} of ${diagram.crossCuttingConcerns?.length ?? 0} cross-cutting concerns.`);
-    }
+    if (renderedNodes !== diagram.nodes.length) errors.push(`Rendered ${renderedNodes} of ${diagram.nodes.length} nodes.`);
+    if (renderedEdges !== diagram.edges.length) errors.push(`Rendered ${renderedEdges} of ${diagram.edges.length} edges.`);
     if (geometry.outside.length) errors.push(`Diagram items outside SVG viewport: ${geometry.outside.join(', ')}`);
     if (geometry.emptyText) errors.push(`${geometry.emptyText} empty SVG text elements rendered.`);
     if (geometry.invalidImages) errors.push(`${geometry.invalidImages} diagram assets were not embedded.`);
@@ -210,12 +189,11 @@ const inspectDiagram = async (page, diagram, quality) => {
     if (geometry.undersizedText.length) errors.push(`Text below ${quality.minimumEffectiveFontSize}px effective size: ${geometry.undersizedText.map((text) => `${text.text} (${text.effectiveFontSize.toFixed(1)}px)`).join(', ')}`);
     if (geometry.outsideText.length) errors.push(`Text outside SVG viewport: ${geometry.outsideText.map((text) => text.text).join(', ')}`);
     if (geometry.nodeContentSpacingViolations.length) errors.push(`Flow-node content overlaps or is too tightly spaced: ${geometry.nodeContentSpacingViolations.map((violation) => `${violation.id}: ${violation.parts} (${violation.gap.toFixed(1)}px)`).join(', ')}`);
-    if (geometry.shortLayerFlows.length) errors.push(`Layer connectors without a visible tail: ${geometry.shortLayerFlows.map((flow) => `${flow.id} (${flow.length.toFixed(1)}px)`).join(', ')}`);
     if (geometry.collisions.length) errors.push(`Overlapping diagram items: ${geometry.collisions.join(', ')}`);
     if (geometry.edgeLabelNodeCollisions.length) errors.push(`Edge labels overlap diagram nodes: ${geometry.edgeLabelNodeCollisions.join(', ')}`);
     if (geometry.crossings.length) errors.push(`Crossing connectors: ${geometry.crossings.join(', ')}`);
     if (accessibilityViolations.length) errors.push(`Accessibility: ${accessibilityViolations.map((violation) => `${violation.id} (${violation.impact})`).join(', ')}`);
-    return { geometry, renderedNodes, renderedEdges, renderedComponents, renderedConcerns, accessibilityViolations, errors };
+    return { geometry, renderedNodes, renderedEdges, accessibilityViolations, errors };
 };
 
 const main = async () => {
@@ -235,14 +213,22 @@ const main = async () => {
     await writeFile(svgPath, `${await renderDiagramSvg(diagram)}\n`);
     const browser = await launchBrowser(options.browser, report.warnings);
     try {
-        const context = await browser.newContext({ viewport: { width: 1600, height: 720 }, deviceScaleFactor: 1 });
+        const context = await browser.newContext({
+            viewport: designContract.diagramQuality.canvas,
+            deviceScaleFactor: designContract.rasterQuality.deviceScaleFactor,
+        });
         const page = await context.newPage();
         await page.goto(pathToFileURL(svgPath).href, { waitUntil: 'load' });
         report.inspection = await inspectDiagram(page, diagram, designContract.diagramQuality);
         report.errors.push(...report.inspection.errors);
         if (options.screenshots) {
             report.screenshot = path.join(options.output, `${diagram.id}.png`);
-            await page.screenshot({ path: report.screenshot, fullPage: false });
+            await page.screenshot({ path: report.screenshot, fullPage: false, scale: 'device' });
+            report.screenshotDimensions = pngDimensions(await readFile(report.screenshot));
+            const expected = designContract.rasterQuality.diagramScreenshot;
+            if (report.screenshotDimensions.width !== expected.width || report.screenshotDimensions.height !== expected.height) {
+                report.errors.push(`Screenshot is ${report.screenshotDimensions.width}x${report.screenshotDimensions.height}; expected ${expected.width}x${expected.height}.`);
+            }
         }
         await context.close();
     } finally {
@@ -252,9 +238,7 @@ const main = async () => {
     report.svg = svgPath;
     report.passed = report.errors.length === 0;
     await writeFile(path.join(options.output, 'validation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
-    const itemSummary = diagram.diagramType === 'flow'
-        ? `${diagram.nodes.length} nodes and ${diagram.edges.length} edges`
-        : `${diagram.layers.length} layers and ${diagram.layers.reduce((sum, layer) => sum + layer.components.length, 0)} components`;
+    const itemSummary = `${diagram.nodes.length} nodes and ${diagram.edges.length} edges`;
     console.log(`${report.passed ? 'PASS' : 'FAIL'}: ${itemSummary} checked; ${report.errors.length} errors; ${report.warnings.length} warnings.`);
     if (!report.passed) {
         console.error(report.errors.join('\n'));

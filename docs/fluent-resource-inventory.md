@@ -36,6 +36,7 @@ compliance.
 | Fluent System Icons | Regular and filled SVG icons in multiple sizes | Already bundled | Prefer Regular for supporting concepts and Filled for selected or emphasized states. Do not duplicate the existing catalog. |
 | Fluent System Icons font | Resizable glyph font and metadata | Already bundled | Keep as a lookup aid; SVG remains the preferred rendering source. |
 | Product launch icons | Microsoft product identity artwork | Reference only | Accept only user-supplied approved assets and preserve original color and proportions. |
+| Approved external icons | Non-Azure, non-Fluent vendor product icons | Bundle selectively | Store only official vendor-owned SVGs under `assets/external-icons/`, pinned to immutable revisions with catalog, license, and trademark metadata. Never use third-party logo mirrors. |
 | File type icons | Multicolor Microsoft file-format artwork | Reference only | Do not redistribute until explicit reuse terms and an approved source are verified. |
 | Fluent Emoji and 3D emoji | Separate Figma and asset collections | Exclude by default | Emoji conflict with the executive presentation contract and add substantial asset bulk. |
 | Fluent 2 site imagery and demos | Screenshots, diagrams, animations, and examples | Exclude | Treat as documentation, not a redistributable asset library. Do not scrape or bundle CDN media. |

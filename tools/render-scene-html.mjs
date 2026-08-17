@@ -87,7 +87,13 @@ const renderLine = (element) => {
     const width = Math.max(1, element.box.width);
     const height = Math.max(1, element.box.height);
     const start = element.start ?? { x: element.box.x, y: element.box.y + height / 2 };
-    const end = element.end ?? { x: element.box.x + width, y: element.box.y + height / 2 };
+    const authoredEnd = element.end ?? { x: element.box.x + width, y: element.box.y + height / 2 };
+    const distance = Math.hypot(authoredEnd.x - start.x, authoredEnd.y - start.y);
+    const inset = style.endArrow ? Math.min(style.endInset ?? 0, Math.max(0, distance - 1)) : 0;
+    const end = distance > 0 ? {
+        x: authoredEnd.x - ((authoredEnd.x - start.x) / distance) * inset,
+        y: authoredEnd.y - ((authoredEnd.y - start.y) / distance) * inset,
+    } : authoredEnd;
     const x1 = start.x - element.box.x;
     const y1 = start.y - element.box.y;
     const x2 = end.x - element.box.x;

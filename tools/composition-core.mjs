@@ -41,7 +41,7 @@ const lineBox = (start, end) => ({
     height: Math.max(1, Math.abs(end.y - start.y)),
 });
 
-const compileElement = (source, profile, theme) => {
+const compileElement = (source, profile, theme, designContract) => {
     const colors = profile.colors[theme];
     const fonts = {
         heading: profile.fonts.heading,
@@ -101,7 +101,10 @@ const compileElement = (source, profile, theme) => {
                 color: isConnector ? colors.secondary : colors.strokeStrong,
                 width: isConnector ? 2.5 : 2,
                 dashType: 'solid',
-                ...(isConnector ? { endArrow: true } : {}),
+                ...(isConnector ? {
+                    endArrow: true,
+                    endInset: designContract.authoringDefaults.connectors.targetClearance,
+                } : {}),
                 ...resolveStyle(source.style, colors, fonts),
             },
         };
@@ -138,7 +141,7 @@ const compileElement = (source, profile, theme) => {
     };
 };
 
-const compileSlide = (deck, sourceSlide, slideNumber, profile) => {
+const compileSlide = (deck, sourceSlide, slideNumber, profile, designContract) => {
     const theme = sourceSlide.theme ?? deck.theme;
     const colors = profile.colors[theme];
     const ids = new Set();
@@ -167,7 +170,7 @@ const compileSlide = (deck, sourceSlide, slideNumber, profile) => {
                     strokeWidth: 0,
                 },
             },
-            ...sourceSlide.elements.map((source) => compileElement(source, profile, theme)),
+            ...sourceSlide.elements.map((source) => compileElement(source, profile, theme, designContract)),
             {
                 id: 'footer-confidentiality',
                 type: 'text',
@@ -210,7 +213,10 @@ export const loadBrandProfile = async (profilePath = path.join(kitRoot, 'design'
 
 export const compileDeckScene = async (deck, options = {}) => {
     const profilePath = options.brandProfilePath ?? (deck.brandProfile ? path.resolve(kitRoot, deck.brandProfile) : undefined);
-    const profile = options.brandProfile ?? await loadBrandProfile(profilePath);
+    const [profile, designContract] = await Promise.all([
+        options.brandProfile ?? loadBrandProfile(profilePath),
+        readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8').then(JSON.parse),
+    ]);
     return {
         schemaVersion: 1,
         deckId: options.deckId ?? slug(deck.title),
@@ -219,6 +225,6 @@ export const compileDeckScene = async (deck, options = {}) => {
         brandStatus: profile.brandStatus,
         source: options.source ?? '',
         canvas: { width: profile.canvas.width, height: profile.canvas.height },
-        slides: deck.slides.map((slide, index) => compileSlide(deck, slide, slide.number ?? index + 1, profile)),
+        slides: deck.slides.map((slide, index) => compileSlide(deck, slide, slide.number ?? index + 1, profile, designContract)),
     };
 };

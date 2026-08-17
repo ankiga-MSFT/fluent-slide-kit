@@ -50,20 +50,49 @@ when there is no explicit theme and no visual-reference cue. State important ass
 Never invent metrics, customer facts, deployed resources, topology, dates, quotes, or capabilities.
 Use explicit placeholders when private evidence is unavailable.
 
+### Reference-image fidelity gate
+
+When the user asks to convert or reconstruct an attached image, treat the image as the authoritative
+content and semantic source. Before authoring, create an internal verbatim content inventory covering
+every visible title, heading, label, caption, qualifier, legend item, and footnote. Also inventory the
+source relationships: grouping, boundaries, connector direction, arrow labels, sequence, icon identity,
+and any color that carries meaning.
+
+Source content and relationships are immutable by default. Do not paraphrase, summarize, normalize
+terminology, correct product language, add or remove labels, reorder steps, or substitute a new narrative
+unless the user explicitly approves that exact deviation. A user-approved title or theme change overrides
+only that item; it does not authorize other content changes. If source text is unreadable or ambiguous,
+ask one targeted business question or mark the item as unresolved rather than guessing.
+
+Standard content budgets must never cause silent omission or condensation of source-image content. Preserve
+the source on one slide when a one-to-one conversion was requested. If exact content cannot remain legible
+within the minimum type and geometry rules, obtain user approval before splitting the slide or changing copy.
+Mark a one-to-one source slide with `sourceImageFidelity.verbatim: true` and record every approved deviation
+in `sourceImageFidelity.approvedDeviations`; this declaration may exceed the standard body budget with a
+validator warning, but never bypasses minimum type, clipping, overlap, accessibility, or screenshot review.
+
+Before delivery, compare the authored composition and screenshot against the inventory. Every visible source
+item and semantic relationship must be accounted for exactly, except for user-approved deviations recorded
+in speaker notes. Do not declare a reference-image conversion complete based on schema or geometry validation
+alone.
+
 ## 2. Route the work internally
 
 Choose the workflow without asking the user:
 
 - Narrative slide or deck: follow the internal [deck playbook](../fluent-deck/SKILL.md).
-- Architecture or workflow: compose directly when a few native elements communicate the story clearly.
-  Follow the internal [diagram playbook](../fluent-diagram/SKILL.md) when branching, merging, decisions,
-  boundaries, swim lanes, cycles, or layered topology need semantic validation.
-- Mixed request: create the diagram first, validate it, then create the surrounding deck.
+- Architecture, capability view, system context, or reference-image reconstruction: always compose directly
+  with native text, rounded shapes, icons, and connectors on the freeform slide canvas. Preserve the visual
+  argument instead of translating it into a generic structural artifact.
+- Branching workflow: follow the internal [diagram playbook](../fluent-diagram/SKILL.md) only when merging,
+  decisions, labeled branches, boundaries, swim lanes, or cycles need semantic graph validation.
+- Mixed request: create and validate only the semantically complex flow, then place it inside the otherwise
+  freeform native composition.
 - Existing artifact review or repair: reproduce the issue, repair the owning source, revalidate, and
   return the revised deliverable.
 
-Within the structured diagram workflow, choose `flow` when sequence and connectors carry the meaning; choose
-`layered-architecture` when layers, channels, capabilities, or cross-cutting governance carry the meaning.
+The structured diagram workflow supports `flow` only. Never use it for architecture merely because the
+content has tiers, channels, capabilities, governance, or many components.
 
 ## 3. Ground content and visuals
 
@@ -82,6 +111,32 @@ Use exact returned paths and never guess an asset filename. Preserve official Az
 proportions. If an official product icon is unavailable, use a clearly conceptual Fluent icon or labeled
 process node; never counterfeit an Azure service icon.
 
+Resolve non-Azure, non-Fluent product or vendor icons through `assets/external-icons/catalog.json` with
+`npm run assets:search -- "<product>" --collection external --json`. If absent, add the asset under
+`assets/external-icons/` only from an official vendor-owned source pinned to an immutable revision. Record
+the source, revision, license file, and trademark notice in its catalog entry and `legal/provenance.json`.
+Use `assetKind: external` and `provenance: external-catalog`. Never use a third-party logo mirror or an
+untracked web URL, and never modify official product artwork.
+
+Before composing, create an internal visual component inventory. Include every product/service icon,
+concept pictogram, action or state symbol, arrow, solid/dashed/dotted path, boundary, square/rectangle,
+card, and panel. Run the local asset search for every inventory item and retain the query, leading matches,
+selection, and rejection reason internally.
+
+Use the exact catalog asset when a match is semantically suitable as a standalone visual. For example, a
+requested thinking symbol resolves to `assets/fluent-system-icons/svg/regular/thinking.svg`; do not silently
+substitute a brain or sparkle icon. A lexical match is not sufficient when its metaphor is wrong.
+
+Treat structural geometry separately after the same search. Fluent entries such as Arrow Right, Line Dashes,
+Square, Rectangle Landscape, and Card UI are fixed icon glyphs; they do not replace stretchable connectors,
+dash patterns, boundaries, or editable content cards. Implement those roles with native `line` and rounded
+`shape` primitives using the shared Fluent-aligned tokens. This is the required structural implementation,
+not an asset fallback.
+
+Use another SVG or generated visual only when the Azure, Fluent, and approved external searches find no suitable local catalog asset and policy
+allows that visual type. Prefer a labeled native primitive over an invented icon. Any permitted generated
+fallback must record `metadata.assetFallback.searchQueries` and `metadata.assetFallback.reason`.
+
 Use image generation only for hero photography, conceptual illustration, or an editorial background.
 Never generate a whole slide, logo, Microsoft product icon, slide text, chart, architecture diagram, or
 workflow as an image. Keep narrative text, data, and diagrams as structured editable content.
@@ -98,16 +153,18 @@ inputs for the current request but are intentionally ignored by Git; only reusab
 one takeaway per slide, make titles communicate claims, and add speaker notes and
 sources. Prefer another slide over shrinking text or overloading one frame.
 
-For a single architecture slide, create a one-slide composition under `decks/`. Add a structured source
-under `diagrams/` only when the architecture meets the semantic threshold above, then embed it as one
-positioned element. These files preserve reproducibility and future revision without user involvement.
+For a single architecture slide, create a one-slide composition under `decks/` and author its complete
+geometry with native primitives. Add a structured source under `diagrams/` only for a qualifying flow,
+then embed that flow as one positioned element. These files preserve reproducibility and future revision
+without limiting architecture composition.
 
 ## 5. Execute the pipeline autonomously
 
 Keep presentation-specific helper scripts, probes, command captures, and intermediate conversions under
 `.slide-artifacts/<deck-name>/tmp/`. Put any other disposable workspace files under `.tmp/<task>/`.
 Never create temporary artifacts in the repository root or a source-controlled directory. Remove them
-before handoff, and require `npm run repo:check` to pass.
+before handoff. `npm run deck:build` runs a mandatory post-build repository hygiene check; also require
+`npm run repo:check` to pass before handoff.
 
 Run the relevant local scripts yourself from the kit root. The standard internal sequence is:
 
@@ -133,20 +190,28 @@ Before handoff, verify:
 - Each slide has one memorable takeaway.
 - Titles state conclusions rather than generic topics.
 - Content is legible when viewed at presentation scale.
+- Readability takes priority over density: large unused regions are redistributed to cramped content before type or padding is reduced.
+- Repeated peer cards use consistent dimensions and at least the rendered-content padding required by `design/design-contract.json`.
+- Centered focal cards align every grouped text element to the same card centerline and declare `metadata.contentAlignment: center`.
 - Architecture boundaries and connector meanings are truthful and unambiguous.
 - Neutral cards and boxes use `$surface` (white in the light theme) unless the user requests another fill or documented focal or semantic intent requires one.
 - Ordinary directional arrows match the primary flow connector: `$secondary`, 2.5px, with a filled triangular arrowhead.
 - Diagram labels remain at least 18px after final slide scaling, with no collisions, clipped text, or connector crossings.
-- Flow diagrams stay within 18 nodes; layered architectures stay within 15 components, five columns, and six layers.
+- Structured flow diagrams stay within 18 nodes; freeform architectures are governed by slide legibility,
+  content budgets, overlap checks, and screenshot review rather than a structural component count.
 - Current Microsoft claims have public sources.
 - Private or missing evidence is clearly marked rather than fabricated.
 - Azure service icons are official local assets where available.
 - Automated validation passes with no unresolved errors.
+- Screenshot review explicitly compares the densest and emptiest regions and repairs avoidable imbalance.
+- Screenshot review rejects mixed text alignment inside a focal card unless the asymmetry is intentional and documented.
 - The repository hygiene check passes with no temporary artifacts outside approved scratch directories.
 - Every HTML and available PowerPoint screenshot has been visually reviewed for hierarchy, density, clipping, and misleading flow.
+- Browser and available PowerPoint preview PNGs are `3840x2160`; PowerPoint remains vector-first, preserves source raster resolution, and uses `3200x1440` only for unavoidable diagram fallbacks.
+- Reference-image conversions pass a verbatim content-and-semantics comparison, with every approved deviation recorded in speaker notes.
 - Every standalone HTML page renders at exactly 16:9 and the manifest contains the expected slide count.
 - The PPTX contains native named Office objects, speaker notes, scene identity, and the expected slide count.
-- Layered architectures are native editable shapes. Any complex flow embedded as a validated graphic is disclosed.
+- Architecture primitives remain native editable Office objects. Any complex flow embedded as a validated graphic is disclosed.
 
 ## 7. Deliver in business language
 

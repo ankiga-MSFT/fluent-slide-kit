@@ -20,11 +20,11 @@ const parseArguments = (arguments_) => {
 
     if (options.terms.length === 0) {
         throw new Error(
-            'Usage: npm run assets:search -- <query> [--collection fluent|azure] [--style regular|filled] [--limit 8] [--json]',
+            'Usage: npm run assets:search -- <query> [--collection fluent|azure|external] [--style regular|filled] [--limit 8] [--json]',
         );
     }
-    if (!['all', 'fluent', 'azure'].includes(options.collection)) {
-        throw new Error('--collection must be all, fluent, or azure.');
+    if (!['all', 'fluent', 'azure', 'external'].includes(options.collection)) {
+        throw new Error('--collection must be all, fluent, azure, or external.');
     }
     if (!['regular', 'filled'].includes(options.style)) {
         throw new Error('--style must be regular or filled.');
@@ -101,14 +101,32 @@ const searchAzure = async (query, queryTerms) => {
         .filter((icon) => icon.score > 0);
 };
 
+const searchExternal = async (query, queryTerms) => {
+    const catalog = await loadJson('external-icons/catalog.json');
+    return catalog.icons
+        .map((icon) => ({
+            collection: 'external',
+            id: icon.id,
+            name: icon.name,
+            vendor: icon.vendor,
+            path: `assets/${icon.path}`,
+            description: icon.description,
+            source: icon.source,
+            license: icon.license,
+            score: scoreText(query, queryTerms, [icon.name, icon.vendor, icon.description, ...icon.keywords]),
+        }))
+        .filter((icon) => icon.score > 0);
+};
+
 const main = async () => {
     const options = parseArguments(process.argv.slice(2));
     const query = normalize(options.terms.join(' '));
     const queryTerms = [...new Set(query.split(' ').filter(Boolean))];
     const searches = [];
 
-    if (options.collection !== 'azure') searches.push(searchFluent(query, queryTerms, options.style));
-    if (options.collection !== 'fluent') searches.push(searchAzure(query, queryTerms));
+    if (['all', 'fluent'].includes(options.collection)) searches.push(searchFluent(query, queryTerms, options.style));
+    if (['all', 'azure'].includes(options.collection)) searches.push(searchAzure(query, queryTerms));
+    if (['all', 'external'].includes(options.collection)) searches.push(searchExternal(query, queryTerms));
 
     const results = (await Promise.all(searches))
         .flat()
@@ -126,7 +144,7 @@ const main = async () => {
     }
 
     for (const result of results) {
-        const qualifier = result.collection === 'azure' ? result.category : result.style;
+        const qualifier = result.collection === 'azure' ? result.category : result.collection === 'external' ? result.vendor : result.style;
         console.log(`${result.collection.padEnd(7)} ${result.name} (${qualifier})\n        ${result.path}`);
     }
 };

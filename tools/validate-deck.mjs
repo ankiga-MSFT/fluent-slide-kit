@@ -44,12 +44,16 @@ const parseArguments = (arguments_) => {
 };
 
 const wordCount = (value = '') => String(value).trim().split(/\s+/).filter(Boolean).length;
+const pngDimensions = (buffer) => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
 
 const validateDeckContract = async (deck) => {
-    const [schema, brandProfileSchema, designContract] = await Promise.all([
+    const [schema, brandProfileSchema, designContract, fluentCatalog, azureCatalog, externalCatalog] = await Promise.all([
         readFile(path.join(kitRoot, 'schemas', 'composition.schema.json'), 'utf8').then(JSON.parse),
         readFile(path.join(kitRoot, 'schemas', 'brand-profile.schema.json'), 'utf8').then(JSON.parse),
         readFile(path.join(kitRoot, 'design', 'design-contract.json'), 'utf8').then(JSON.parse),
+        readFile(path.join(assetsRoot, 'fluent-system-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+        readFile(path.join(assetsRoot, 'azure-public-service-icons', 'catalog.json'), 'utf8').then(JSON.parse),
+        readFile(path.join(assetsRoot, 'external-icons', 'catalog.json'), 'utf8').then(JSON.parse),
     ]);
     const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
     const validate = ajv.compile(schema);
@@ -84,6 +88,29 @@ const validateDeckContract = async (deck) => {
     const slideNumbers = new Set();
     const reservedElementIds = new Set(['background', 'footer-confidentiality']);
     const canvas = brandProfile.canvas;
+    const fluentCatalogPaths = new Set(fluentCatalog.icons.flatMap((icon) =>
+        Object.values(icon.styles).filter(Boolean).map((asset) => `assets/${asset.path}`)));
+    const azureCatalogPaths = new Set(azureCatalog.icons.map((icon) => `assets/${icon.path}`));
+    const externalCatalogPaths = new Set(externalCatalog.icons.map((icon) => `assets/${icon.path}`));
+    const externalIds = new Set();
+    for (const icon of externalCatalog.icons) {
+        const owner = `external icon ${icon.id}`;
+        if (externalIds.has(icon.id)) errors.push(`${owner} has a duplicate id.`);
+        externalIds.add(icon.id);
+        if (!icon.path?.startsWith('external-icons/')) errors.push(`${owner} path must remain under assets/external-icons/: ${icon.path}`);
+        if (!/^https:\/\//.test(icon.source ?? '')) errors.push(`${owner} requires an HTTPS official source URL.`);
+        if (!/^[0-9a-f]{40}$/.test(icon.sourceRevision ?? '')) errors.push(`${owner} requires a 40-character immutable sourceRevision.`);
+        for (const field of ['vendor', 'license', 'licenseFile', 'trademarkNotice']) {
+            if (!icon[field]?.trim()) errors.push(`${owner} requires ${field}.`);
+        }
+        for (const relativePath of [icon.path, icon.licenseFile].filter(Boolean)) {
+            try {
+                await access(path.join(assetsRoot, relativePath));
+            } catch {
+                errors.push(`${owner} references missing file: assets/${relativePath}`);
+            }
+        }
+    }
 
     for (const [index, slide] of deck.slides.entries()) {
         const location = `slide ${index + 1} (${slide.id})`;
@@ -104,7 +131,12 @@ const validateDeckContract = async (deck) => {
             .filter((item) => item.type === 'text' && !['display', 'title'].includes(item.role ?? item.typography))
             .reduce((sum, item) => sum + wordCount(item.text), 0);
         if (bodyWords > designContract.contentBudgets.bodyWords) {
-            errors.push(`${location}: body copy uses ${bodyWords} words; budget is ${designContract.contentBudgets.bodyWords}.`);
+            const message = `${location}: body copy uses ${bodyWords} words; budget is ${designContract.contentBudgets.bodyWords}.`;
+            if (slide.sourceImageFidelity?.verbatim) {
+                warnings.push(`${message} Accepted for declared verbatim source-image fidelity.`);
+            } else {
+                errors.push(message);
+            }
         }
 
         const elementIds = new Set();
@@ -140,6 +172,34 @@ const validateDeckContract = async (deck) => {
                 const usesNeutralGrey = fill === '$subtle' || fill?.toUpperCase?.() === themeColors.subtle.toUpperCase();
                 if (usesNeutralGrey && !item.metadata?.fillIntent?.trim()) {
                     errors.push(`${location}: neutral box ${item.id} must use $surface; add metadata.fillIntent for an explicit user or semantic exception.`);
+                }
+                if (item.metadata?.contentAlignment === 'center') {
+                    const groupedText = slide.elements.filter((candidate) => candidate.type === 'text' && candidate.group === item.group);
+                    const containerCenter = item.box.x + item.box.width / 2;
+                    const tolerance = designContract.authoringDefaults.focalContent.centerTolerance;
+                    if (!item.group || groupedText.length === 0) {
+                        errors.push(`${location}: centered focal container ${item.id} requires grouped text elements.`);
+                    }
+                    for (const text of groupedText) {
+                        if (text.id === item.metadata?.focalHeadingId && item.metadata?.focalIconId) continue;
+                        const textCenter = text.box.x + text.box.width / 2;
+                        if (text.style?.align !== 'center' || Math.abs(textCenter - containerCenter) > tolerance) {
+                            errors.push(`${location}: focal text ${text.id} must use center alignment and share the horizontal centerline of ${item.id}.`);
+                        }
+                    }
+                    if (item.metadata?.focalIconId || item.metadata?.focalHeadingId) {
+                        const icon = slide.elements.find((candidate) => candidate.id === item.metadata?.focalIconId && candidate.group === item.group);
+                        const heading = slide.elements.find((candidate) => candidate.id === item.metadata?.focalHeadingId && candidate.type === 'text' && candidate.group === item.group);
+                        if (!icon || !heading) {
+                            errors.push(`${location}: centered focal container ${item.id} requires valid focalIconId and focalHeadingId elements in group ${item.group}.`);
+                        } else {
+                            const unionLeft = Math.min(icon.box.x, heading.box.x);
+                            const unionRight = Math.max(icon.box.x + icon.box.width, heading.box.x + heading.box.width);
+                            if (Math.abs((unionLeft + unionRight) / 2 - containerCenter) > tolerance) {
+                                errors.push(`${location}: focal icon ${icon.id} and heading ${heading.id} must form a group centered on ${item.id}.`);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -178,6 +238,27 @@ const validateDeckContract = async (deck) => {
             if (!['.svg', '.png', '.jpg', '.jpeg'].includes(path.extname(absoluteAssetPath).toLowerCase())) {
                 errors.push(`${location}: unsupported asset format; use SVG, PNG, or JPEG: ${item.path}`);
             }
+            if (item.assetKind === 'fluent' && !fluentCatalogPaths.has(item.path)) {
+                errors.push(`${location}: Fluent asset is not an exact local catalog entry: ${item.path}. Resolve it with npm run assets:search.`);
+            }
+            if (item.assetKind === 'azure' && !azureCatalogPaths.has(item.path)) {
+                errors.push(`${location}: Azure asset is not an exact local catalog entry: ${item.path}. Resolve it with npm run assets:search.`);
+            }
+            if (item.assetKind === 'external' && !externalCatalogPaths.has(item.path)) {
+                errors.push(`${location}: external asset is not an exact approved external catalog entry: ${item.path}. Add it under assets/external-icons with source and license metadata.`);
+            }
+            if (['fluent', 'azure'].includes(item.assetKind) && item.provenance !== 'local-catalog') {
+                errors.push(`${location}: ${item.assetKind} assets must use local-catalog provenance: ${item.path}`);
+            }
+            if (item.assetKind === 'external' && item.provenance !== 'external-catalog') {
+                errors.push(`${location}: external assets must use external-catalog provenance: ${item.path}`);
+            }
+            if (item.provenance === 'local-catalog' && !['fluent', 'azure'].includes(item.assetKind)) {
+                errors.push(`${location}: local-catalog provenance is reserved for Fluent and Azure catalog assets: ${item.path}`);
+            }
+            if (item.provenance === 'external-catalog' && item.assetKind !== 'external') {
+                errors.push(`${location}: external-catalog provenance is reserved for approved external assets: ${item.path}`);
+            }
             if (item.assetKind !== 'fluent' && !item.alt.trim()) {
                 errors.push(`${location}: ${item.assetKind} assets require useful alt text: ${item.path}`);
             }
@@ -188,12 +269,35 @@ const validateDeckContract = async (deck) => {
             if (item.assetKind === 'azure' && !brandProfile.assetPolicy.allowProductIcons) {
                 errors.push(`${location}: brand profile ${brandProfile.id} does not allow Microsoft product icons.`);
             }
+            if (item.assetKind === 'external' && !brandProfile.assetPolicy.allowProductIcons) {
+                errors.push(`${location}: brand profile ${brandProfile.id} does not allow external product icons.`);
+            }
             if (item.provenance === 'ai-generated') {
                 if (item.assetKind !== 'image') {
                     errors.push(`${location}: AI-generated assets must use kind "image"; icons and product artwork cannot be generated.`);
                 }
                 if (!item.path.startsWith('assets/generated/')) {
                     errors.push(`${location}: AI-generated assets must remain under assets/generated/: ${item.path}`);
+                }
+                const fallback = item.metadata?.assetFallback;
+                if (!Array.isArray(fallback?.searchQueries) || fallback.searchQueries.length === 0 || !fallback?.reason?.trim()) {
+                    errors.push(`${location}: AI-generated fallback ${item.id} must record metadata.assetFallback.searchQueries and reason after catalog search.`);
+                }
+            }
+        }
+
+        const boundaries = slide.elements.filter((item) => item.type === 'shape' && item.role === 'boundary');
+        const connectors = slide.elements.filter((item) => item.type === 'line' && item.role === 'connector');
+        const inside = (point, box) => point.x >= box.x && point.x <= box.x + box.width
+            && point.y >= box.y && point.y <= box.y + box.height;
+        for (const boundary of boundaries) {
+            for (const connector of connectors) {
+                const midpoint = {
+                    x: (connector.start.x + connector.end.x) / 2,
+                    y: (connector.start.y + connector.end.y) / 2,
+                };
+                if ([connector.start, midpoint, connector.end].some((point) => inside(point, boundary.box)) && boundary.z >= connector.z) {
+                    errors.push(`${location}: boundary ${boundary.id} at z ${boundary.z} can obscure connector ${connector.id} at z ${connector.z}; boundaries must render behind connectors.`);
                 }
             }
         }
@@ -231,6 +335,46 @@ const inspectPage = async (page, diagramQuality) => {
             } : { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
         }
         const itemBounds = [...groupedBounds].map(([label, rect]) => ({ label, rect }));
+        const shapeBounds = [...document.querySelectorAll('.scene-shape[data-scene-element]:not([data-scene-element="background"])')]
+            .map((element) => ({
+                id: element.getAttribute('data-scene-element'),
+                group: element.getAttribute('data-scene-group'),
+                rect: element.getBoundingClientRect(),
+            }));
+        const contentPaddingViolations = [];
+        for (const element of document.querySelectorAll('.scene-text[data-scene-element], .scene-image[data-scene-element]')) {
+            const group = element.getAttribute('data-scene-group');
+            if (!group) continue;
+            let rect = element.getBoundingClientRect();
+            if (element.classList.contains('scene-text') && element.firstChild) {
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                const contentRect = range.getBoundingClientRect();
+                if (contentRect.width > 0 && contentRect.height > 0) rect = contentRect;
+            }
+            const container = shapeBounds
+                .filter((shape) => shape.group === group
+                    && rect.left >= shape.rect.left - tolerance
+                    && rect.top >= shape.rect.top - tolerance
+                    && rect.right <= shape.rect.right + tolerance
+                    && rect.bottom <= shape.rect.bottom + tolerance)
+                .sort((left, right) => left.rect.width * left.rect.height - right.rect.width * right.rect.height)[0];
+            if (!container) continue;
+            const padding = {
+                left: rect.left - container.rect.left,
+                top: rect.top - container.rect.top,
+                right: container.rect.right - rect.right,
+                bottom: container.rect.bottom - rect.bottom,
+            };
+            const minimum = Math.min(...Object.values(padding));
+            if (minimum + tolerance < quality.minimumRenderedContentPadding) {
+                contentPaddingViolations.push({
+                    id: element.getAttribute('data-scene-element'),
+                    container: container.id,
+                    minimum,
+                });
+            }
+        }
 
         for (const element of document.querySelectorAll('.scene-text, h1, h2, p, .caption, .eyebrow, .stat')) {
             const style = getComputedStyle(element);
@@ -271,10 +415,10 @@ const inspectPage = async (page, diagramQuality) => {
             const svgBounds = svg.getBoundingClientRect();
             const viewBox = svg.viewBox.baseVal;
             const scale = Math.min(svgBounds.width / viewBox.width, svgBounds.height / viewBox.height);
-            const readableSelector = '.node-label, .node-description, .lane-label, .group-label, .column-label, .layer-label, .component-label, .component-description, .concern-title, .concern-label';
+            const readableSelector = '.node-label, .node-description, .lane-label, .group-label';
             const readableText = [...svg.querySelectorAll(readableSelector)].map((element) => {
                 const rect = element.getBoundingClientRect();
-                const container = element.closest('.diagram-node, .diagram-lane, .diagram-group, .architecture-component, .architecture-concern, .architecture-column');
+                const container = element.closest('.diagram-node, .diagram-lane, .diagram-group');
                 const shape = container?.querySelector(':scope > rect, :scope > polygon, :scope > path');
                 const shapeBounds = shape?.getBoundingClientRect();
                 return {
@@ -284,9 +428,9 @@ const inspectPage = async (page, diagramQuality) => {
                     outsideContainer: Boolean(shapeBounds) && (rect.left < shapeBounds.left - tolerance || rect.top < shapeBounds.top - tolerance || rect.right > shapeBounds.right + tolerance || rect.bottom > shapeBounds.bottom + tolerance),
                 };
             });
-            const diagramItems = [...svg.querySelectorAll('[data-diagram-node], [data-diagram-component], [data-diagram-concern]')]
+            const diagramItems = [...svg.querySelectorAll('[data-diagram-node]')]
                 .map((element) => ({
-                    id: element.getAttribute('data-diagram-node') ?? element.getAttribute('data-diagram-component') ?? element.getAttribute('data-diagram-concern'),
+                    id: element.getAttribute('data-diagram-node'),
                     rect: element.getBoundingClientRect(),
                 }));
             const itemCollisions = [];
@@ -339,18 +483,9 @@ const inspectPage = async (page, diagramQuality) => {
                     }
                 }
             }
-            const shortLayerFlows = [...svg.querySelectorAll('[data-diagram-layer-flow]')]
-                .map((element) => ({
-                    id: element.getAttribute('data-diagram-layer-flow'),
-                    length: Math.hypot(
-                        element.x2.baseVal.value - element.x1.baseVal.value,
-                        element.y2.baseVal.value - element.y1.baseVal.value,
-                    ),
-                }))
-                .filter((flow) => flow.length < quality.minimumLayerConnectorLength);
             const sharpCornerRectangles = [...svg.querySelectorAll('rect:not([data-canvas-background])')]
                 .filter((element) => element.rx.baseVal.value < quality.minimumCornerRadius)
-                .map((element) => element.getAttribute('class') ?? element.closest('[data-diagram-node], [data-diagram-component], [data-diagram-concern]')?.getAttribute('data-diagram-node') ?? 'unnamed rectangle');
+                .map((element) => element.getAttribute('class') ?? element.closest('[data-diagram-node]')?.getAttribute('data-diagram-node') ?? 'unnamed rectangle');
 
             const parseSegments = (pathElement) => {
                 const values = [...pathElement.getAttribute('d').matchAll(/[ML]\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)]
@@ -393,7 +528,6 @@ const inspectPage = async (page, diagramQuality) => {
                 outsideText: readableText.filter((text) => text.outsideViewport),
                 uncontainedText: readableText.filter((text) => text.outsideContainer),
                 nodeContentSpacingViolations,
-                shortLayerFlows,
                 sharpCornerRectangles,
                 itemCollisions,
                 edgeLabelNodeCollisions,
@@ -407,6 +541,7 @@ const inspectPage = async (page, diagramQuality) => {
             clippedText,
             sharpSceneCorners,
             overlaps,
+            contentPaddingViolations,
             diagrams,
         };
     }, diagramQuality);
@@ -467,19 +602,28 @@ const main = async () => {
 
     const browser = await launchBrowser(options.browser, report.warnings);
     try {
-        const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+        const context = await browser.newContext({
+            viewport: designContract.canonicalCanvas,
+            deviceScaleFactor: designContract.rasterQuality.deviceScaleFactor,
+        });
         const page = await context.newPage();
 
         for (const slide of renderManifest.slides) {
             const htmlPath = path.join(options.output, slide.file);
             await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'load' });
-            const inspection = await inspectPage(page, designContract.diagramQuality);
+            const inspection = await inspectPage(page, {
+                ...designContract.diagramQuality,
+                minimumRenderedContentPadding: designContract.layoutQuality.minimumRenderedContentPadding,
+            });
             const slideErrors = [];
             if (inspection.geometry.documentOverflow) slideErrors.push('Document exceeds the 1920x1080 canvas.');
             if (inspection.geometry.outside.length) slideErrors.push(`Items outside slide: ${inspection.geometry.outside.join(', ')}`);
             if (inspection.geometry.clippedText.length) slideErrors.push(`Clipped text: ${inspection.geometry.clippedText.join(' | ')}`);
             if (inspection.geometry.sharpSceneCorners.length) slideErrors.push(`Scene shapes below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${inspection.geometry.sharpSceneCorners.join(', ')}`);
             if (inspection.geometry.overlaps.length) slideErrors.push(`Overlapping elements: ${inspection.geometry.overlaps.join(', ')}`);
+            if (inspection.geometry.contentPaddingViolations.length) {
+                slideErrors.push(`Rendered content padding below ${designContract.layoutQuality.minimumRenderedContentPadding}px: ${inspection.geometry.contentPaddingViolations.map((item) => `${item.id} in ${item.container} (${item.minimum.toFixed(1)}px)`).join(', ')}`);
+            }
             for (const diagram of inspection.geometry.diagrams) {
                 if (diagram.viewBox.width !== designContract.diagramQuality.canvas.width || diagram.viewBox.height !== designContract.diagramQuality.canvas.height) {
                     slideErrors.push(`Embedded diagram must use a fixed ${designContract.diagramQuality.canvas.width}x${designContract.diagramQuality.canvas.height} viewBox.`);
@@ -488,7 +632,6 @@ const main = async () => {
                 if (diagram.outsideText.length) slideErrors.push(`Diagram text outside viewport: ${diagram.outsideText.map((text) => text.text).join(', ')}`);
                 if (diagram.uncontainedText.length) slideErrors.push(`Diagram text outside its container: ${diagram.uncontainedText.map((text) => text.text).join(', ')}`);
                 if (diagram.nodeContentSpacingViolations.length) slideErrors.push(`Flow-node content overlaps or is too tightly spaced: ${diagram.nodeContentSpacingViolations.map((violation) => `${violation.id}: ${violation.parts} (${violation.gap.toFixed(1)}px)`).join(', ')}`);
-                if (diagram.shortLayerFlows.length) slideErrors.push(`Layer connectors without a visible tail: ${diagram.shortLayerFlows.map((flow) => `${flow.id} (${flow.length.toFixed(1)}px)`).join(', ')}`);
                 if (diagram.sharpCornerRectangles.length) slideErrors.push(`Diagram rectangles below the ${designContract.diagramQuality.minimumCornerRadius}px corner radius: ${diagram.sharpCornerRectangles.join(', ')}`);
                 if (diagram.itemCollisions.length) slideErrors.push(`Overlapping diagram items: ${diagram.itemCollisions.join(', ')}`);
                 if (diagram.edgeLabelNodeCollisions.length) slideErrors.push(`Diagram edge labels overlap nodes: ${diagram.edgeLabelNodeCollisions.join(', ')}`);
@@ -502,8 +645,16 @@ const main = async () => {
             }
 
             const screenshot = options.screenshots ? path.join(screenshotDirectory, slide.file.replace(/\.html$/, '.png')) : undefined;
-            if (screenshot) await page.screenshot({ path: screenshot, fullPage: false });
-            report.slides.push({ ...slide, screenshot, inspection, errors: slideErrors });
+            let screenshotDimensions;
+            if (screenshot) {
+                await page.screenshot({ path: screenshot, fullPage: false, scale: 'device' });
+                screenshotDimensions = pngDimensions(await readFile(screenshot));
+                const expected = designContract.rasterQuality.htmlScreenshot;
+                if (screenshotDimensions.width !== expected.width || screenshotDimensions.height !== expected.height) {
+                    slideErrors.push(`Screenshot is ${screenshotDimensions.width}x${screenshotDimensions.height}; expected ${expected.width}x${expected.height}.`);
+                }
+            }
+            report.slides.push({ ...slide, screenshot, screenshotDimensions, inspection, errors: slideErrors });
             report.errors.push(...slideErrors.map((error) => `${slide.file}: ${error}`));
         }
 
