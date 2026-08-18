@@ -1,9 +1,10 @@
-# Native PowerPoint architecture
+# Optional PowerPoint compatibility export
 
-## Product contract
+## Compatibility scope
 
-The freeform composition JSON is the authoring source. It compiles into one fixed `1920x1080` scene. HTML and
-PowerPoint consume that scene independently; PowerPoint is never produced by converting arbitrary HTML.
+The core product contract delivers standalone HTML and lossless `3840x2160` PNGs. The PowerPoint exporter is
+retained as an optional maintainer utility and does not carry a whole-slide editability guarantee. The freeform
+composition JSON remains the authoring source and compiles into one fixed `1920x1080` scene.
 
 ```text
 business brief + evidence
@@ -13,18 +14,17 @@ composition JSON + optional diagram JSON
         |
         v
 renderer-neutral scene (pixels, roles, stable ids)
-        |----------------------|
-        v                      v
-standalone HTML          native PowerPoint
-        |                      |
-        v                      v
-Edge validation          Open XML + Office validation
+        |
+        v
+standalone HTML -> lossless 3840x2160 PNG
+        |
+        +---- optional compatibility export -> PowerPoint
 ```
 
 PowerPoint coordinates use a `144 scene pixels = 1 inch` conversion. Type uses `2 scene pixels = 1 point`.
 This maps the `1920x1080` scene exactly to PowerPoint's `13.333x7.5` wide layout.
 
-## Editability
+## Partial editability
 
 | Scene content | PowerPoint representation |
 |---|---|
@@ -36,9 +36,9 @@ This maps the `1920x1080` scene exactly to PowerPoint's `13.333x7.5` wide layout
 | Fluent and Azure assets | Individual image objects |
 | Sources and takeaway | Speaker notes; the visible footer is limited to Microsoft Confidential |
 
-A slide is never exported as one full-slide screenshot. `tools/validate-pptx.mjs` rejects that pattern.
-Complex flow is the only deliberate graphic fallback; `delivery-manifest.json` identifies it as
-`validated-graphic`.
+The optional exporter does not package a slide as one full-slide screenshot. However, complex flow diagrams
+are single PNG graphics, so practical editability varies by slide. The default delivery manifest does not
+advertise PowerPoint output.
 
 ## Identity and future revision
 
@@ -48,13 +48,10 @@ Every Office object is named:
 fluent-slide-kit:<slide-id>:<element-id>
 ```
 
-This Selection Pane identity is the contract for a future PowerPoint task-pane add-in. A revision request
-can target managed objects without attempting to understand arbitrary user-created slides.
+This Selection Pane identity is retained for compatibility tooling and experimentation.
 
-PowerPoint supports light final edits. The current implementation intentionally does not import arbitrary
-Office edits back into composition JSON. Regeneration remains deterministic and source-driven. A future add-in
-should submit the selected slide id, managed object ids, natural-language instruction, and evidence delta to
-an authenticated revision service, then replace only the affected managed objects.
+The current implementation intentionally does not import arbitrary Office edits back into composition JSON.
+Regeneration remains deterministic and source-driven.
 
 ## Brand profiles
 
@@ -64,15 +61,14 @@ Microsoft brand approval.
 
 An organization may add an `approved-internal` profile only after a brand owner supplies and approves the
 fonts, palette, logo rules, and permitted product artwork. The profile does not grant trademark rights by
-itself. An approved `.potx` ingestion layer remains separate future work because PptxGenJS cannot preserve
-an arbitrary template's masters and custom XML with full fidelity.
+itself. Arbitrary `.potx` ingestion is outside the compatibility export's scope.
 
 ## Validation
 
 HTML validation checks schema, content budgets, assets, clipping, overlap, accessibility, diagram metrics,
 and browser screenshots.
 
-PowerPoint validation checks:
+When invoked explicitly, PowerPoint validation checks:
 
 - expected slide count;
 - native shape and picture structure;
@@ -96,11 +92,11 @@ Generated images may be used for hero photography, conceptual illustration, or e
 Store them under `assets/generated/` with `kind: image` and `provenance: ai-generated`.
 
 Do not generate whole slides, logos, Microsoft product icons, text, charts, architecture diagrams, or
-workflows as images. Those elements must remain structured, grounded, accessible, and editable.
+workflows as images. Those elements must remain structured, grounded, and accessible.
 
 ## Dependency boundary
 
-PptxGenJS 4.0.1 is pinned. Its `image-size` dependency has denial-of-service advisories for untrusted
+The optional exporter pins PptxGenJS 4.0.1. Its `image-size` dependency has denial-of-service advisories for untrusted
 ICNS/JXL/HEIF inputs. The composition schema and validators restrict the kit to local SVG/PNG/JPEG presentation assets,
 so those parsers are outside the accepted input path. Do not broaden image formats without revisiting the
 advisory and adding resource limits.

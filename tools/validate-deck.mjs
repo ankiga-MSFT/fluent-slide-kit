@@ -649,7 +649,7 @@ const main = async () => {
             if (screenshot) {
                 await page.screenshot({ path: screenshot, fullPage: false, scale: 'device' });
                 screenshotDimensions = pngDimensions(await readFile(screenshot));
-                const expected = designContract.rasterQuality.htmlScreenshot;
+                const expected = designContract.rasterQuality.deliveryPng;
                 if (screenshotDimensions.width !== expected.width || screenshotDimensions.height !== expected.height) {
                     slideErrors.push(`Screenshot is ${screenshotDimensions.width}x${screenshotDimensions.height}; expected ${expected.width}x${expected.height}.`);
                 }

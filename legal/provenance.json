@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "kitPositioning": "Fluent-aligned semantic slide tooling with HTML previews and editable PowerPoint output; not Microsoft brand certification.",
+    "kitPositioning": "Fluent-aligned semantic slide tooling with standalone HTML and lossless 4K PNG output; not Microsoft brand certification.",
     "assets": [
         {
             "name": "Fluent UI System Icons",
@@ -70,13 +70,13 @@
             "license": "MPL-2.0"
         }
     ],
-    "runtimeDependencies": [
+    "optionalCompatibilityDependencies": [
         {
             "name": "PptxGenJS",
             "version": "4.0.1",
             "source": "https://github.com/gitbrent/PptxGenJS",
             "license": "MIT",
-            "purpose": "Generate native editable PowerPoint Open XML packages from the shared scene."
+            "purpose": "Generate optional PowerPoint compatibility packages from the shared scene; diagram editability is not guaranteed."
         }
     ],
     "securityBoundaries": [

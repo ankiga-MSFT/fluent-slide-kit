@@ -9,9 +9,11 @@
     },
     "rasterQuality": {
         "deviceScaleFactor": 2,
-        "htmlScreenshot": {
+        "deliveryPng": {
             "width": 3840,
-            "height": 2160
+            "height": 2160,
+            "format": "png",
+            "lossless": true
         },
         "diagramScreenshot": {
             "width": 3200,

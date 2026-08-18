@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "Deterministic tooling for AI-generated Fluent-aligned HTML and editable PowerPoint slides.",
+    "description": "Deterministic tooling for AI-generated Fluent-aligned HTML slides and lossless 4K PNG deliverables.",
     "scripts": {
         "assets:search": "node tools/search-assets.mjs",
         "diagram:render": "node tools/render-diagram.mjs",

@@ -8,7 +8,7 @@
         {
             "id": "opening",
             "title": "Composition without templates",
-            "takeaway": "The kit gives the author spatial freedom while preserving shared assets, tokens, validation, and native PowerPoint output.",
+            "takeaway": "The kit gives the author spatial freedom while preserving shared assets, tokens, validation, and lossless 4K PNG output.",
             "background": "$brandStrong",
             "footerColor": "$onBrand",
             "elements": [
@@ -79,7 +79,7 @@
                         "width": 1320,
                         "height": 120
                     },
-                    "text": "Freeform scene primitives. Shared Fluent tokens. Editable PowerPoint.",
+                    "text": "Freeform scene primitives. Shared Fluent tokens. Lossless 4K PNG.",
                     "typography": "subtitle",
                     "style": {
                         "color": "$onBrand"
@@ -322,7 +322,7 @@
                         "width": 420,
                         "height": 160
                     },
-                    "text": "Reject clipping, unintended overlap, inaccessible output, missing assets, or incomplete Office objects.",
+                    "text": "Reject clipping, unintended overlap, inaccessible output, missing assets, or incorrect PNG dimensions.",
                     "typography": "body",
                     "style": {
                         "color": "$secondary"
@@ -333,8 +333,8 @@
         },
         {
             "id": "azure-journey",
-            "title": "Native primitives clarify the Azure journey",
-            "takeaway": "Official icons, direct connectors, and concise labels remain individually editable in PowerPoint.",
+            "title": "Structured primitives clarify the Azure journey",
+            "takeaway": "Official icons, direct connectors, and concise labels remain sharp in standalone HTML and lossless 4K PNG output.",
             "elements": [
                 {
                     "id": "title",
@@ -347,7 +347,7 @@
                         "width": 1696,
                         "height": 70
                     },
-                    "text": "Native primitives clarify the Azure journey",
+                    "text": "Structured primitives clarify the Azure journey",
                     "typography": "title"
                 },
                 {
@@ -586,7 +586,7 @@
                     }
                 }
             ],
-            "notes": "Every service card, icon, label, and connector is a separate named Office object. The composition is authored directly rather than selected from an architecture layout."
+            "notes": "Every service card, icon, label, and connector is a separate structured scene element. The composition is authored directly rather than selected from an architecture layout."
         }
     ]
 }

@@ -1,6 +1,6 @@
 ---
 name: fluent-presentation
-description: "Create, revise, review, or export an executive-ready Microsoft or Azure presentation from a natural-language business brief. Use when an executive asks for a slide, deck, PowerPoint, presentation, visual, Azure architecture, process flow, recommendation, decision narrative, HTML preview, or executive summary. Own the complete workflow: clarify essential business intent, research current Microsoft facts, compose the visual argument, resolve assets, compile a shared scene, render and validate editable PowerPoint plus HTML previews, visually review, repair, and deliver without asking the user to run commands or edit files."
+description: "Create, revise, review, or export an executive-ready Microsoft or Azure presentation from a natural-language business brief. Use when an executive asks for a slide, deck, PowerPoint-ready visual, presentation, Azure architecture, process flow, recommendation, decision narrative, HTML scene, or executive summary. Own the complete workflow: clarify essential business intent, research current Microsoft facts, compose the visual argument, resolve assets, compile a shared scene, render and validate offline HTML plus lossless 4K PNGs, visually review, repair, and deliver without asking the user to run commands or edit files."
 argument-hint: "Describe the audience, message or decision, evidence, and desired slide or deck"
 ---
 
@@ -9,7 +9,7 @@ argument-hint: "Describe the audience, message or decision, evidence, and desire
 ## User experience contract
 
 The user interacts only through natural language. Treat terminal commands, JSON, schemas, scene graphs,
-asset paths, renderers, validators, Office automation, and screenshot automation as internal details.
+asset paths, renderers, validators, and screenshot automation as internal details.
 
 Never ask the user to:
 
@@ -17,10 +17,10 @@ Never ask the user to:
 - create, copy, or edit JSON, HTML, SVG, CSS, or asset paths;
 - choose a schema, renderer, layout id, or validation option;
 - inspect a raw validation report;
-- manually create screenshots, convert HTML, or assemble PowerPoint files.
+- manually create screenshots or convert HTML.
 
 Run the complete workflow with available tools. If a tool fails, diagnose and repair it before
-reporting a blocker. In the final handoff, lead with the finished presentation and preview, not the
+reporting a blocker. In the final handoff, lead with the finished 4K PNGs and HTML, not the
 implementation process. Provide technical details only when the user asks for them.
 
 This workflow requires Copilot Chat Agent mode so tools can run. If tool access is unavailable, ask
@@ -82,12 +82,12 @@ Choose the workflow without asking the user:
 
 - Narrative slide or deck: follow the internal [deck playbook](../fluent-deck/SKILL.md).
 - Architecture, capability view, system context, or reference-image reconstruction: always compose directly
-  with native text, rounded shapes, icons, and connectors on the freeform slide canvas. Preserve the visual
+  with structured text, rounded shapes, icons, and connectors on the freeform slide canvas. Preserve the visual
   argument instead of translating it into a generic structural artifact.
 - Branching workflow: follow the internal [diagram playbook](../fluent-diagram/SKILL.md) only when merging,
   decisions, labeled branches, boundaries, swim lanes, or cycles need semantic graph validation.
 - Mixed request: create and validate only the semantically complex flow, then place it inside the otherwise
-  freeform native composition.
+  freeform scene composition.
 - Existing artifact review or repair: reproduce the issue, repair the owning source, revalidate, and
   return the revised deliverable.
 
@@ -129,17 +129,17 @@ substitute a brain or sparkle icon. A lexical match is not sufficient when its m
 
 Treat structural geometry separately after the same search. Fluent entries such as Arrow Right, Line Dashes,
 Square, Rectangle Landscape, and Card UI are fixed icon glyphs; they do not replace stretchable connectors,
-dash patterns, boundaries, or editable content cards. Implement those roles with native `line` and rounded
+dash patterns, boundaries, or structured content cards. Implement those roles with `line` and rounded
 `shape` primitives using the shared Fluent-aligned tokens. This is the required structural implementation,
 not an asset fallback.
 
 Use another SVG or generated visual only when the Azure, Fluent, and approved external searches find no suitable local catalog asset and policy
-allows that visual type. Prefer a labeled native primitive over an invented icon. Any permitted generated
+allows that visual type. Prefer a labeled scene primitive over an invented icon. Any permitted generated
 fallback must record `metadata.assetFallback.searchQueries` and `metadata.assetFallback.reason`.
 
 Use image generation only for hero photography, conceptual illustration, or an editorial background.
 Never generate a whole slide, logo, Microsoft product icon, slide text, chart, architecture diagram, or
-workflow as an image. Keep narrative text, data, and diagrams as structured editable content.
+workflow as an image. Keep narrative text, data, and diagrams as structured content.
 
 Every presentation is a static still-frame experience. Do not author animations, slide transitions,
 autoplay, hover-dependent content, interactive controls, loading states, or motion-dependent meaning.
@@ -154,7 +154,7 @@ one takeaway per slide, make titles communicate claims, and add speaker notes an
 sources. Prefer another slide over shrinking text or overloading one frame.
 
 For a single architecture slide, create a one-slide composition under `decks/` and author its complete
-geometry with native primitives. Add a structured source under `diagrams/` only for a qualifying flow,
+geometry with scene primitives. Add a structured source under `diagrams/` only for a qualifying flow,
 then embed that flow as one positioned element. These files preserve reproducibility and future revision
 without limiting architecture composition.
 
@@ -170,13 +170,10 @@ Run the relevant local scripts yourself from the kit root. The standard internal
 
 1. Search and resolve assets.
 2. Validate the diagram when one exists.
-3. Run `npm run deck:build -- <deck.json> --preview` to compile one shared scene and produce HTML and editable PowerPoint.
-4. Inspect every HTML and PowerPoint-rendered screenshot with image tooling.
+3. Run `npm run deck:build -- <deck.json>` to compile one shared scene and produce standalone HTML and lossless 4K PNGs.
+4. Inspect every generated PNG with image tooling.
 5. Repair content, scene geometry, graph semantics, assets, or renderer mapping at the layer that owns the defect.
-6. Repeat both validators and screenshot review until clean.
-
-If an interactive PowerPoint session is open, do not close or automate it. Structural PPTX validation
-must still pass; report that Office preview was safely skipped and retain the validated HTML preview.
+6. Repeat validation and PNG review until clean.
 
 Do not stop after authoring source files. A task is complete only when required validators pass and the
 visual output has been inspected. Do not ask the user to perform a quality-control step that the agent
@@ -206,23 +203,21 @@ Before handoff, verify:
 - Screenshot review explicitly compares the densest and emptiest regions and repairs avoidable imbalance.
 - Screenshot review rejects mixed text alignment inside a focal card unless the asymmetry is intentional and documented.
 - The repository hygiene check passes with no temporary artifacts outside approved scratch directories.
-- Every HTML and available PowerPoint screenshot has been visually reviewed for hierarchy, density, clipping, and misleading flow.
-- Browser and available PowerPoint preview PNGs are `3840x2160`; PowerPoint remains vector-first, preserves source raster resolution, and uses `3200x1440` only for unavoidable diagram fallbacks.
+- Every generated PNG has been visually reviewed for hierarchy, density, clipping, and misleading flow.
+- Every delivered PNG is lossless and exactly `3840x2160`.
 - Reference-image conversions pass a verbatim content-and-semantics comparison, with every approved deviation recorded in speaker notes.
 - Every standalone HTML page renders at exactly 16:9 and the manifest contains the expected slide count.
-- The PPTX contains native named Office objects, speaker notes, scene identity, and the expected slide count.
-- Architecture primitives remain native editable Office objects. Any complex flow embedded as a validated graphic is disclosed.
+- The delivery manifest maps every slide to its HTML and PNG and records the expected dimensions.
 
 ## 7. Deliver in business language
 
 Return a concise handoff containing:
 
-- a clickable link to the editable PowerPoint;
-- clickable links to the HTML output and preview screenshots;
+- clickable links to the lossless 4K PNGs first;
+- clickable links to the standalone HTML output;
 - the slide count and one-line narrative summary;
 - important content assumptions, source gaps, or placeholders;
 - the brand status from the delivery manifest (`aligned-not-certified`, `approved-internal`, or `custom-approved`);
-- any slide listed as `validated-graphic` rather than `native-shapes`.
 
 Final handoff files live under `deliverables/<deck-name>/`; `.slide-artifacts/` is internal working
 space only. Never send the user into intermediate validation folders to find the presentation.
@@ -237,4 +232,4 @@ Describe output as Fluent-aligned unless an authorized brand owner has approved 
 - "Build a five-slide decision deck comparing two Azure migration options for the CFO."
 - "Turn this document into a board-ready presentation and flag unsupported claims."
 - "Show our target workflow with approvals and an exception path."
-- "Review the latest deck, fix visual issues, and give me the editable PowerPoint and previews."
+- "Review the latest deck, fix visual issues, and give me the 4K PNGs and HTML scenes."

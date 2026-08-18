@@ -1,9 +1,12 @@
 # Fluent Slide Kit
 
-A compact toolkit for creating executive-ready, editable PowerPoint decks and fixed `1920x1080` HTML
-scenes with 2x `3840x2160` previews, public Fluent 2 design guidance, local Fluent UI System Icons, and official Azure service
+A compact toolkit for creating executive-ready fixed `1920x1080` HTML scenes and lossless
+`3840x2160` PNG deliverables with public Fluent 2 design guidance, local Fluent UI System Icons, and official Azure service
 icons. GitHub Copilot authors freeform composition JSON; the kit resolves tokens into one renderer-neutral scene,
-renders HTML and native Office objects, validates both, and delivers `.pptx`, HTML, and 4K PNG previews.
+renders and validates offline HTML, and captures presentation-ready 4K PNGs.
+
+An optional PowerPoint compatibility exporter remains available to maintainers, but it is not part of the default
+delivery workflow or an editability promise. Users can insert the lossless 4K PNGs directly into PowerPoint.
 
 This project produces **Fluent-aligned** output. It does not certify Microsoft brand compliance.
 Microsoft logos, product launch icons, and organization-specific templates require an approved
@@ -20,7 +23,7 @@ A useful brief can be one sentence. Include any details you know; the rest have 
 - **Audience:** who will see it
 - **Outcome:** what they should understand, decide, or do
 - **Evidence:** documents, facts, or organizational context to use
-- **Format:** one slide or deck; editable PowerPoint is the primary deliverable and HTML is the QA preview
+- **Format:** one slide or deck; lossless 4K PNG is the primary portable deliverable and HTML preserves the vector scene
 
 Examples:
 
@@ -28,17 +31,17 @@ Examples:
 > and the takeaway is how signals become prioritized, governed actions.
 
 > Build a five-slide board-ready presentation comparing our two Azure migration options. Use the
-> attached evidence, flag unsupported claims, and give me the editable PowerPoint and previews.
+> attached evidence, flag unsupported claims, and give me the 4K PNGs and HTML scenes.
 
 > Review the latest presentation, fix content and visual issues, and return the revised deck.
 
 The `fluent-presentation` skill automatically interprets the brief, asks only essential business
 questions, researches current Microsoft facts, chooses visuals, authors architecture directly with
-native slide primitives, creates a structured flow only when branching semantics require it, renders
-the slides, runs quality checks, visually reviews and repairs screenshots, and returns an editable
-`.pptx`, validated HTML pages, and automatically generated 4K PNG previews.
+structured scene primitives, creates a structured flow only when branching semantics require it, renders
+the slides, runs quality checks, visually reviews and repairs screenshots, and returns validated HTML
+pages with lossless 4K PNG deliverables.
 
-The handoff leads with the editable PowerPoint, then preview images and HTML. Technical semantic sources,
+The handoff leads with the 4K PNGs, then the standalone HTML scenes. Technical semantic sources,
 the compiled scene, and validation reports remain available for reproducibility but require no executive input.
 
 ## Architecture
@@ -56,14 +59,14 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `tools/search-assets.mjs` | Ranked local Fluent and Azure asset discovery |
 | `tools/composition-core.mjs` | Token-resolved composition-to-scene compiler |
 | `tools/render-deck.mjs` | Scene-driven standalone HTML entry point |
-| `tools/render-scene-pptx.mjs` | Scene-to-native-Office renderer |
-| `tools/build-deck.mjs` | End-to-end HTML/PPTX build and delivery manifest |
+| `tools/render-scene-pptx.mjs` | Optional scene-to-PowerPoint compatibility renderer |
+| `tools/build-deck.mjs` | End-to-end HTML/4K-PNG build and delivery manifest |
 | `tools/validate-deck.mjs` | Schema, content, browser, geometry, asset, and axe checks |
-| `tools/validate-pptx.mjs` | Open XML editability, scene coverage, notes, and optional Office preview checks |
+| `tools/validate-pptx.mjs` | Optional compatibility-export structure checker |
 | `tools/render-diagram.mjs` | Deterministic graph-to-standalone-SVG renderer |
 | `tools/validate-diagram.mjs` | Graph semantics, browser, geometry, asset, and axe checks |
 | `examples/deck.json` | Versioned reusable freeform composition with Fluent and Azure visuals |
-| `examples/static-patterns.json` | Six validated native patterns: status, owner, progress, table, tags, and KPI |
+| `examples/static-patterns.json` | Six validated structured patterns: status, owner, progress, table, tags, and KPI |
 | `diagrams/templates/flow.json` | Versioned reusable branching-flow template |
 | `.github/skills/fluent-presentation/SKILL.md` | Executive-facing natural-language orchestration workflow |
 | `.github/skills/fluent-deck/SKILL.md` | Hidden internal deck implementation playbook |
@@ -71,17 +74,16 @@ the compiled scene, and validation reports remain available for reproducibility 
 | `assets/manifest.json` | Entry point for the local icon collections |
 | `assets/external-icons/catalog.json` | Approved non-Azure, non-Fluent vendor icons with pinned source and license metadata |
 | `legal/provenance.json` | Asset/tool versions, licenses, terms, and brand boundary |
-| `docs/native-powerpoint-architecture.md` | Shared-scene, native editability, validation, and add-in design |
+| `docs/native-powerpoint-architecture.md` | Optional PowerPoint compatibility-export design and limitations |
 
 Final handoff bundles are written to `deliverables/<deck-name>/`, separate from intermediate validation
 and preview material under `.slide-artifacts/`. General temporary helpers and command captures belong under
 `.tmp/<task>/`. These directories are Git-ignored. Request-specific composition sources under `decks/` and
 top-level `diagrams/` are local-only; reusable fixtures under `examples/` and `diagrams/templates/` remain versioned.
 
-Generated HTML remains offline. PowerPoint uses native text, shapes, lines, and individual image objects.
-Architectures are fully native because they are authored directly in the freeform composition. Complex
-flow diagrams are browser-rasterized validated graphics until a native flow connector renderer is added;
-the delivery manifest discloses this per slide.
+Generated HTML remains offline and preserves vector text, shapes, connectors, icons, and diagrams. The default
+delivery PNG is captured losslessly at `3840x2160` and is suitable for insertion into PowerPoint. Optional PowerPoint
+exports may mix editable primitives with flattened diagram graphics and are not part of the default quality contract.
 
 Every slide is a static still frame. The kit excludes animations, slide transitions, autoplay,
 hover-dependent disclosure, interactive controls, loading states, and motion-dependent meaning.
@@ -96,11 +98,11 @@ requestor must execute.
 3. Inventory every visual role, search each concept locally, and copy exact catalog paths for suitable
   pictograms or symbols. Resolve non-Azure/non-Fluent product icons from `assets/external-icons/`; new entries
   require an official pinned source, license file, and trademark notice. Structural connectors, dash patterns,
-  boundaries, and cards remain native editable geometry.
+  boundaries, and cards remain scalable renderer geometry.
 4. When graph semantics require it, copy a fixture from `diagrams/templates/`, author and validate
   `diagrams/<name>.json`, then embed it as a positioned `diagram` element. Request diagrams are Git-ignored.
 5. Add sources for factual claims and bracketed placeholders for missing evidence.
-6. Run the dual-format build and inspect HTML and PowerPoint screenshots, even when checks pass.
+6. Run the HTML/PNG build and inspect every 4K PNG, even when checks pass.
 7. Repair the composition first; change shared renderers only for system-level defects.
 
 ### Repository hygiene
@@ -133,13 +135,15 @@ npm run deck:render -- decks/decision-deck.json --output slides
 # Compile the renderer-neutral scene
 npm run deck:compile -- decks/decision-deck.json
 
-# Individual quality gates and native export
+# Individual HTML quality gate
 npm run deck:validate -- decks/decision-deck.json
+
+# Complete validated HTML and lossless 4K PNG deliverable bundle
+npm run deck:build -- decks/decision-deck.json
+
+# Optional PowerPoint compatibility export; editability varies by slide content
 npm run deck:export:pptx -- decks/decision-deck.json
 npm run deck:validate:pptx -- .slide-artifacts/pptx/decision-deck.pptx --deck decks/decision-deck.json
-
-# Complete validated deliverable bundle; Office preview is optional
-npm run deck:build -- decks/decision-deck.json --preview
 
 # Repository hygiene
 npm run repo:check
@@ -153,7 +157,7 @@ completion and inline errors while the AI or a human edits them.
 
 ## Diagram workflow
 
-Use native text, shape, image, and line elements for architecture, system context, capability views,
+Use structured text, shape, image, and line elements for architecture, system context, capability views,
 deployment views, reference-image reconstruction, and short sequences. Use `diagramType: flow` only when
 branching, decisions, merging, cycles, lanes, or labeled edge semantics carry the message.
 
@@ -187,10 +191,10 @@ must both use center alignment and share the container's horizontal centerline.
 Neutral cards, components, and boxes default to `$surface`, which is white in the light theme. Non-white
 fills are reserved for explicit user direction or documented focal or semantic meaning. Ordinary directional
 arrows share the flow-diagram primary connector treatment: `$secondary`, 2.5px, with a filled triangle.
-The renderer applies a shared target clearance so arrowheads stop visibly before card boundaries in both HTML and PowerPoint.
+The renderer applies a shared target clearance so arrowheads stop visibly before card boundaries in HTML and the captured PNG.
 
 For common executive content, use `examples/static-patterns.json` as the anatomy reference. It contains
-native, editable still-frame examples for a status message, owner/persona view, determinate progress and
+structured still-frame examples for a status message, owner/persona view, determinate progress and
 milestones, structured table, metadata/status tags, and sourced KPI summary. These are compositions to
 adapt, not fixed layouts or interactive component simulations.
 
@@ -211,30 +215,21 @@ The quality gate checks:
 - Canvas overflow, clipped content, and group-aware element overlap
 - Embedded diagram viewBox, effective 18px minimum type, text containment, collisions, and crossings
 - Serious WCAG 2.0/2.1 A and AA violations through axe-core
-- A deterministic 2x `3840x2160` screenshot for every `1920x1080` logical slide
-- Native Office objects with stable scene-derived names rather than full-slide screenshots
-- Speaker notes and per-slide scene identity in the PowerPoint package
-- Expected PowerPoint slide and scene-element coverage
-- Optional desktop PowerPoint rendering at `3840x2160`, including a nonblank pixel check
+- A lossless `3840x2160` PNG for every `1920x1080` logical slide
+- Delivery-manifest entries that map every slide to its standalone HTML and PNG
 
 Screenshot review remains mandatory because automated checks cannot judge narrative quality,
 visual hierarchy, misleading diagrams, or whether the selected image supports the message.
 
-## PowerPoint, HTML, and scene delivery
+## HTML, PNG, and scene delivery
 
-Composition JSON is the authoring source and `deck.scene.json` is the resolved geometry shared by both renderers.
-PowerPoint is the primary executive artifact: text, cards, and freeform architecture remain editable.
-HTML is the rapid deterministic QA surface. The validators capture both browser and,
-when desktop Office is available and no interactive session is open, PowerPoint-rendered previews.
-Native geometry and SVG media remain resolution-independent, source PNG/JPEG assets are not downsampled,
-and the validated graphic fallback for a complex flow is rendered at `3200x1440`.
+Composition JSON is the authoring source and `deck.scene.json` is the resolved geometry used by the HTML renderer.
+Standalone HTML preserves vector text, shapes, connectors, icons, and diagrams for inspection and reuse. The browser
+validator captures every slide as a lossless `3840x2160` PNG and rejects any output with different dimensions.
+Source PNG/JPEG assets are embedded without downsampling in the HTML scene.
 
-PowerPoint light edits are expected, but regeneration remains source-driven; arbitrary Office edits are
-not reverse-engineered into deck JSON. Stable Selection Pane names (`fluent-slide-kit:<slide>:<element>`)
-provide the identity contract for a future PowerPoint task-pane revision experience.
-
-Desktop preview automation refuses to run while an interactive PowerPoint session exists, preventing the
-validator from closing or interrupting user work. Structural validation still runs without Office.
+The optional PowerPoint exporter is retained for compatibility testing. It is outside the default build because
+complex diagrams become single graphics and practical editability varies by slide.
 
 ## Roadmap status
 
@@ -242,31 +237,23 @@ Implemented:
 
 - freeform composition and optional structured diagram sources;
 - renderer-neutral scene compilation with stable element ids;
-- scene-driven HTML and native editable PowerPoint renderers;
-- native text, shape, line, image, and unrestricted freeform architecture objects;
-- validated graphic fallback for complex flow diagrams;
+- scene-driven offline HTML rendering and lossless 4K PNG capture;
+- structured text, shape, line, image, and unrestricted freeform architecture elements;
+- vector structured-flow rendering in standalone HTML;
 - brand-profile schema and explicit `aligned-not-certified` status;
-- HTML, Open XML, speaker-note, Office-preview, and pixel validation;
+- HTML, accessibility, geometry, asset, and PNG-dimension validation;
 - generated-image policy and safe local asset formats;
-- static-only output contract and six native executive patterns;
-- stable Selection Pane names for future AI revisions.
+- static-only output contract and six structured executive patterns;
+- optional PowerPoint compatibility export with stable Selection Pane names.
 
 Deliberately separate future phases:
 
-- importing arbitrary approved `.potx` masters without losing proprietary template metadata;
-- native-shape rendering for complex flow diagrams;
-- a PowerPoint task-pane add-in and authenticated AI revision service;
 - an optional approved image-generation provider.
-
-The add-in cannot be production-ready without choosing an identity model, AI backend, data-retention
-policy, and deployment boundary. The stable object-name and semantic-source contracts required by that
-phase are already present; see `docs/native-powerpoint-architecture.md`.
 
 ## Copilot workflows
 
 - `fluent-presentation` is the only executive-facing skill. It owns the complete natural-language
-  request through researched content, diagrams, shared scene, editable PowerPoint, HTML, validation,
-  visual repair, and previews.
+  request through researched content, diagrams, shared scene, HTML validation, visual repair, and lossless 4K PNG delivery.
 - `fluent-deck` and `fluent-diagram` are hidden internal playbooks loaded by the presentation skill.
 - Prompt shortcuts are intentionally omitted so users do not need to choose between technical workflows.
 
@@ -306,7 +293,6 @@ The two JSON foundation snapshots under `design/` are plain MIT-licensed source 
 dependencies. Their exact upstream package versions, revision, modifications, and notices are recorded
 in `legal/provenance.json`. Referenced fonts and icons remain governed by their separate asset terms.
 
-`pptxgenjs` depends on `image-size`, whose audit advisory concerns untrusted ICNS/JXL/HEIF parsers. The
-kit accepts schema-constrained local SVG/PNG/JPEG assets and never permits those formats, so that vulnerable
-parser path is outside the input contract. Do not weaken this restriction or run `npm audit fix --force`,
-which currently proposes an unsafe downgrade of the PowerPoint renderer.
+The optional `pptxgenjs` compatibility exporter depends on `image-size`, whose audit advisory concerns untrusted
+ICNS/JXL/HEIF inputs. The kit accepts schema-constrained local SVG/PNG/JPEG assets and never permits those formats,
+so that parser path is outside the input contract. Do not weaken this restriction or run `npm audit fix --force`.

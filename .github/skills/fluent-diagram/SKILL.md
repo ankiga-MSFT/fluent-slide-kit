@@ -17,9 +17,9 @@ Use this skill only for ordered behavior where nodes and connectors communicate 
 decisions, dependencies, asynchronous work, cycles, or responsibility. It produces an accessible
 standalone SVG from `diagrams/<name>.json` and can embed it as a positioned `diagram` element.
 
-Use `fluent-deck` and native freeform primitives for architecture, system context, capabilities, tiers,
+Use `fluent-deck` and freeform scene primitives for architecture, system context, capabilities, tiers,
 channels, governance, deployment views, and reference-image reconstruction. Those compositions must retain
-full spatial freedom and native PowerPoint editability.
+full spatial freedom and structured scene geometry.
 
 ## 1. Establish diagram semantics
 
@@ -34,7 +34,7 @@ inventory tooling only when the user explicitly wants a deployed-resource view.
 ## 2. Confirm graph semantics
 
 Choose `flow` when the audience must follow what happens next, why a branch is taken, where paths merge,
-or how work moves between owners. Use native shape, text, image, and line elements when the message is a
+or how work moves between owners. Use shape, text, image, and line scene elements when the message is a
 short linear sequence or any architecture view. Do not represent a stable architecture as a workflow
 merely because services have relationships.
 
@@ -64,7 +64,7 @@ local Azure asset, visible service label, and useful alt text. Do not recolor or
 Non-Azure, non-Fluent product icons must come from the approved `assets/external-icons/` catalog with
 official pinned source, license, and trademark metadata; never reference an arbitrary web asset directly.
 Use exact catalog matches for node pictograms. Keep graph edges, arrowheads, dash patterns, lanes, boundaries,
-and node cards as native renderer geometry because Arrow, Line Dashes, Square, and Card UI catalog matches are
+and node cards as renderer geometry because Arrow, Line Dashes, Square, and Card UI catalog matches are
 standalone glyphs rather than extensible graph components. If no suitable node icon exists, use a labeled node
 instead of inventing an icon.
 
@@ -126,10 +126,9 @@ Reference the validated source graph from a deck slide:
 Run `npm run deck:validate -- <deck.json>`. The deck renderer generates and embeds the SVG inline, so
 the HTML remains offline and does not depend on a separately copied diagram file.
 
-In the current implementation, `flow` renders as a browser-validated graphic because PowerPoint does not
-preserve nested SVG image assets reliably. Record that exception in the delivery manifest and never
-describe a complex flow slide as fully shape-editable. Architecture slides remain native because they
-are authored directly through `fluent-deck`.
+The validated flow remains vector SVG inside standalone HTML and is captured in the slide's lossless
+`3840x2160` delivery PNG. Architecture slides remain freeform because they are authored directly through
+`fluent-deck`.
 
 ## 8. Hand off
 
