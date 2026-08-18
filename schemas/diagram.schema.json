@@ -241,6 +241,9 @@
                 "tone": {
                     "$ref": "#/$defs/tone"
                 },
+                "parentGroup": {
+                    "$ref": "#/$defs/id"
+                },
                 "borderStyle": {
                     "enum": [
                         "solid",

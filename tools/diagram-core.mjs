@@ -124,6 +124,36 @@ const disconnectedNodes = (nodeIds, edges) => {
     return nodeIds.filter((id) => !visited.has(id));
 };
 
+const findGroupCycle = (groups = []) => {
+    const parentById = new Map(groups.map((group) => [group.id, group.parentGroup]));
+    for (const group of groups) {
+        const path = [];
+        const visited = new Set();
+        let current = group.id;
+        while (current) {
+            if (visited.has(current)) return [...path.slice(path.indexOf(current)), current];
+            visited.add(current);
+            path.push(current);
+            current = parentById.get(current);
+        }
+    }
+    return undefined;
+};
+
+const groupMembers = (diagram, groupId) => {
+    const parentById = new Map((diagram.groups ?? []).map((group) => [group.id, group.parentGroup]));
+    return diagram.nodes.filter((node) => {
+        const visited = new Set();
+        let current = node.group;
+        while (current && !visited.has(current)) {
+            if (current === groupId) return true;
+            visited.add(current);
+            current = parentById.get(current);
+        }
+        return false;
+    });
+};
+
 export const validateDiagram = async (diagram) => {
     const [schema, designContract, catalogPaths] = await Promise.all([
         readFile(path.join(kitRoot, 'schemas', 'diagram.schema.json'), 'utf8').then(JSON.parse),
@@ -196,11 +226,14 @@ export const validateDiagram = async (diagram) => {
     }
 
     for (const group of diagram.groups ?? []) {
-        const members = diagram.nodes.filter((node) => node.group === group.id);
+        if (group.parentGroup && !groupIds.has(group.parentGroup)) errors.push(`Group ${group.id} references missing parent group: ${group.parentGroup}`);
+        const members = groupMembers(diagram, group.id);
         if (members.length === 0) warnings.push(`Group ${group.id} has no nodes.`);
         const memberLanes = new Set(members.map((node) => node.lane).filter(Boolean));
         if (memberLanes.size > 1) errors.push(`Group ${group.id} spans multiple lanes; split it into lane-specific groups.`);
     }
+    const groupCycle = findGroupCycle(diagram.groups);
+    if (groupCycle) errors.push(`Diagram groups contain a parent cycle (${groupCycle.join(' -> ')}).`);
 
     for (const lane of diagram.lanes ?? []) {
         if (!diagram.nodes.some((node) => node.lane === lane.id)) warnings.push(`Lane ${lane.id} has no nodes.`);
@@ -452,21 +485,40 @@ const edgeGeometry = (edge, source, target, direction, index) => {
     return { path: `M ${start.x} ${start.y} L ${start.x} ${start.y + 30} L ${routeX} ${start.y + 30} L ${routeX} ${end.y - 30} L ${end.x} ${end.y - 30} L ${end.x} ${end.y}`, label: { x: routeX, y: (start.y + end.y) / 2 } };
 };
 
-const groupBounds = (diagram, positions) => (diagram.groups ?? []).map((group) => {
-    const members = diagram.nodes.filter((node) => node.group === group.id).map((node) => positions.get(node.id));
-    if (!members.length) return undefined;
-    const left = Math.min(...members.map((member) => member.x));
-    const top = Math.min(...members.map((member) => member.y));
-    const right = Math.max(...members.map((member) => member.x + member.width));
-    const bottom = Math.max(...members.map((member) => member.y + member.height));
-    return {
-        ...group,
-        x: left - GROUP_HORIZONTAL_PADDING,
-        y: top - GROUP_TOP_PADDING,
-        width: right - left + GROUP_HORIZONTAL_PADDING * 2,
-        height: bottom - top + GROUP_TOP_PADDING + GROUP_BOTTOM_PADDING,
+const groupBounds = (diagram, positions) => {
+    const groups = diagram.groups ?? [];
+    const cache = new Map();
+    const visiting = new Set();
+    const calculate = (group) => {
+        if (cache.has(group.id)) return cache.get(group.id);
+        if (visiting.has(group.id)) return undefined;
+        visiting.add(group.id);
+        const directNodes = diagram.nodes
+            .filter((node) => node.group === group.id)
+            .map((node) => positions.get(node.id));
+        const childGroups = groups
+            .filter((candidate) => candidate.parentGroup === group.id)
+            .map(calculate)
+            .filter(Boolean);
+        const members = [...directNodes, ...childGroups];
+        visiting.delete(group.id);
+        if (!members.length) return undefined;
+        const left = Math.min(...members.map((member) => member.x));
+        const top = Math.min(...members.map((member) => member.y));
+        const right = Math.max(...members.map((member) => member.x + member.width));
+        const bottom = Math.max(...members.map((member) => member.y + member.height));
+        const bounds = {
+            ...group,
+            x: left - GROUP_HORIZONTAL_PADDING,
+            y: top - GROUP_TOP_PADDING,
+            width: right - left + GROUP_HORIZONTAL_PADDING * 2,
+            height: bottom - top + GROUP_TOP_PADDING + GROUP_BOTTOM_PADDING,
+        };
+        cache.set(group.id, bounds);
+        return bounds;
     };
-}).filter(Boolean);
+    return groups.map(calculate).filter(Boolean);
+};
 
 const palette = (theme) => theme === 'dark'
     ? { background: '#202020', surface: '#292929', text: '#FFFFFF', secondary: '#D6D6D6', muted: '#ADADAD', stroke: '#666666', card: '#5C5C5C', lane: '#252525', group: '#333333', label: '#202020', brand: '#479EF5', brandSubtle: '#0C3B5E', success: '#54B054', successSubtle: '#0B3B0B', warning: '#FCE100', warningSubtle: '#4A1E04', danger: '#DC626D', dangerSubtle: '#3B0509' }

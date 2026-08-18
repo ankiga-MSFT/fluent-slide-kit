@@ -1035,6 +1035,47 @@ test('flow groups support dotted boundaries and rank-skipping edges reserve a ho
     assert.equal(coordinates[0].y, coordinates[1].y);
 });
 
+test('flow groups support nested dotted boundaries', async () => {
+    const diagram = {
+        schemaVersion: 1,
+        diagramType: 'flow',
+        id: 'nested-skill-groups',
+        title: 'Nested skill groups',
+        direction: 'right',
+        theme: 'light',
+        rankSkipRouting: 'horizontal-channel',
+        nodes: [
+            { id: 'customer', label: 'Customer', kind: 'actor' },
+            { id: 'ops', label: 'Azure Ops Skill', kind: 'process', group: 'skills' },
+            { id: 'resiliency', label: 'Resiliency skill', kind: 'process', group: 'partner-skills' },
+            { id: 'chaos', label: 'Chaos Studio skill', kind: 'process', group: 'partner-skills' },
+            { id: 'tools', label: 'Azure MCP tools', kind: 'external-system' },
+        ],
+        edges: [
+            { id: 'request', source: 'customer', target: 'ops' },
+            { id: 'delegate-resiliency', source: 'ops', target: 'resiliency' },
+            { id: 'delegate-chaos', source: 'ops', target: 'chaos' },
+            { id: 'resiliency-tools', source: 'resiliency', target: 'tools' },
+            { id: 'chaos-tools', source: 'chaos', target: 'tools' },
+            { id: 'ops-tools', source: 'ops', target: 'tools', kind: 'dependency' },
+        ],
+        groups: [
+            { id: 'skills', label: 'Azure Skills', borderStyle: 'dotted' },
+            { id: 'partner-skills', label: 'ARM Partner Skills', parentGroup: 'skills', borderStyle: 'dotted' },
+        ],
+    };
+    const contract = await validateDiagram(diagram);
+    assert.deepEqual(contract.errors, []);
+    const svg = await renderDiagramSvg(diagram);
+    const boundaries = [...svg.matchAll(/class="diagram-group[^>]*boundary-dotted"><rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/g)]
+        .map((match) => ({ x: Number(match[1]), y: Number(match[2]), width: Number(match[3]), height: Number(match[4]) }));
+    assert.equal(boundaries.length, 2);
+    assert.ok(boundaries[0].x < boundaries[1].x);
+    assert.ok(boundaries[0].y < boundaries[1].y);
+    assert.ok(boundaries[0].x + boundaries[0].width > boundaries[1].x + boundaries[1].width);
+    assert.ok(boundaries[0].y + boundaries[0].height > boundaries[1].y + boundaries[1].height);
+});
+
 test('flow edge labels can align with the target node', async () => {
     const diagram = {
         schemaVersion: 1,
