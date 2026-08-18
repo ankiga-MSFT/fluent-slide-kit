@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -88,7 +88,9 @@ test('presentation skills require local assets, Fluent foundations, and static o
         assert.match(source, /2\.5px/);
         assert.match(source, /filled triangular arrowhead/);
         assert.match(source, /3840x2160/);
-        assert.match(source, /vector-first/);
+        assert.match(source, /lossless/);
+        assert.match(source, /PNG/);
+        assert.doesNotMatch(source, /editable PowerPoint|native Office/);
         assert.match(source, /component inventory/i);
         assert.match(source, /assetFallback/);
         assert.match(source, /standalone (?:visual|symbol|glyph)/i);
@@ -139,7 +141,7 @@ test('presentation skills require local assets, Fluent foundations, and static o
     });
     assert.match(designContract.authoringDefaults.connectors.boundaryLayering, /lower z-order/);
     assert.equal(designContract.rasterQuality.deviceScaleFactor, 2);
-    assert.deepEqual(designContract.rasterQuality.htmlScreenshot, { width: 3840, height: 2160 });
+    assert.deepEqual(designContract.rasterQuality.deliveryPng, { width: 3840, height: 2160, format: 'png', lossless: true });
     assert.deepEqual(designContract.rasterQuality.diagramScreenshot, { width: 3200, height: 1440 });
     assert.deepEqual(designContract.rasterQuality.powerPointDiagramFallback, { width: 3200, height: 1440 });
     assert.deepEqual(designContract.powerPointQuality.preview, { width: 3840, height: 2160 });
@@ -274,11 +276,60 @@ test('final deliverables are separate from intermediate artifacts', async () => 
     const source = await readFile(path.join(kitRoot, 'tools', 'build-deck.mjs'), 'utf8');
     assert.match(source, /path\.join\(kitRoot, 'deliverables', path\.basename/);
     assert.doesNotMatch(source, /path\.join\(kitRoot, '\.slide-artifacts', 'deliverables'/);
-    assert.match(source, /htmlScreenshot: designContract\.rasterQuality\.htmlScreenshot/);
-    assert.match(source, /vectorFirst: designContract\.powerPointQuality\.preferVectorMedia/);
+    assert.match(source, /expectedPng = designContract\.rasterQuality\.deliveryPng/);
+    assert.doesNotMatch(source, /export-deck-pptx|validate-pptx|editablePowerPoint|powerPointValidation/);
     assert.match(source, /exactCatalogMembership: true/);
     assert.match(source, /check-repo-hygiene\.mjs/);
     assert.match(source, /postBuildCheck: true/);
+});
+
+test('default deck build delivers standalone HTML and a lossless 4K PNG without PowerPoint artifacts', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'fluent-html-png-build-'));
+    try {
+        const deckPath = path.join(output, 'html-png.json');
+        const deliveryPath = path.join(output, 'delivery');
+        await writeFile(deckPath, JSON.stringify({
+            schemaVersion: 1,
+            title: 'HTML and PNG delivery',
+            theme: 'light',
+            slides: [{
+                id: 'html-png',
+                takeaway: 'The default build delivers browser-native slides and presentation-ready PNGs.',
+                title: 'Delivery stays sharp',
+                elements: [
+                    { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1400, height: 70 }, text: 'Delivery stays sharp', typography: 'title' },
+                ],
+                notes: 'HTML and lossless 4K PNG regression fixture.',
+            }],
+        }));
+        await execFileAsync(process.execPath, [
+            'tools/build-deck.mjs',
+            deckPath,
+            '--output',
+            deliveryPath,
+        ], { cwd: kitRoot });
+
+        assert.deepEqual((await readdir(deliveryPath)).sort(), ['delivery-manifest.json', 'html']);
+        const manifest = JSON.parse(await readFile(path.join(deliveryPath, 'delivery-manifest.json'), 'utf8'));
+        assert.deepEqual(manifest.outputs, {
+            htmlDirectory: 'html',
+            pngDirectory: 'html/screenshots',
+            scene: 'html/deck.scene.json',
+            htmlValidation: 'html/validation-report.json',
+        });
+        assert.deepEqual(manifest.quality.png, {
+            width: 3840,
+            height: 2160,
+            format: 'png',
+            lossless: true,
+            deviceScaleFactor: 2,
+        });
+        assert.deepEqual(manifest.slides[0].pngDimensions, { width: 3840, height: 2160 });
+        const png = await readFile(path.join(deliveryPath, manifest.slides[0].png));
+        assert.deepEqual(pngDimensions(png), { width: 3840, height: 2160 });
+    } finally {
+        await rm(output, { recursive: true, force: true });
+    }
 });
 
 test('freeform deck compiles to a valid renderer-neutral scene', async () => {

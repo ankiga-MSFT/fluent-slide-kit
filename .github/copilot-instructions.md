@@ -1,7 +1,7 @@
 # Fluent slide kit instructions
 
-This repository creates fixed `1920x1080` HTML scenes, 2x `3840x2160` PNG previews, and native editable
-PowerPoint slides from a shared renderer-neutral scene, plus structured SVG diagrams aligned with public Fluent 2 guidance.
+This repository creates fixed `1920x1080` HTML scenes and lossless `3840x2160` PNG deliverables from a shared
+renderer-neutral scene, plus structured SVG diagrams aligned with public Fluent 2 guidance.
 It is not proof of Microsoft brand compliance. Use Microsoft logos, product launch icons, and
 organization brand assets only when the user supplies an approved source and applicable terms.
 
@@ -10,7 +10,7 @@ organization brand assets only when the user supplies an approved source and app
 - Assume users are business or executive stakeholders who interact only through natural language.
 - Route slide, deck, presentation, architecture, workflow, review, and repair requests
 	through the `fluent-presentation` skill.
-- Never ask the user to run commands, edit JSON, HTML, or PowerPoint XML, select asset paths, or inspect validation reports.
+- Never ask the user to run commands, edit JSON or HTML, select asset paths, or inspect validation reports.
 - Ask only business questions that materially affect audience, outcome, evidence, or confidentiality.
 - Run asset search, authoring, scene compilation, dual rendering, validation, screenshot capture, inspection, and repair
 	autonomously with available tools.
@@ -31,13 +31,12 @@ organization brand assets only when the user supplies an approved source and app
 - Select a profile under `design/brand-profiles/`; public output defaults to `fluent-aligned` and must
 	not be described as Microsoft brand compliant.
 - Compose slides directly from positioned text, shape, line, image, and optional flow-diagram elements. Use stable ids, semantic tokens, explicit z-order, and logical groups for intentionally overlapping elements.
-- Author every architecture, capability view, system context, tier map, and reference-image reconstruction directly in the freeform composition. Use native rounded shapes, text, connectors, Azure icons, and Fluent icons without imposing a fixed grid, rail, layer, or topology template.
+- Author every architecture, capability view, system context, tier map, and reference-image reconstruction directly in the freeform composition. Use rounded shapes, text, connectors, Azure icons, and Fluent icons without imposing a fixed grid, rail, layer, or topology template.
 - Author a structured `flow` graph under `diagrams/`, conforming to `schemas/diagram.schema.json`, only when branching, merging, decisions, lanes, cycles, or labeled edge semantics justify graph-specific validation.
 - Treat the selected brand profile, `design/design-contract.json`, `assets/manifest.json`, and the compiled scene as source of truth.
-- Compile one scene for both renderers. Never convert arbitrary HTML into PowerPoint.
+- Compile one renderer-neutral scene, render standalone HTML, and capture its validated 4K PNG.
 - Generate standalone HTML with `npm run deck:render -- <deck.json>`; do not hand-edit generated slides.
-- Generate native PowerPoint with `npm run deck:export:pptx -- <deck.json>`; do not package full-slide screenshots.
-- Deliver browser and available PowerPoint previews at `3840x2160`. Keep PowerPoint vector-first, preserve source raster resolution, and render unavoidable embedded-diagram fallbacks at `3200x1440`.
+- Generate lossless PNGs at exactly `3840x2160`; fail delivery when any slide has different dimensions.
 - Generate standalone SVG with `npm run diagram:render -- <diagram.json>`; do not hand-edit generated diagrams.
 - Put final handoff bundles under `deliverables/<deck-name>/`. Reserve `.slide-artifacts/` for intermediate validation and previews.
 
@@ -47,22 +46,22 @@ organization brand assets only when the user supplies an approved source and app
 2. Compose architecture and simple sequences with direct primitives; opt into a structured flow only when graph semantics require it.
 3. Create an internal component inventory for every visual role, including icons, arrows, line styles, boxes, cards, and boundaries. Run `npm run assets:search -- "<concept>" --json` for every item before selecting an implementation.
 4. Author explicit geometry on the fixed canvas; never guess asset filenames or invent SVG geometry.
-5. Run `npm run deck:build -- <deck.json> --preview` after every substantive composition change.
-6. Inspect every HTML and available PowerPoint screenshot and repair hierarchy or composition issues.
-7. Verify HTML and native PPTX validators pass; provide the editable `.pptx`, HTML, and previews.
+5. Run `npm run deck:build -- <deck.json>` after every substantive composition change.
+6. Inspect every 4K PNG and repair hierarchy or composition issues.
+7. Verify the HTML validator and PNG dimension checks pass; provide the lossless PNGs and standalone HTML.
 
 For branching, merging, decisions, labeled connectors, boundaries, swim lanes, or cycles, use the
 diagram schema and `fluent-diagram` skill. Embed the validated source as a `diagram` element within the
-otherwise freeform composition. Keep simple sequences native with shape, text, image, and line elements.
+otherwise freeform composition. Keep simple sequences structured with shape, text, image, and line elements.
 
 Use an exact Fluent or Azure catalog result whenever it is a semantically suitable pictogram or standalone
 symbol. Catalog entries such as Arrow Right, Line Dashes, Square, and Card UI are glyphs, not stretchable
-connectors or content containers; structural arrows, dashed paths, boundaries, boxes, and cards remain native
-editable lines and rounded shapes styled by `design/design-contract.json`. If no suitable catalog visual exists,
+connectors or content containers; structural arrows, dashed paths, boundaries, boxes, and cards remain renderer
+lines and rounded shapes styled by `design/design-contract.json`. If no suitable catalog visual exists,
 search `assets/external-icons/catalog.json` for approved non-Azure, non-Fluent product or vendor icons. Add a new
 external icon only from an official vendor-owned source pinned to an immutable revision, with its license and
 trademark notice recorded in that catalog and `legal/provenance.json`; never use a third-party logo mirror.
-Use a labeled native primitive before inventing an icon. Any permitted generated-image fallback must record
+Use a labeled scene primitive before inventing an icon. Any permitted generated-image fallback must record
 `metadata.assetFallback.searchQueries` and `metadata.assetFallback.reason`.
 
 ## Content rules
@@ -101,9 +100,8 @@ Use a labeled native primitive before inventing an icon. Any permitted generated
 
 ## Quality gate
 
-The composition, diagram, and PPTX validators must pass schema, semantic graph checks, brand policy, content
+The composition and diagram validators must pass schema, semantic graph checks, brand policy, content
 budgets, asset existence, font readiness, broken-image checks, canvas geometry, top-level overlap checks,
-embedded SVG type and text bounds, diagram collisions and connector crossings, native named Office-object
-coverage, speaker notes, and serious WCAG issues. A passing validator does not replace screenshot review.
-Report the editable PowerPoint first, then HTML/previews, brand status, takeaway per slide, editability
-exceptions, and unresolved placeholders.
+embedded SVG type and text bounds, diagram collisions and connector crossings, exact 4K PNG dimensions,
+and serious WCAG issues. A passing validator does not replace screenshot review.
+Report the PNGs first, then HTML, brand status, takeaway per slide, and unresolved placeholders.

@@ -8,18 +8,15 @@ import { compileDeckScene, kitRoot } from './composition-core.mjs';
 const execFileAsync = promisify(execFile);
 
 const parseArguments = (arguments_) => {
-    const options = { input: undefined, output: undefined, preview: false, requirePreview: false };
+    const options = { input: undefined, output: undefined };
     for (let index = 0; index < arguments_.length; index += 1) {
         const argument = arguments_[index];
         if (argument === '--output') options.output = path.resolve(arguments_[index += 1]);
-        else if (argument === '--preview') options.preview = true;
-        else if (argument === '--require-preview') {
-            options.preview = true;
-            options.requirePreview = true;
-        } else if (!options.input) options.input = path.resolve(argument);
+        else if (['--preview', '--require-preview'].includes(argument)) continue;
+        else if (!options.input) options.input = path.resolve(argument);
         else throw new Error(`Unexpected argument: ${argument}`);
     }
-    if (!options.input) throw new Error('Usage: npm run deck:build -- <deck.json> [--output <directory>] [--preview]');
+    if (!options.input) throw new Error('Usage: npm run deck:build -- <deck.json> [--output <directory>]');
     options.output ??= path.join(kitRoot, 'deliverables', path.basename(options.input, path.extname(options.input)));
     return options;
 };
@@ -37,27 +34,30 @@ const main = async () => {
         readFile(path.join(kitRoot, 'assets', 'external-icons', 'catalog.json'), 'utf8').then(JSON.parse),
     ]);
     const htmlDirectory = path.join(options.output, 'html');
-    const pptxPath = path.join(options.output, `${path.basename(options.input, path.extname(options.input))}.pptx`);
-    const pptxValidationDirectory = path.join(options.output, 'pptx-validation');
     await rm(options.output, { recursive: true, force: true });
     await mkdir(options.output, { recursive: true });
 
     await runNode('validate-deck.mjs', [options.input, '--output', htmlDirectory]);
-    await runNode('export-deck-pptx.mjs', [options.input, '--output', pptxPath]);
-    const pptxArguments = [pptxPath, '--deck', options.input, '--output', pptxValidationDirectory];
-    if (options.requirePreview) pptxArguments.push('--require-preview');
-    else if (options.preview) pptxArguments.push('--preview');
-    await runNode('validate-pptx.mjs', pptxArguments);
 
     const deck = JSON.parse(await readFile(options.input, 'utf8'));
     const scene = await compileDeckScene(deck, { source: path.relative(kitRoot, options.input).split(path.sep).join('/') });
-    const slides = [];
-    for (const slide of scene.slides) {
-        const powerPointMode = slide.elements.some((element) => element.type === 'diagram')
-            ? 'validated-graphic'
-            : 'native-shapes';
-        slides.push({ id: slide.id, powerPointMode });
-    }
+    const [htmlManifest, htmlValidation] = await Promise.all([
+        readFile(path.join(htmlDirectory, 'deck-manifest.json'), 'utf8').then(JSON.parse),
+        readFile(path.join(htmlDirectory, 'validation-report.json'), 'utf8').then(JSON.parse),
+    ]);
+    const expectedPng = designContract.rasterQuality.deliveryPng;
+    const slides = htmlManifest.slides.map((slide, index) => {
+        const validation = htmlValidation.slides[index];
+        if (!validation?.screenshot || validation.screenshotDimensions?.width !== expectedPng.width || validation.screenshotDimensions?.height !== expectedPng.height) {
+            throw new Error(`Slide ${slide.id} is missing its validated ${expectedPng.width}x${expectedPng.height} PNG.`);
+        }
+        return {
+            id: slide.id,
+            html: `html/${slide.file}`,
+            png: `html/screenshots/${path.basename(validation.screenshot)}`,
+            pngDimensions: validation.screenshotDimensions,
+        };
+    });
     const externalCatalogByPath = new Map(externalCatalog.icons.map((icon) => [`assets/${icon.path}`, icon]));
     const externalAssets = [...new Set(scene.slides
         .flatMap((slide) => slide.elements)
@@ -83,25 +83,20 @@ const main = async () => {
         brandProfile: scene.brandProfile,
         brandStatus: scene.brandStatus,
         outputs: {
-            editablePowerPoint: path.relative(options.output, pptxPath).split(path.sep).join('/'),
             htmlDirectory: path.relative(options.output, htmlDirectory).split(path.sep).join('/'),
+            pngDirectory: 'html/screenshots',
             scene: 'html/deck.scene.json',
             htmlValidation: 'html/validation-report.json',
-            powerPointValidation: 'pptx-validation/validation-report.json',
-            powerPointPreviews: options.preview ? 'pptx-validation/previews/' : undefined,
         },
         quality: {
-            htmlScreenshot: designContract.rasterQuality.htmlScreenshot,
-            powerPointPreview: designContract.powerPointQuality.preview,
+            png: {
+                ...expectedPng,
+                deviceScaleFactor: designContract.rasterQuality.deviceScaleFactor,
+            },
             layout: designContract.layoutQuality,
             repositoryHygiene: {
                 postBuildCheck: true,
                 approvedScratchPrefixes: ['.tmp/', '.slide-artifacts/'],
-            },
-            powerPointMedia: {
-                vectorFirst: designContract.powerPointQuality.preferVectorMedia,
-                preserveSourceRaster: designContract.powerPointQuality.preserveSourceRaster,
-                diagramFallback: designContract.rasterQuality.powerPointDiagramFallback,
             },
         },
         assetResolution: {
@@ -112,13 +107,10 @@ const main = async () => {
             externalAssets,
         },
         slides,
-        limitations: slides.some((slide) => slide.powerPointMode === 'validated-graphic')
-            ? ['Opt-in complex flow elements are embedded as validated graphics; all other authored primitives remain native Office objects.']
-            : [],
     };
     await writeFile(path.join(options.output, 'delivery-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
     await runNode('check-repo-hygiene.mjs', []);
-    console.log(`Built validated HTML and editable PowerPoint deliverables in ${options.output}`);
+    console.log(`Built validated HTML and lossless ${expectedPng.width}x${expectedPng.height} PNG deliverables in ${options.output}`);
 };
 
 main().catch((error) => {

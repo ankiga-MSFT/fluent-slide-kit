@@ -16,4 +16,4 @@ Every reference in deck JSON must use:
 Accepted formats are SVG, PNG, and JPEG. Prefer PNG or JPEG for generated bitmap imagery.
 
 Do not store generated whole slides, text, charts, logos, Microsoft product icons, architecture diagrams,
-or workflows here. Those elements must remain structured and editable.
+or workflows here. Those elements must remain structured and accessible.
