@@ -68,9 +68,10 @@ For a centered focal card, set `metadata.contentAlignment: center` on the contai
 elements `align: center` and the same horizontal centerline as the container. Treat the icon and text as one
 balanced composition; do not leave a centered heading paired with left-aligned supporting copy or vice versa.
 
-Set the confirmed deck theme explicitly; never omit `theme` and rely on a renderer fallback. Preserve
-an existing deck's theme unless the user approves a change. Use slide-level overrides only for an
-intentional section change. An embedded diagram must declare the same theme as its resolved slide.
+Set the resolved deck theme explicitly; never omit `theme` and rely on a renderer fallback. Resolve it
+to `light` unless the user explicitly requests another theme. Preserve an existing deck's stated theme
+unless the user requests a change. Use slide-level overrides only for an intentional section change.
+An embedded diagram must declare the same theme as its resolved slide.
 
 ## 3. Resolve assets and diagrams
 

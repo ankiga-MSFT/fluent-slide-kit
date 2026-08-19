@@ -36,16 +36,16 @@ questions only when the missing answer would materially change the output:
 - What decision, action, or understanding should the presentation create?
 - Which supplied evidence or organizational context must be used?
 
-Always confirm the title and visual theme before authoring, in addition to those questions and even
-when the rest of the request is clear. Propose one specific action title and either `light` or `dark`,
-then ask the user to approve or replace both in one concise question. When supplied visual references
-have a clearly dominant light or dark canvas, propose that theme and state that it came from the
-reference. Explicit user direction always wins. For a deck, confirm the deck title and default theme,
-then let slide titles follow from each slide's takeaway. Never author a title or theme silently.
+Always confirm the title before authoring, in addition to those questions and even when the rest of the
+request is clear. Propose one specific action title, then ask the user to approve or replace it in one
+concise question. Default the visual theme to `light` without asking for confirmation, including when a
+supplied visual reference uses a dark canvas. Use another theme only when the user explicitly requests it.
+For a deck, confirm the deck title, use the resolved default theme, and let slide titles follow from each
+slide's takeaway.
 
 For an underspecified request, default to an executive audience, a concise explanatory narrative,
-public Microsoft sources, 16:9 output, and a single slide when the user says "a slide." Use light only
-when there is no explicit theme and no visual-reference cue. State important assumptions in the handoff.
+public Microsoft sources, 16:9 output, the `light` theme, and a single slide when the user says "a slide."
+State important assumptions in the handoff.
 
 Never invent metrics, customer facts, deployed resources, topology, dates, quotes, or capabilities.
 Use explicit placeholders when private evidence is unavailable.

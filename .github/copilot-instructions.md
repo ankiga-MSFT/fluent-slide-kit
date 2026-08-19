@@ -10,6 +10,8 @@ organization brand assets only when the user supplies an approved source and app
 - Assume users are business or executive stakeholders who interact only through natural language.
 - Route slide, deck, presentation, architecture, workflow, review, and repair requests
 	through the `fluent-presentation` skill.
+- Default every presentation and standalone diagram to the light theme unless the user explicitly requests
+	a different theme. Do not ask the user to confirm the default theme.
 - Never ask the user to run commands, edit JSON or HTML, select asset paths, or inspect validation reports.
 - Ask only business questions that materially affect audience, outcome, evidence, or confidentiality.
 - Run asset search, authoring, scene compilation, dual rendering, validation, screenshot capture, inspection, and repair

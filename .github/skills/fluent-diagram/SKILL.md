@@ -44,7 +44,8 @@ Author `flow` against `schemas/diagram.schema.json` using node kinds, edge kinds
 direction, and intentional cycles.
 
 Set `theme` explicitly. For an embedded diagram, match the host slide's resolved theme; for a
-standalone diagram, use the theme confirmed with the user. Never silently reset a dark request to light.
+standalone diagram, default to `light` unless the user explicitly requests another theme. Never silently
+reset a dark request to light.
 
 Give every element a stable lowercase id. Label decision outcomes, set `allowCycles: true` only for
 intentional feedback, and keep a group within one lane.
