@@ -79,12 +79,19 @@ const compileElement = (source, profile, theme, designContract) => {
     }
 
     if (source.type === 'shape') {
+        const containerDefaults = source.role === 'container'
+            ? {
+                stroke: resolveToken(designContract.authoringDefaults.containers.stroke, colors, 'color'),
+                strokeWidth: designContract.authoringDefaults.containers.strokeWidth,
+            }
+            : {};
         return {
             ...common,
             shape: source.shape,
             style: {
                 fill: colors.surface,
                 strokeWidth: 0,
+                ...containerDefaults,
                 ...resolveStyle(source.style, colors, fonts),
             },
         };

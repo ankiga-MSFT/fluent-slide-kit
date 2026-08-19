@@ -41,8 +41,13 @@
         "containers": {
             "fill": "$surface",
             "lightResolvedFill": "#FFFFFF",
+            "stroke": "$stroke",
+            "lightResolvedStroke": "#242424",
+            "strokeWidth": 1.5,
+            "minimumOutlineContrast": 3,
             "nonWhiteFillRequires": "Explicit user direction or documented focal or semantic intent",
-            "exceptionMetadata": "fillIntent"
+            "exceptionMetadata": "fillIntent",
+            "outlineExceptionMetadata": "outlineIntent"
         },
         "focalContent": {
             "alignment": "center",

@@ -119,7 +119,12 @@ test('presentation skills require local assets, Fluent foundations, and static o
     ]);
     assert.equal(designContract.authoringDefaults.containers.fill, '$surface');
     assert.equal(designContract.authoringDefaults.containers.lightResolvedFill, '#FFFFFF');
+    assert.equal(designContract.authoringDefaults.containers.stroke, '$stroke');
+    assert.equal(designContract.authoringDefaults.containers.lightResolvedStroke, '#242424');
+    assert.equal(designContract.authoringDefaults.containers.strokeWidth, 1.5);
+    assert.equal(designContract.authoringDefaults.containers.minimumOutlineContrast, 3);
     assert.equal(designContract.authoringDefaults.containers.exceptionMetadata, 'fillIntent');
+    assert.equal(designContract.authoringDefaults.containers.outlineExceptionMetadata, 'outlineIntent');
     assert.equal(designContract.authoringDefaults.focalContent.alignment, 'center');
     assert.equal(designContract.authoringDefaults.focalContent.metadata, 'contentAlignment');
     assert.equal(designContract.authoringDefaults.focalContent.centerTolerance, 1);
@@ -383,7 +388,8 @@ test('neutral shapes and primary connectors inherit shared visual defaults', asy
             title: 'Shared defaults remain consistent',
             takeaway: 'Neutral containers stay white and primary connectors match validated flows.',
             elements: [
-                { id: 'neutral-box', type: 'shape', z: 3, box: { x: 112, y: 240, width: 480, height: 280 }, shape: 'roundRect', style: { stroke: '$stroke', strokeWidth: 1 } },
+                { id: 'neutral-box', type: 'shape', role: 'container', z: 3, box: { x: 112, y: 240, width: 480, height: 280 }, shape: 'roundRect', style: {} },
+                { id: 'semantic-box', type: 'shape', role: 'container', z: 3, box: { x: 640, y: 240, width: 480, height: 280 }, shape: 'roundRect', style: { fill: '$successSubtle', stroke: '$success', strokeWidth: 2 } },
                 { id: 'primary-connector', type: 'line', role: 'connector', z: 4, start: { x: 592, y: 380 }, end: { x: 820, y: 380 } },
                 { id: 'divider', type: 'line', role: 'divider', z: 4, start: { x: 112, y: 560 }, end: { x: 820, y: 560 } },
             ],
@@ -391,6 +397,10 @@ test('neutral shapes and primary connectors inherit shared visual defaults', asy
     });
     const elements = new Map(scene.slides[0].elements.map((element) => [element.id, element]));
     assert.equal(elements.get('neutral-box').style.fill, '#FFFFFF');
+    assert.equal(elements.get('neutral-box').style.stroke, '#242424');
+    assert.equal(elements.get('neutral-box').style.strokeWidth, 1.5);
+    assert.equal(elements.get('semantic-box').style.stroke, '#107C10');
+    assert.equal(elements.get('semantic-box').style.strokeWidth, 2);
     assert.equal(elements.get('primary-connector').style.color, '#424242');
     assert.equal(elements.get('primary-connector').style.width, 2.5);
     assert.equal(elements.get('primary-connector').style.endArrow, true);
@@ -626,6 +636,7 @@ test('deck validation requires explicit intent for grey boxes and custom connect
                 elements: [
                     { id: 'title', type: 'text', role: 'title', z: 10, box: { x: 112, y: 68, width: 1200, height: 70 }, text: 'Visual exceptions remain explicit', typography: 'title' },
                     { id: 'grey-box', type: 'shape', z: 3, box: { x: 112, y: 240, width: 400, height: 240 }, shape: 'roundRect', style: { fill: '$subtle', stroke: '$stroke', strokeWidth: 1 } },
+                    { id: 'pale-card', type: 'shape', role: 'container', z: 3, box: { x: 560, y: 240, width: 400, height: 240 }, shape: 'roundRect', style: { fill: '$surface', stroke: '#D1D1D1', strokeWidth: 1.5 } },
                     { id: 'custom-arrow', type: 'line', role: 'connector', z: 4, start: { x: 512, y: 360 }, end: { x: 800, y: 360 }, style: { color: '$brand', width: 4, endArrow: true } },
                 ],
             }],
@@ -633,11 +644,12 @@ test('deck validation requires explicit intent for grey boxes and custom connect
         await writeFile(deckPath, JSON.stringify(deck));
         await assert.rejects(
             execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'invalid')], { cwd: kitRoot }),
-            /neutral box grey-box must use \$surface|connector custom-arrow departs from the primary flow style/,
+            /neutral box grey-box must use \$surface|container pale-card requires an outline with at least 3:1 contrast|connector custom-arrow departs from the primary flow style/,
         );
 
         deck.slides[0].elements[1].metadata = { fillIntent: 'The user explicitly requested a grey comparison state.' };
-        deck.slides[0].elements[2].metadata = { connectorIntent: 'The user explicitly requested a brand-emphasis arrow.' };
+        deck.slides[0].elements[2].metadata = { outlineIntent: 'The user explicitly requested a low-emphasis secondary card.' };
+        deck.slides[0].elements[3].metadata = { connectorIntent: 'The user explicitly requested a brand-emphasis arrow.' };
         await writeFile(deckPath, JSON.stringify(deck));
         const result = await execFileAsync(process.execPath, ['tools/validate-deck.mjs', deckPath, '--no-screenshots', '--output', path.join(output, 'valid')], { cwd: kitRoot });
         assert.match(result.stdout, /PASS: 1 slides checked; 0 errors; 0 warnings\./);
@@ -887,7 +899,7 @@ test('renderer creates standalone slides with inlined Fluent SVG', async () => {
         assert.match(cards, /data-scene-element="assets-icon"/);
         assert.match(cards, /data-scene-element="assets-card"[^>]+border-radius:8px/);
         assert.match(cards, /data-scene-element="assets-card"[^>]+background:#EBF3FC[^>]+border:2px solid #0F6CBD/);
-        assert.match(cards, /data-scene-element="composition-card"[^>]+background:#FFFFFF[^>]+border:1px solid #D1D1D1/);
+        assert.match(cards, /data-scene-element="composition-card"[^>]+background:#FFFFFF[^>]+border:1px solid #242424/);
         assert.match(cards, /data-scene-element="validation-card"[^>]+background:#F1FAF1[^>]+border:2px solid #107C10/);
         assert.match(cards, /currentColor/i);
         assert.match(cards, /data-scene-element="footer-confidentiality"[^>]*>Microsoft Confidential<\/div>/);
@@ -984,6 +996,8 @@ test('flow nodes share one card shape and signal kind with a glyph', async () =>
     const svg = await renderDiagramSvg(diagram);
     assert.equal(svg.includes('<polygon'), false);
     assert.equal((svg.match(/class="node-shape/g) ?? []).length, diagram.nodes.length);
+    assert.match(svg, /\.node-shape \{ fill: #FFFFFF; stroke: #242424; stroke-width: 1\.5; \}/);
+    assert.match(svg, /\.node-shape\.tone-brand \{ fill: #EBF3FC; stroke: #0F6CBD; \}/);
     for (const rectangle of svg.match(/<rect\b(?![^>]*data-canvas-background)[^>]*>/g) ?? []) {
         assert.ok(Number(rectangle.match(/rx="([\d.]+)"/)?.[1]) >= 6, rectangle);
     }

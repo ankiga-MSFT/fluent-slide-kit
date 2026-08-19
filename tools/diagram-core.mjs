@@ -522,7 +522,7 @@ const groupBounds = (diagram, positions) => {
 
 const palette = (theme) => theme === 'dark'
     ? { background: '#202020', surface: '#292929', text: '#FFFFFF', secondary: '#D6D6D6', muted: '#ADADAD', stroke: '#666666', card: '#5C5C5C', lane: '#252525', group: '#333333', label: '#202020', brand: '#479EF5', brandSubtle: '#0C3B5E', success: '#54B054', successSubtle: '#0B3B0B', warning: '#FCE100', warningSubtle: '#4A1E04', danger: '#DC626D', dangerSubtle: '#3B0509' }
-    : { background: '#FFFFFF', surface: '#FFFFFF', text: '#242424', secondary: '#424242', muted: '#616161', stroke: '#BDBDBD', card: '#D1D1D1', lane: '#F7F7F7', group: '#FAFAFA', label: '#FFFFFF', brand: '#0F6CBD', brandSubtle: '#EBF3FC', success: '#107C10', successSubtle: '#F1FAF1', warning: '#8A6D00', warningSubtle: '#FFF4CE', danger: '#C50F1F', dangerSubtle: '#FDF3F4' };
+    : { background: '#FFFFFF', surface: '#FFFFFF', text: '#242424', secondary: '#424242', muted: '#616161', stroke: '#BDBDBD', card: '#242424', lane: '#F7F7F7', group: '#FAFAFA', label: '#FFFFFF', brand: '#0F6CBD', brandSubtle: '#EBF3FC', success: '#107C10', successSubtle: '#F1FAF1', warning: '#8A6D00', warningSubtle: '#FFF4CE', danger: '#C50F1F', dangerSubtle: '#FDF3F4' };
 
 const renderFlowDiagramSvg = async (diagram, options = {}) => {
     const layout = layoutDiagram(diagram);

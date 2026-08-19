@@ -191,7 +191,7 @@ Before handoff, verify:
 - Repeated peer cards use consistent dimensions and at least the rendered-content padding required by `design/design-contract.json`.
 - Centered focal cards align every grouped text element to the same card centerline and declare `metadata.contentAlignment: center`.
 - Architecture boundaries and connector meanings are truthful and unambiguous.
-- Neutral cards and boxes use `$surface` (white in the light theme) unless the user requests another fill or documented focal or semantic intent requires one.
+- Neutral cards and boxes use `$surface` (white in the light theme) with the near-black `$stroke` outline at a minimum 3:1 contrast against the fill. Semantic border colors remain valid when they carry meaning; lower-contrast or borderless exceptions require documented `outlineIntent`.
 - Ordinary directional arrows match the primary flow connector: `$secondary`, 2.5px, with a filled triangular arrowhead.
 - Diagram labels remain at least 18px after final slide scaling, with no collisions, clipped text, or connector crossings.
 - Structured flow diagrams stay within 18 nodes; freeform architectures are governed by slide legibility,

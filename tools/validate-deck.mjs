@@ -45,6 +45,26 @@ const parseArguments = (arguments_) => {
 
 const wordCount = (value = '') => String(value).trim().split(/\s+/).filter(Boolean).length;
 const pngDimensions = (buffer) => ({ width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) });
+const resolveColor = (value, colors) => typeof value === 'string' && value.startsWith('$')
+    ? colors[value.slice(1)]
+    : value;
+const colorChannels = (color) => {
+    const match = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(color ?? '');
+    return match ? match.slice(1).map((channel) => Number.parseInt(channel, 16) / 255) : undefined;
+};
+const relativeLuminance = (color) => {
+    const channels = colorChannels(color);
+    if (!channels) return undefined;
+    return channels
+        .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+};
+const contrastRatio = (first, second) => {
+    const firstLuminance = relativeLuminance(first);
+    const secondLuminance = relativeLuminance(second);
+    if (firstLuminance === undefined || secondLuminance === undefined) return undefined;
+    return (Math.max(firstLuminance, secondLuminance) + 0.05) / (Math.min(firstLuminance, secondLuminance) + 0.05);
+};
 
 const validateDeckContract = async (deck) => {
     const [schema, brandProfileSchema, designContract, fluentCatalog, azureCatalog, externalCatalog] = await Promise.all([
@@ -172,6 +192,17 @@ const validateDeckContract = async (deck) => {
                 const usesNeutralGrey = fill === '$subtle' || fill?.toUpperCase?.() === themeColors.subtle.toUpperCase();
                 if (usesNeutralGrey && !item.metadata?.fillIntent?.trim()) {
                     errors.push(`${location}: neutral box ${item.id} must use $surface; add metadata.fillIntent for an explicit user or semantic exception.`);
+                }
+                if (item.role === 'container') {
+                    const containerDefaults = designContract.authoringDefaults.containers;
+                    const resolvedFill = resolveColor(fill ?? containerDefaults.fill, themeColors);
+                    const resolvedStroke = resolveColor(item.style?.stroke ?? containerDefaults.stroke, themeColors);
+                    const strokeWidth = item.style?.strokeWidth ?? containerDefaults.strokeWidth;
+                    const outlineContrast = contrastRatio(resolvedFill, resolvedStroke);
+                    const hasOutlineException = item.metadata?.[containerDefaults.outlineExceptionMetadata]?.trim();
+                    if ((strokeWidth <= 0 || outlineContrast === undefined || outlineContrast < containerDefaults.minimumOutlineContrast) && !hasOutlineException) {
+                        errors.push(`${location}: container ${item.id} requires an outline with at least ${containerDefaults.minimumOutlineContrast}:1 contrast against its fill; add metadata.${containerDefaults.outlineExceptionMetadata} for an explicit exception.`);
+                    }
                 }
                 if (item.metadata?.contentAlignment === 'center') {
                     const groupedText = slide.elements.filter((candidate) => candidate.type === 'text' && candidate.group === item.group);
