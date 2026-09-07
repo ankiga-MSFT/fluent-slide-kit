@@ -219,6 +219,10 @@
                 "bidirectional": {
                     "type": "boolean",
                     "default": false
+                },
+                "affectsRank": {
+                    "type": "boolean",
+                    "default": true
                 }
             }
         },

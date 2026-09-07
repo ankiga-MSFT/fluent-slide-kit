@@ -27,15 +27,17 @@ const NODE_DESCRIPTION_LINE = 18;
 const NODE_DESCRIPTION_GAP = 12;
 const RANK_GAP = 96;
 const SLOT_GAP = 16;
+const LABELED_SAME_RANK_SLOT_GAP = 112;
 const OUTER_PADDING = 24;
 const LANE_LABEL_SIZE = 24;
 const GROUP_LANE_INSET = 14;
 const DIAGRAM_WIDTH = 1600;
 const DIAGRAM_HEIGHT = 720;
 const EDGE_LABEL_MIN_WIDTH = 52;
-const EDGE_LABEL_CHARACTER_WIDTH = 7.5;
-const EDGE_LABEL_PADDING = 20;
+const EDGE_LABEL_CHARACTER_WIDTH = 8;
+const EDGE_LABEL_PADDING = 16;
 const EDGE_LABEL_NODE_GAP = 8;
+const EDGE_ENDPOINT_CLEARANCE = 10;
 const GROUP_HORIZONTAL_PADDING = 22;
 const GROUP_TOP_PADDING = 38;
 const GROUP_BOTTOM_PADDING = 18;
@@ -258,9 +260,10 @@ export const validateDiagram = async (diagram) => {
 
 const calculateRanks = (nodes, edges) => {
     const ids = nodes.map((node) => node.id);
+    const rankingEdges = edges.filter((edge) => edge.affectsRank !== false);
     const incoming = new Map(ids.map((id) => [id, 0]));
     const outgoing = new Map(ids.map((id) => [id, []]));
-    for (const edge of edges) {
+    for (const edge of rankingEdges) {
         incoming.set(edge.target, (incoming.get(edge.target) ?? 0) + 1);
         outgoing.get(edge.source)?.push(edge.target);
     }
@@ -281,6 +284,9 @@ const calculateRanks = (nodes, edges) => {
     let cycleRank = Math.max(0, ...rank.values());
     for (const id of ids) {
         if (!processed.has(id)) rank.set(id, cycleRank += 1);
+    }
+    for (const edge of edges.filter((candidate) => candidate.affectsRank === false)) {
+        rank.set(edge.target, rank.get(edge.source) ?? 0);
     }
     return rank;
 };
@@ -337,20 +343,31 @@ const layoutDiagram = (diagram) => {
             if (!buckets.has(nodeRank)) buckets.set(nodeRank, []);
             buckets.get(nodeRank).push(node);
         }
-        const maxInRank = Math.max(1, ...[...buckets.values()].map((bucket) => bucket.length));
+        const slotGapForBucket = (bucket) => {
+            const bucketIds = new Set(bucket.map((node) => node.id));
+            return diagram.edges.some((edge) => edge.affectsRank === false
+                && edge.label
+                && bucketIds.has(edge.source)
+                && bucketIds.has(edge.target))
+                ? LABELED_SAME_RANK_SLOT_GAP
+                : SLOT_GAP;
+        };
         const crossNodeSize = direction === 'right' ? NODE_HEIGHT : NODE_WIDTH;
+        const maximumBucketSize = Math.max(crossNodeSize, ...[...buckets.values()].map((bucket) =>
+            bucket.length * crossNodeSize + (bucket.length - 1) * slotGapForBucket(bucket)));
         // Lanes holding a group need extra room so the group frame stays inside the lane band.
         const groupInset = members.some((node) => node.group) ? GROUP_LANE_INSET : 0;
         const rankSkipOffset = [...buckets.keys()].some((nodeRank) => skippedRanks.has(nodeRank)) ? RANK_SKIP_CHANNEL_OFFSET : 0;
-        const bandSize = LANE_LABEL_SIZE + OUTER_PADDING + groupInset * 2 + rankSkipOffset + maxInRank * crossNodeSize + (maxInRank - 1) * SLOT_GAP;
+        const bandSize = LANE_LABEL_SIZE + OUTER_PADDING + groupInset * 2 + rankSkipOffset + maximumBucketSize;
         laneMetrics.push({ ...lane, start: crossCursor, size: bandSize });
 
         for (const [nodeRank, bucket] of buckets) {
+            const bucketSlotGap = slotGapForBucket(bucket);
             bucket.forEach((node, index) => {
                 const primary = primaryPosition(nodeRank);
                 const cross = crossCursor + LANE_LABEL_SIZE + OUTER_PADDING / 2 + groupInset
                     + (skippedRanks.has(nodeRank) ? RANK_SKIP_CHANNEL_OFFSET : 0)
-                    + index * (crossNodeSize + SLOT_GAP);
+                    + index * (crossNodeSize + bucketSlotGap);
                 positions.set(node.id, direction === 'right'
                     ? { x: primary, y: cross, width: NODE_WIDTH, height: NODE_HEIGHT, rank: nodeRank, usesHorizontalRankSkipChannel }
                     : { x: cross, y: primary, width: NODE_WIDTH, height: NODE_HEIGHT, rank: nodeRank, usesHorizontalRankSkipChannel });
@@ -458,6 +475,25 @@ const edgeGeometry = (edge, source, target, direction, index) => {
                 ? 0
                 : 0.25;
     if (direction === 'right') {
+        if (source.rank === target.rank) {
+            const sourceAbove = source.y <= target.y;
+            const start = {
+                x: source.x + source.width / 2,
+                y: sourceAbove
+                    ? source.y + source.height + EDGE_ENDPOINT_CLEARANCE
+                    : source.y - EDGE_ENDPOINT_CLEARANCE,
+            };
+            const end = {
+                x: target.x + target.width / 2,
+                y: sourceAbove
+                    ? target.y - EDGE_ENDPOINT_CLEARANCE
+                    : target.y + target.height + EDGE_ENDPOINT_CLEARANCE,
+            };
+            return {
+                path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+                label: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+            };
+        }
         const start = { x: source.x + source.width, y: source.y + source.height / 2 };
         const end = { x: target.x, y: target.y + target.height / 2 };
         if (end.x > start.x) {
@@ -537,18 +573,23 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
         .map((group) => `<g class="diagram-group tone-${group.tone ?? 'neutral'} boundary-${group.borderStyle ?? 'dashed'}"><rect x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="8" /><text x="${group.x + 14}" y="${group.y + 27}" class="group-label">${escapeXml(group.label)}</text></g>`)
         .join('\n');
     const renderedEdges = diagram.edges.map((edge, index) => {
-        const geometry = edgeGeometry(edge, layout.positions.get(edge.source), layout.positions.get(edge.target), layout.direction, index);
+        const source = layout.positions.get(edge.source);
+        const target = layout.positions.get(edge.target);
+        const geometry = edgeGeometry(edge, source, target, layout.direction, index);
         const kind = edge.kind ?? 'primary';
-        const markerStart = edge.bidirectional ? ' marker-start="url(#arrow-start)"' : '';
+        const markerStart = edge.bidirectional ? ` marker-start="url(#arrow-start-${kind})"` : '';
         const labelWidth = edgeLabelWidth(edge.label);
+        if (edge.label && source.rank === target.rank) {
+            geometry.label.x -= 56;
+        }
         return { edge, geometry, kind, markerStart, labelWidth };
     });
     const edgeMarkup = renderedEdges.map(({ edge, geometry, kind, markerStart }) => `<g class="diagram-edge edge-${kind}" data-diagram-edge="${escapeXml(edge.id)}" data-edge-source="${escapeXml(edge.source)}" data-edge-target="${escapeXml(edge.target)}">
                     <path d="${geometry.path}" marker-end="url(#arrow-${kind})"${markerStart} />
                 </g>`).join('\n');
     const edgeLabelMarkup = renderedEdges.filter(({ edge }) => edge.label).map(({ edge, geometry, labelWidth }) => `<g class="edge-label" data-diagram-edge-label="${escapeXml(edge.id)}">
-                    <rect x="${geometry.label.x - labelWidth / 2}" y="${geometry.label.y - 16}" width="${labelWidth}" height="24" rx="12" />
-                    <text x="${geometry.label.x}" y="${geometry.label.y + 1}" text-anchor="middle">${escapeXml(edge.label)}</text>
+                    <rect x="${geometry.label.x - labelWidth / 2}" y="${geometry.label.y - 16}" width="${labelWidth}" height="28" rx="14" />
+                    <text x="${geometry.label.x}" y="${geometry.label.y + 2}" text-anchor="middle">${escapeXml(edge.label)}</text>
                 </g>`).join('\n');
     const nodeMarkup = (await Promise.all(diagram.nodes.map((node) => renderNode(node, layout.positions.get(node.id), colors)))).join('\n');
     const legendMarkup = (diagram.legend ?? []).map((item, index) => {
@@ -566,7 +607,10 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
     <marker id="arrow-asynchronous" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#0F6CBD" /></marker>
     <marker id="arrow-dependency" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#616161" /></marker>
     <marker id="arrow-error" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#C50F1F" /></marker>
-    <marker id="arrow-start" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M9,0 L9,6 L0,3 z" fill="#424242" /></marker>
+    <marker id="arrow-start-primary" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#424242" /></marker>
+    <marker id="arrow-start-asynchronous" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#0F6CBD" /></marker>
+    <marker id="arrow-start-dependency" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#616161" /></marker>
+    <marker id="arrow-start-error" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#C50F1F" /></marker>
     <style>
       .diagram-lane rect { fill: ${colors.lane}; stroke: ${colors.stroke}; stroke-width: 1.5; }
     .lane-label { fill: ${colors.secondary}; font: 600 18px "Segoe UI", sans-serif; }
@@ -590,10 +634,10 @@ const renderFlowDiagramSvg = async (diagram, options = {}) => {
     .node-description { fill: ${colors.muted}; font: 18px "Segoe UI", sans-serif; }
       .diagram-edge path { fill: none; stroke: #424242; stroke-width: 2.5; }
       .edge-asynchronous path, .edge-asynchronous line { stroke: #0F6CBD; stroke-dasharray: 8 6; }
-      .edge-dependency path, .edge-dependency line { stroke: #616161; stroke-dasharray: 3 5; }
+    .edge-dependency path, .edge-dependency line { stroke: #616161; stroke-dasharray: 1 7; stroke-linecap: round; }
       .edge-error path, .edge-error line { stroke: #C50F1F; }
       .edge-label rect { fill: ${colors.label}; stroke: ${colors.card}; stroke-width: 1; }
-    .edge-label text, .legend-item text { fill: ${colors.secondary}; font: 16px "Segoe UI", sans-serif; }
+    .edge-label text, .legend-item text { fill: ${colors.secondary}; font: 18px "Segoe UI", sans-serif; }
       .legend-item line { stroke: #424242; stroke-width: 2.5; }
     </style>
   </defs>
